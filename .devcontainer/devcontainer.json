@@ -1,0 +1,28 @@
+{
+    "name": "FUEL ROS 2 Jazzy - Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "vscode"
+        }
+    },
+    "remoteUser": "vscode",
+    "workspaceFolder": "/home/vscode/ws/src/hkust-fuel-ipp-ros2",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/ws/src/hkust-fuel-ipp-ros2,type=bind",
+    "runArgs": [
+        "--network=host",
+        "--cap-add=SYS_PTRACE",
+        "--security-opt=seccomp:unconfined"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Ranch-Hand-Robotics.rde-pack",
+                "ms-vscode.cpptools",
+                "ms-python.python",
+                "eamodio.gitlens"
+            ]
+        }
+    },
+    "postCreateCommand": "(sudo rosdep init || echo \"rosdep already initialized\") && rosdep update && rosdep install --from-paths src --ignore-src -r -y"
+}

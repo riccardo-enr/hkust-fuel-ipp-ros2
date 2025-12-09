@@ -1,0 +1,30 @@
+name: ROS 2 Jazzy Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up ROS 2 Jazzy
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+
+      - name: Install workspace dependencies
+        run: |
+          sudo apt-get update
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy
+
+      - name: Build workspace
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --symlink-install
