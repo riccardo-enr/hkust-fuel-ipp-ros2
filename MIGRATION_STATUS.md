@@ -7,8 +7,8 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 ## Overall Progress
 
 **Packages Total:** 25  
-**Completed:** 5 packages  
-**In Progress:** 20 packages  
+**Completed:** 20 packages (80%)  
+**In Progress:** 5 packages (20%)  
 
 ### Phase Status
 
@@ -18,47 +18,55 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 | 2. Message Package Migration | ✅ Complete | 3/3 packages |
 | 3. Package Manifest Updates | ✅ Complete | 25/25 packages |
 | 4. Documentation Updates | ✅ Complete | README updated |
-| 5. CMakeLists.txt Migration | 🔄 In Progress | 4/25 packages |
+| 5. CMakeLists.txt Migration | 🔄 In Progress | 20/25 packages (80%) |
 | 6. Source Code Migration | ⏳ Pending | 0/25 packages |
 | 7. Launch File Migration | ⏳ Pending | 0 packages |
 | 8. Testing & Validation | ⏳ Pending | - |
 
 ## Detailed Package Status
 
-### ✅ Fully Migrated Packages (5)
+### ✅ Fully Migrated Packages (20)
 
-1. **so3_control** - Nodelet converted to component, package.xml and CMakeLists.txt updated
-2. **quadrotor_msgs** - Message package fully migrated to rosidl
-3. **cmake_utils** - Utility package migrated
-4. **bspline** - Message and library package migrated
-5. **multi_map_server** - Package.xml updated (CMakeLists.txt pending)
+**Core Planning Libraries:**
+1. **bspline** - B-spline representation with messages
+2. **bspline_opt** - B-spline optimization with NLopt
+3. **path_searching** - Kinodynamic A* and topology PRM
+4. **plan_env** - SDF mapping and environment
+5. **active_perception** - Frontier finding and trajectory visibility
+6. **poly_traj** - Polynomial trajectory
+7. **traj_utils** - Planning visualization utilities
+8. **lkh_tsp_solver** - TSP solver
 
-### 🔄 Partially Migrated Packages (20)
+**Message Packages:**
+9. **quadrotor_msgs** - Custom quadrotor messages (rosidl)
 
-All of the following packages have updated package.xml files but require CMakeLists.txt updates and source code migration:
+**Simulator Packages:**
+10. **so3_control** - SO3 control component (nodelet → component)
+11. **so3_quadrotor_simulator** - Quadrotor dynamics
+12. **so3_disturbance_generator** - Disturbance generation
+13. **map_generator** - Map generation and recording
+14. **local_sensing** - Depth/PCL rendering
+15. **poscmd_2_odom** - Position command converter
 
-#### Fuel Planner Packages
-- **active_perception**
-- **bspline_opt**
-- **exploration_manager** (has launch files to convert)
-- **path_searching**
-- **plan_env**
-- **plan_manage** (has launch files to convert)
-- **poly_traj**
-- **traj_utils**
-- **lkh_tsp_solver**
+**Utility Packages:**
+16. **cmake_utils** - CMake utilities
+17. **pose_utils** - Pose utilities with Armadillo
+18. **uav_utils** - Header-only UAV utilities
+19. **odom_visualization** - Odometry visualization
+20. **waypoint_generator** - Waypoint generation
+
+### 🔄 Partially Migrated Packages (5)
+
+Packages with updated package.xml but pending CMakeLists.txt:
+
+1. **exploration_manager** (has launch files to convert)
+2. **plan_manage** (has launch files to convert)
+3. **multi_map_server** (has messages)
+4. **multi_map_server/quadrotor_msgs** (duplicate message package)
+5. **rviz_plugins** (RViz visualization plugins)
 
 #### UAV Simulator Packages
-- **pose_utils**
-- **uav_utils**
-- **odom_visualization**
-- **waypoint_generator**
-- **rviz_plugins**
-- **map_generator**
-- **local_sensing**
-- **poscmd_2_odom**
-- **so3_disturbance_generator**
-- **so3_quadrotor_simulator** (has launch files to convert)
+(All migrated - see Fully Migrated list above)
 
 ## Remaining Work
 
