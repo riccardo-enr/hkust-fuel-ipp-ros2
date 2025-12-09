@@ -1,128 +1,53 @@
 #include <iostream>
 #include <string.h>
-#include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2/LinearMath/Transform.h"
-#include "geometry_msgs/msg/transform_stamped.hpp"
-#include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "sensor_msgs/msg/range.hpp"
-#include "visualization_msgs/msg/marker.hpp"
-#include "std_msgs/msg/color_rgba.hpp"
+#include "ros/ros.h"
+#include "tf/transform_broadcaster.h"
+#include "nav_msgs/Odometry.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "nav_msgs/Path.h"
+#include "sensor_msgs/Range.h"
+#include "visualization_msgs/Marker.h"
 #include "armadillo"
 #include "pose_utils.h"
-#include "quadrotor_msgs/msg/position_command.hpp"
+#include "quadrotor_msgs/PositionCommand.h"
 
 using namespace arma;
 using namespace std;
 
-class OdomVisualization : public rclcpp::Node {
-public:
-  OdomVisualization() : Node("odom_visualization") {
-    // Declare and get parameters
-    this->declare_parameter("mesh_resource", "package://odom_visualization/meshes/hummingbird.mesh");
-    this->declare_parameter("color/r", 1.0);
-    this->declare_parameter("color/g", 0.0);
-    this->declare_parameter("color/b", 0.0);
-    this->declare_parameter("color/a", 1.0);
-    this->declare_parameter("origin", false);
-    this->declare_parameter("robot_scale", 2.0);
-    this->declare_parameter("frame_id", "world");
-    this->declare_parameter("cross_config", false);
-    this->declare_parameter("tf45", false);
-    this->declare_parameter("covariance_scale", 100.0);
-    this->declare_parameter("covariance_position", false);
-    this->declare_parameter("covariance_velocity", false);
-    this->declare_parameter("covariance_color", false);
+static string mesh_resource;
+static double color_r, color_g, color_b, color_a, cov_scale, scale;
 
-    mesh_resource = this->get_parameter("mesh_resource").as_string();
-    color_r = this->get_parameter("color/r").as_double();
-    color_g = this->get_parameter("color/g").as_double();
-    color_b = this->get_parameter("color/b").as_double();
-    color_a = this->get_parameter("color/a").as_double();
-    origin = this->get_parameter("origin").as_bool();
-    scale = this->get_parameter("robot_scale").as_double();
-    _frame_id = this->get_parameter("frame_id").as_string();
-    cross_config = this->get_parameter("cross_config").as_bool();
-    tf45 = this->get_parameter("tf45").as_bool();
-    cov_scale = this->get_parameter("covariance_scale").as_double();
-    cov_pos = this->get_parameter("covariance_position").as_bool();
-    cov_vel = this->get_parameter("covariance_velocity").as_bool();
-    cov_color = this->get_parameter("covariance_color").as_bool();
+bool cross_config = false;
+bool tf45 = false;
+bool cov_pos = false;
+bool cov_vel = false;
+bool cov_color = false;
+bool origin = false;
+bool isOriginSet = false;
+colvec poseOrigin(6);
+ros::Publisher posePub;
+ros::Publisher pathPub;
+ros::Publisher velPub;
+ros::Publisher covPub;
+ros::Publisher covVelPub;
+ros::Publisher trajPub;
+ros::Publisher sensorPub;
+ros::Publisher meshPub;
+ros::Publisher heightPub;
+tf::TransformBroadcaster* broadcaster;
+geometry_msgs::PoseStamped poseROS;
+nav_msgs::Path pathROS;
+visualization_msgs::Marker velROS;
+visualization_msgs::Marker covROS;
+visualization_msgs::Marker covVelROS;
+visualization_msgs::Marker trajROS;
+visualization_msgs::Marker sensorROS;
+visualization_msgs::Marker meshROS;
+sensor_msgs::Range heightROS;
+string _frame_id;
 
-    isOriginSet = false;
-    poseOrigin = colvec(6);
-
-    // Create publishers
-    posePub = this->create_publisher<geometry_msgs::msg::PoseStamped>("pose", 100);
-    pathPub = this->create_publisher<nav_msgs::msg::Path>("path", 100);
-    velPub = this->create_publisher<visualization_msgs::msg::Marker>("velocity", 100);
-    covPub = this->create_publisher<visualization_msgs::msg::Marker>("covariance", 100);
-    covVelPub = this->create_publisher<visualization_msgs::msg::Marker>("covariance_velocity", 100);
-    trajPub = this->create_publisher<visualization_msgs::msg::Marker>("trajectory", 100);
-    sensorPub = this->create_publisher<visualization_msgs::msg::Marker>("sensor", 100);
-    meshPub = this->create_publisher<visualization_msgs::msg::Marker>("robot", 100);
-    heightPub = this->create_publisher<sensor_msgs::msg::Range>("height", 100);
-
-    // Create subscribers
-    sub_odom = this->create_subscription<nav_msgs::msg::Odometry>(
-        "odom", 100, std::bind(&OdomVisualization::odom_callback, this, std::placeholders::_1));
-    sub_cmd = this->create_subscription<quadrotor_msgs::msg::PositionCommand>(
-        "cmd", 100, std::bind(&OdomVisualization::cmd_callback, this, std::placeholders::_1));
-
-    // Create TF broadcaster
-    tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-
-    RCLCPP_INFO(this->get_logger(), "Odom visualization node initialized");
-  }
-
-private:
-  // Parameters
-  string mesh_resource;
-  double color_r, color_g, color_b, color_a, cov_scale, scale;
-  bool cross_config;
-  bool tf45;
-  bool cov_pos;
-  bool cov_vel;
-  bool cov_color;
-  bool origin;
-  bool isOriginSet;
-  colvec poseOrigin;
-  string _frame_id;
-
-  // Publishers
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr posePub;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr velPub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr covPub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr covVelPub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr trajPub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr sensorPub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr meshPub;
-  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr heightPub;
-
-  // Subscribers
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom;
-  rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr sub_cmd;
-
-  // TF
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
-
-  // Message storage
-  geometry_msgs::msg::PoseStamped poseROS;
-  nav_msgs::msg::Path pathROS;
-  visualization_msgs::msg::Marker velROS;
-  visualization_msgs::msg::Marker covROS;
-  visualization_msgs::msg::Marker covVelROS;
-  visualization_msgs::msg::Marker trajROS;
-  visualization_msgs::msg::Marker sensorROS;
-  visualization_msgs::msg::Marker meshROS;
-  sensor_msgs::msg::Range heightROS;
-
-  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
   if (msg->header.frame_id == string("null")) return;
   colvec pose(6);
   pose(0) = msg->pose.pose.position.x;
