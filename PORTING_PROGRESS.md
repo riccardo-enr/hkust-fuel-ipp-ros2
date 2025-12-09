@@ -75,9 +75,16 @@ The following packages have been successfully ported to ROS 2 and compile withou
     -   `CMakeLists.txt`: Rewritten for `ament_cmake`. Updated C++ standard to C++17. Removed dynamic_reconfigure build dependencies.
     -   `src/so3_disturbance_generator.cpp`: Completely rewritten as an `rclcpp::Node` class. Replaced `dynamic_reconfigure` with ROS 2 parameter declarations using `declare_parameter()` and `get_parameter()`. Converted all message types to ROS 2 format (`geometry_msgs::msg::Vector3`, `nav_msgs::msg::Odometry`, etc.). Replaced ROS 1 time handling (`ros::Time`, `toSec()`) with ROS 2 equivalents (`rclcpp::Time`, `seconds()`). Converted publishers/subscribers to ROS 2 API. Replaced spin loop with `create_wall_timer()` for disturbance generation at 100 Hz.
 
+-   **`multi_map_server`**:
+    -   `package.xml`: Updated to format 3, `ament_cmake` buildtool.
+    -   `CMakeLists.txt`: Rewritten to use `ament_cmake` and `rosidl_generate_interfaces`.
+    -   `include/multi_map_server/Map2D.h`: Updated message type includes and namespaces (TF1->TF2, nav_msgs types).
+    -   `include/multi_map_server/Map3D.h`: Updated `ros::Time` to `rclcpp::Time` and TF1 to TF2 equivalents for quaternion creation and time handling.
+    -   `src/multi_map_visualization.cc`: Rewritten as an `rclcpp::Node`.
+
 
 ## Next Steps
-1.  Continue porting the remaining `uav_simulator` packages (`so3_disturbance_generator`, `multi_map_server`, `rviz_plugins`).
+1.  Continue porting the remaining `uav_simulator` packages (`rviz_plugins`).
 2.  Port the `fuel_planner` packages.
 
 ## Status Update (2025-12-09)
@@ -85,7 +92,7 @@ The following packages have been successfully ported to ROS 2 and compile withou
 - **Progress snapshot:** Most core packages have been ported to ROS 2 (Jazzy) and there are no reported compile errors for the packages listed in the "Completed Packages" section. The workspace devcontainer has been updated to use `ros:jazzy`.
 - **What's done:** Consistent `package.xml`/`CMakeLists.txt` migrations to `ament_cmake`; message renames and `::msg::` namespace updates; TF1→TF2 conversions; node conversions to `rclcpp` and `rclcpp_components`; sensible fixes for `Header.seq` removal and shared pointer usage.
 - **Remaining high-level work:**
-    - Port the `uav_simulator` subpackages: `so3_disturbance_generator`, `multi_map_server`, and `rviz_plugins` (the latter is highest effort because rviz2 plugin API differs significantly from rviz1).
+    - Port the `uav_simulator` subpackages: `rviz_plugins` (the latter is highest effort because rviz2 plugin API differs significantly from rviz1).
     - Port the `fuel_planner` packages (likely the largest group; requires careful dependency and behavior testing).
     - Verify and update CI/build scripts and run full workspace builds and runtime smoke tests.
 
@@ -97,19 +104,9 @@ The following packages have been successfully ported to ROS 2 and compile withou
 
 ## Package Inventory and Dependency Map
 
-### Remaining UAV Simulator Packages (3 packages)
+### Remaining UAV Simulator Packages (1 package)
 
-1. **`so3_disturbance_generator`** (Low complexity)
-   - Dependencies: `roscpp`, `std_msgs`, `nav_msgs`, `sensor_msgs`, `visualization_msgs`, `pose_utils` (✓ ported), `dynamic_reconfigure` (needs ROS 2 equivalent)
-   - Effort: Small — straightforward node conversion
-   - Blocker: `dynamic_reconfigure` → migrate to ROS 2 parameters/services
-
-2. **`multi_map_server`** (Medium complexity)
-   - Dependencies: `roscpp`, `visualization_msgs`, `geometry_msgs`, `tf` → `tf2`, `nav_msgs`, `std_srvs`, `laser_geometry`, `pose_utils` (✓ ported), `message_generation`, `quadrotor_msgs` (✓ ported)
-   - Effort: Medium — has custom messages/services, server node
-   - Blocker: Custom message definitions need rosidl migration
-
-3. **`rviz_plugins`** (High complexity - **DEFER**)
+1. **`rviz_plugins`** (High complexity - **DEFER**)
    - Dependencies: `rviz` → `rviz2`, `roscpp`, `multi_map_server`, `qtbase5-dev`
    - Effort: High — rviz2 plugin API is completely different from rviz1
    - Blocker: Depends on `multi_map_server`; requires plugin API rewrite
@@ -200,18 +197,14 @@ The following packages have been successfully ported to ROS 2 and compile withou
 ✅ **Inventory completed** — See detailed package dependency map above.
 ✅ **`so3_disturbance_generator` ported and building** — Successfully converted to ROS 2 with parameter-based configuration.
 
-**Status:** `multi_map_server` port is in progress. Completed:
+**Status:** `multi_map_server` fully ported.
 - `package.xml` updated to ament_cmake and rosidl
 - `CMakeLists.txt` updated with rosidl_generate_interfaces
 - `Map2D.h` updated (TF1→TF2, nav_msgs types)
+- `Map3D.h` updated (ros::Time → rclcpp::Time, TF2 updates for quaternion creation and time handling)
 - `multi_map_visualization.cc` rewritten as rclcpp::Node
 
-**Remaining work for `multi_map_server`:**
-- `Map3D.h` needs ros::Time → rclcpp::Time conversion and TF2 updates (lines 319, 321, 328, 509-510)
-- Build and test the package
-- Estimated: 1-2 hours
-
-**Next recommended action:** Complete `multi_map_server` port, then proceed with FUEL planner packages starting with Tier 1 (`plan_env`, `lkh_tsp_solver`, `poly_traj`).
+**Next recommended action:** Proceed with FUEL planner packages starting with Tier 1 (`plan_env`, `lkh_tsp_solver`, `poly_traj`).
 
 ---
 _Updated on 2025-12-09 — contact the maintainer or open a PR per package for review and CI checks._
