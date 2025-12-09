@@ -1,0 +1,3 @@
+list(APPEND CMAKE_MODULE_PATH "${cmake_utils_DIR}/../cmake_modules")
+include("${cmake_utils_DIR}/../cmake/arch.cmake")
+include("${cmake_utils_DIR}/../cmake/color.cmake")
