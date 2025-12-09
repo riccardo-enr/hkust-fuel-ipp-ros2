@@ -1,5 +1,5 @@
 #include "bspline/non_uniform_bspline.h"
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace fast_planner {
 NonUniformBspline::NonUniformBspline(const Eigen::MatrixXd& points, const int& order,
@@ -153,8 +153,10 @@ double NonUniformBspline::checkRatio() {
       max_acc = max(max_acc, fabs(acc(j)));
   }
   double ratio = max(max_vel / limit_vel_, sqrt(fabs(max_acc) / limit_acc_));
-  ROS_INFO("max vel: %lf, max acc: %lf, ratio: %lf", max_vel, max_acc, ratio);
-  ROS_ERROR_COND(ratio > 2.0, "max vel: %lf, max acc: %lf, ratio: %lf", max_vel, max_acc, ratio);
+  RCLCPP_INFO(rclcpp::get_logger("bspline"), "max vel: %lf, max acc: %lf, ratio: %lf", max_vel, max_acc, ratio);
+  if (ratio > 2.0) {
+    RCLCPP_ERROR(rclcpp::get_logger("bspline"), "max vel: %lf, max acc: %lf, ratio: %lf", max_vel, max_acc, ratio);
+  }
 
   return ratio;
 }
