@@ -19,13 +19,15 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 | 3. Package Manifest Updates | ✅ Complete | 25/25 packages |
 | 4. Documentation Updates | ✅ Complete | README + MIGRATION_STATUS + SOURCE_MIGRATION_GUIDE |
 | 5. CMakeLists.txt Migration | ✅ Nearly Complete | 24/25 packages (96%) |
-| 6. Source Code Migration | 🔄 In Progress | 6 files migrated |
+| 6. Source Code Migration | 🔄 In Progress | 11 files migrated |
 | 7. Launch File Migration | ⏳ Pending | 0 packages |
 | 8. Testing & Validation | ⏳ Pending | - |
 
 ## Source Code Migration Progress
 
-**Files Migrated (6):**
+**Files Migrated (11):**
+
+**Simple Utility Nodes (6):**
 1. **poscmd_2_odom.cpp** - Position command to odometry converter
 2. **map_recorder.cpp** - Map recording utility
 3. **map_publisher.cpp** - Map publishing utility
@@ -33,13 +35,25 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 5. **exploration_node.cpp** - Main exploration FSM node
 6. **fast_planner_node.cpp** - Fast planner main node
 
+**Planning Libraries (3):**
+7. **non_uniform_bspline.cpp** - B-spline library with logging
+8. **astar.cpp** - A* search with parameter handling
+9. **kinodynamic_astar.cpp** - Kinodynamic A* (14 parameters migrated)
+
+**Complex Utilities (2):**
+10. **waypoint_generator.cpp** - TF2 usage, multiple pub/sub, dynamic parameters
+11. **sample_waypoints.h** - Waypoint pattern generation helper
+
 **Patterns Established:**
 - Global state → Class-based design (inherit from `rclcpp::Node`)
 - Message includes: `/msg/` subdirectory, `.hpp` extension
 - Publishers/Subscribers use `SharedPtr` and `std::bind`
 - Parameters: `declare_parameter()` + `get_parameter()` pattern
 - Rate loops → Timers (`create_wall_timer()`)
+- Time API: `ros::Time::now()` → `this->now()`, `ros::Duration` → `rclcpp::Duration`
+- TF: `tf::*` → `tf2::*` with `tf2_geometry_msgs`
 - Logging: `ROS_INFO` → `RCLCPP_INFO(this->get_logger(), ...)`
+- Library classes: `ros::NodeHandle&` → `rclcpp::Node::SharedPtr`
 
 See `SOURCE_MIGRATION_GUIDE.md` for detailed migration patterns and examples.
 
