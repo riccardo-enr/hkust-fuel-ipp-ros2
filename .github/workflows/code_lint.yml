@@ -1,0 +1,29 @@
+name: Code Lint
+
+on:
+  push:
+    branches: [ main, master, feat/ros2]
+  pull_request:
+
+jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: "ros2_ws/src"
+
+  cpp-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run clang-format check
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang-format
+          find ros2_ws/src -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
