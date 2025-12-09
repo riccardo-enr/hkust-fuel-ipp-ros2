@@ -17,11 +17,31 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 | 1. Nodelet to Component Migration | ✅ Complete | 1/1 packages |
 | 2. Message Package Migration | ✅ Complete | 4/4 packages |
 | 3. Package Manifest Updates | ✅ Complete | 25/25 packages |
-| 4. Documentation Updates | ✅ Complete | README + MIGRATION_STATUS |
+| 4. Documentation Updates | ✅ Complete | README + MIGRATION_STATUS + SOURCE_MIGRATION_GUIDE |
 | 5. CMakeLists.txt Migration | ✅ Nearly Complete | 24/25 packages (96%) |
-| 6. Source Code Migration | ⏳ Pending | 0/25 packages |
+| 6. Source Code Migration | 🔄 In Progress | 6 files migrated |
 | 7. Launch File Migration | ⏳ Pending | 0 packages |
 | 8. Testing & Validation | ⏳ Pending | - |
+
+## Source Code Migration Progress
+
+**Files Migrated (6):**
+1. **poscmd_2_odom.cpp** - Position command to odometry converter
+2. **map_recorder.cpp** - Map recording utility
+3. **map_publisher.cpp** - Map publishing utility
+4. **click_map.cpp** - Interactive map generation
+5. **exploration_node.cpp** - Main exploration FSM node
+6. **fast_planner_node.cpp** - Fast planner main node
+
+**Patterns Established:**
+- Global state → Class-based design (inherit from `rclcpp::Node`)
+- Message includes: `/msg/` subdirectory, `.hpp` extension
+- Publishers/Subscribers use `SharedPtr` and `std::bind`
+- Parameters: `declare_parameter()` + `get_parameter()` pattern
+- Rate loops → Timers (`create_wall_timer()`)
+- Logging: `ROS_INFO` → `RCLCPP_INFO(this->get_logger(), ...)`
+
+See `SOURCE_MIGRATION_GUIDE.md` for detailed migration patterns and examples.
 
 ## Detailed Package Status
 
