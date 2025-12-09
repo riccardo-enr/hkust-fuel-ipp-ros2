@@ -1,0 +1,7 @@
+<library path="libso3_control_component">
+  <class name="so3_control::SO3ControlComponent" type="so3_control::SO3ControlComponent" base_class_type="rclcpp::Node">
+    <description>
+      SO3 Control Component for ROS 2
+    </description>
+  </class>
+</library>
