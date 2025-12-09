@@ -7,27 +7,27 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 ## Overall Progress
 
 **Packages Total:** 25  
-**Completed:** 20 packages (80%)  
-**In Progress:** 5 packages (20%)  
+**Completed:** 24 packages (96%)  
+**In Progress:** 1 package (4%)  
 
 ### Phase Status
 
 | Phase | Status | Progress |
 |-------|--------|----------|
 | 1. Nodelet to Component Migration | ✅ Complete | 1/1 packages |
-| 2. Message Package Migration | ✅ Complete | 3/3 packages |
+| 2. Message Package Migration | ✅ Complete | 4/4 packages |
 | 3. Package Manifest Updates | ✅ Complete | 25/25 packages |
-| 4. Documentation Updates | ✅ Complete | README updated |
-| 5. CMakeLists.txt Migration | 🔄 In Progress | 20/25 packages (80%) |
+| 4. Documentation Updates | ✅ Complete | README + MIGRATION_STATUS |
+| 5. CMakeLists.txt Migration | ✅ Nearly Complete | 24/25 packages (96%) |
 | 6. Source Code Migration | ⏳ Pending | 0/25 packages |
 | 7. Launch File Migration | ⏳ Pending | 0 packages |
 | 8. Testing & Validation | ⏳ Pending | - |
 
 ## Detailed Package Status
 
-### ✅ Fully Migrated Packages (20)
+### ✅ Fully Migrated Packages (24)
 
-**Core Planning Libraries:**
+**Core Planning Libraries (10):**
 1. **bspline** - B-spline representation with messages
 2. **bspline_opt** - B-spline optimization with NLopt
 3. **path_searching** - Kinodynamic A* and topology PRM
@@ -36,43 +36,50 @@ This document tracks the progress of porting the FUEL project from ROS 1 to ROS 
 6. **poly_traj** - Polynomial trajectory
 7. **traj_utils** - Planning visualization utilities
 8. **lkh_tsp_solver** - TSP solver
+9. **exploration_manager** - Exploration FSM and manager
+10. **plan_manage** - Planner management library
 
-**Message Packages:**
-9. **quadrotor_msgs** - Custom quadrotor messages (rosidl)
+**Message Packages (4):**
+11. **quadrotor_msgs** - Custom quadrotor messages (main package, rosidl)
+12. **bspline** - (includes Bspline.msg)
+13. **multi_map_server** - (includes map messages)
+14. **multi_map_server/quadrotor_msgs** - (duplicate, marked for consolidation)
 
-**Simulator Packages:**
-10. **so3_control** - SO3 control component (nodelet → component)
-11. **so3_quadrotor_simulator** - Quadrotor dynamics
-12. **so3_disturbance_generator** - Disturbance generation
-13. **map_generator** - Map generation and recording
-14. **local_sensing** - Depth/PCL rendering
-15. **poscmd_2_odom** - Position command converter
+**Simulator Packages (7):**
+15. **so3_control** - SO3 control component (nodelet → component)
+16. **so3_quadrotor_simulator** - Quadrotor dynamics
+17. **so3_disturbance_generator** - Disturbance generation
+18. **map_generator** - Map generation and recording
+19. **local_sensing** - Depth/PCL rendering
+20. **poscmd_2_odom** - Position command converter
+21. **multi_map_server** - Multi-map visualization
 
-**Utility Packages:**
-16. **cmake_utils** - CMake utilities
-17. **pose_utils** - Pose utilities with Armadillo
-18. **uav_utils** - Header-only UAV utilities
-19. **odom_visualization** - Odometry visualization
-20. **waypoint_generator** - Waypoint generation
+**Utility Packages (6):**
+22. **cmake_utils** - CMake utilities
+23. **pose_utils** - Pose utilities with Armadillo
+24. **uav_utils** - Header-only UAV utilities
+25. **odom_visualization** - Odometry visualization
+26. **waypoint_generator** - Waypoint generation
 
-### 🔄 Partially Migrated Packages (5)
+### 🔄 Partially Migrated Packages (1)
 
-Packages with updated package.xml but pending CMakeLists.txt:
+**Pending CMakeLists.txt:**
+1. **rviz_plugins** - RViz visualization plugins (requires Qt5/RViz2 specific updates)
 
-1. **exploration_manager** (has launch files to convert)
-2. **plan_manage** (has launch files to convert)
-3. **multi_map_server** (has messages)
-4. **multi_map_server/quadrotor_msgs** (duplicate message package)
-5. **rviz_plugins** (RViz visualization plugins)
-
-#### UAV Simulator Packages
-(All migrated - see Fully Migrated list above)
+Note: rviz_plugins is complex and requires specialized RViz2 and Qt5 knowledge. It can be addressed separately or considered optional for initial ROS 2 port.
 
 ## Remaining Work
 
-### 1. CMakeLists.txt Migration (21 packages)
+### 1. CMakeLists.txt Migration (1 package)
 
-Each CMakeLists.txt file needs to be updated to:
+**rviz_plugins** - This package requires:
+- Qt5 (instead of Qt4) configuration for RViz2
+- RViz2-specific plugin API updates
+- Can be considered optional for initial port or addressed separately
+
+### 2. Source Code Migration (ALL packages with C++ code - PRIMARY FOCUS)
+
+This is the next major phase. For each C++ source file:
 - Replace `find_package(catkin ...)` with `find_package(ament_cmake REQUIRED)`
 - Update `find_package()` calls for ROS 2 packages (roscpp → rclcpp, etc.)
 - Remove `catkin_package()` and replace with `ament_package()`
