@@ -1,69 +1,77 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(multi_map_server)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(laser_geometry REQUIRED)
+find_package(pose_utils REQUIRED)
+find_package(quadrotor_msgs REQUIRED)
+find_package(Armadillo REQUIRED)
+
+# Generate messages
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/MultiOccupancyGrid.msg"
+  "msg/MultiSparseMap3D.msg"
+  "msg/SparseMap3D.msg"
+  "msg/VerticalOccupancyGridList.msg"
+  DEPENDENCIES geometry_msgs nav_msgs
+)
+
+include_directories(
+  include
+  ${ARMADILLO_INCLUDE_DIRS}
+)
+
+add_executable(multi_map_visualization src/multi_map_visualization.cc)
+
+ament_target_dependencies(multi_map_visualization
+  rclcpp
   geometry_msgs
   nav_msgs
-  pose_utils
-  message_generation
-  roscpp
   visualization_msgs
-  tf
+  tf2
+  tf2_ros
   std_srvs
   laser_geometry
   pose_utils
   quadrotor_msgs
 )
 
-add_message_files(
-   FILES
-   MultiOccupancyGrid.msg
-   MultiSparseMap3D.msg
-   SparseMap3D.msg
-   VerticalOccupancyGridList.msg
-   #plan_cmd.msg
-)
-
-generate_messages(
-   DEPENDENCIES
-   geometry_msgs
-   nav_msgs
-)
-
-
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES irobot_msgs
-   CATKIN_DEPENDS geometry_msgs nav_msgs quadrotor_msgs
-#  DEPENDS system_lib
-)
-
-###########
-## Build ##
-###########
-find_package(Armadillo REQUIRED)
-include_directories(${ARMADILLO_INCLUDE_DIRS})
-
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
-
-## Declare a cpp executable
-add_executable(multi_map_visualization src/multi_map_visualization.cc)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-add_dependencies(multi_map_visualization multi_map_server_messages_cpp)
-
-## Specify libraries to link a library or executable target against
 target_link_libraries(multi_map_visualization 
-   ${catkin_LIBRARIES}
-   ${ARMADILLO_LIBRARIES}
+  ${ARMADILLO_LIBRARIES}
 )
+
+# Install
+install(TARGETS multi_map_visualization
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Testing
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_export_dependencies(rosidl_default_runtime)
+
+ament_package()

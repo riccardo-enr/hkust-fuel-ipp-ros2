@@ -40,56 +40,80 @@
 #-rosbuild_add_link_flags(decode_msgs -Wl,--as-needed)
 
 #------------------------------------------------------------------
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(quadrotor_msgs)
 
-find_package(catkin REQUIRED COMPONENTS
-  #armadillo
-  roscpp
-  nav_msgs
-  geometry_msgs
-  message_generation
-)
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# NOTE: This is a duplicate package. Consider using the main quadrotor_msgs package
+# in uav_simulator/Utils/quadrotor_msgs instead.
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 include_directories(
-    ${catkin_INCLUDE_DIRS}
-    include
-    )
-
-
-add_message_files(
-  FILES
-  AuxCommand.msg
-  Corrections.msg
-  Gains.msg
-  OutputData.msg
-  PositionCommand.msg
-  PPROutputData.msg
-  Serial.msg
-  SO3Command.msg
-  StatusData.msg
-  TRPYCommand.msg
+  include
+  ${EIGEN3_INCLUDE_DIR}
 )
 
-generate_messages(
-    DEPENDENCIES
-    geometry_msgs
-    nav_msgs
+# Generate messages
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/AuxCommand.msg"
+  "msg/Corrections.msg"
+  "msg/Gains.msg"
+  "msg/OutputData.msg"
+  "msg/PositionCommand.msg"
+  "msg/PPROutputData.msg"
+  "msg/Serial.msg"
+  "msg/SO3Command.msg"
+  "msg/StatusData.msg"
+  "msg/TRPYCommand.msg"
+  DEPENDENCIES geometry_msgs nav_msgs
 )
-
-catkin_package(
-  #INCLUDE_DIRS include
-  #LIBRARIES irobot_msgs
-  #CATKIN_DEPENDS geometry_msgs nav_msgs
-  #DEPENDS system_lib
-  CATKIN_DEPENDS message_runtime
-)
-
-#add_dependencies(decode_msgs quadrotor_msgs_generate_messages_cpp)
-#add_dependencies(encode_msgs quadrotor_msgs_generate_messages_cpp)
-
-find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
 
 add_library(decode_msgs src/decode_msgs.cpp)
 add_library(encode_msgs src/encode_msgs.cpp)
+
+target_include_directories(decode_msgs PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${EIGEN3_INCLUDE_DIR}
+)
+
+target_include_directories(encode_msgs PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${EIGEN3_INCLUDE_DIR}
+)
+
+# Install
+install(TARGETS decode_msgs encode_msgs
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Testing
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_export_dependencies(rosidl_default_runtime)
+
+ament_package()
