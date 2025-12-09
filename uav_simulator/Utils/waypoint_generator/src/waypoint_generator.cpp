@@ -1,11 +1,13 @@
 #include <iostream>
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseArray.h>
-#include <geometry_msgs/Vector3.h>
-#include <nav_msgs/Path.h>
+#include <rclcpp/rclcpp.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_array.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "sample_waypoints.h"
 #include <vector>
 #include <deque>
@@ -15,244 +17,269 @@
 using namespace std;
 using bfmt = boost::format;
 
-ros::Publisher pub1;
-ros::Publisher pub2;
-ros::Publisher pub3;
-string waypoint_type = string("manual");
-bool is_odom_ready;
-nav_msgs::Odometry odom;
-nav_msgs::Path waypoints;
-
-// series waypoint needed
-std::deque<nav_msgs::Path> waypointSegments;
-ros::Time trigged_time;
-
-void load_seg(ros::NodeHandle& nh, int segid, const ros::Time& time_base) {
-  std::string seg_str = boost::str(bfmt("seg%d/") % segid);
-  double yaw;
-  double time_from_start;
-  ROS_INFO("Getting segment %d", segid);
-  ROS_ASSERT(nh.getParam(seg_str + "yaw", yaw));
-  ROS_ASSERT_MSG((yaw > -3.1499999) && (yaw < 3.14999999), "yaw=%.3f", yaw);
-  ROS_ASSERT(nh.getParam(seg_str + "time_from_start", time_from_start));
-  ROS_ASSERT(time_from_start >= 0.0);
-
-  std::vector<double> ptx;
-  std::vector<double> pty;
-  std::vector<double> ptz;
-
-  ROS_ASSERT(nh.getParam(seg_str + "x", ptx));
-  ROS_ASSERT(nh.getParam(seg_str + "y", pty));
-  ROS_ASSERT(nh.getParam(seg_str + "z", ptz));
-
-  ROS_ASSERT(ptx.size());
-  ROS_ASSERT(ptx.size() == pty.size() && ptx.size() == ptz.size());
-
-  nav_msgs::Path path_msg;
-
-  path_msg.header.stamp = time_base + ros::Duration(time_from_start);
-
-  double baseyaw = tf::getYaw(odom.pose.pose.orientation);
-
-  for (size_t k = 0; k < ptx.size(); ++k) {
-    geometry_msgs::PoseStamped pt;
-    pt.pose.orientation = tf::createQuaternionMsgFromYaw(baseyaw + yaw);
-    Eigen::Vector2d dp(ptx.at(k), pty.at(k));
-    Eigen::Vector2d rdp;
-    rdp.x() = std::cos(-baseyaw - yaw) * dp.x() + std::sin(-baseyaw - yaw) * dp.y();
-    rdp.y() = -std::sin(-baseyaw - yaw) * dp.x() + std::cos(-baseyaw - yaw) * dp.y();
-    pt.pose.position.x = rdp.x() + odom.pose.pose.position.x;
-    pt.pose.position.y = rdp.y() + odom.pose.pose.position.y;
-    pt.pose.position.z = ptz.at(k) + odom.pose.pose.position.z;
-    path_msg.poses.push_back(pt);
+class WaypointGenerator : public rclcpp::Node {
+public:
+  WaypointGenerator() : Node("waypoint_generator") {
+    // Declare and get parameters
+    this->declare_parameter("waypoint_type", "manual");
+    waypoint_type_ = this->get_parameter("waypoint_type").as_string();
+    
+    // Initialize publishers
+    pub1_ = this->create_publisher<nav_msgs::msg::Path>("waypoints", 50);
+    pub2_ = this->create_publisher<geometry_msgs::msg::PoseArray>("waypoints_vis", 10);
+    
+    // Initialize subscribers
+    sub1_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "odom", 10, std::bind(&WaypointGenerator::odom_callback, this, std::placeholders::_1));
+    sub2_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "goal", 10, std::bind(&WaypointGenerator::goal_callback, this, std::placeholders::_1));
+    sub3_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "traj_start_trigger", 10, std::bind(&WaypointGenerator::traj_start_trigger_callback, this, std::placeholders::_1));
+    
+    trigged_time_ = rclcpp::Time(0);
+    is_odom_ready_ = false;
   }
 
-  waypointSegments.push_back(path_msg);
-}
+private:
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub1_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr pub2_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub1_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr sub2_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr sub3_;
+  
+  std::string waypoint_type_;
+  bool is_odom_ready_;
+  nav_msgs::msg::Odometry odom_;
+  nav_msgs::msg::Path waypoints_;
+  std::deque<nav_msgs::msg::Path> waypointSegments_;
+  rclcpp::Time trigged_time_;
 
-void load_waypoints(ros::NodeHandle& nh, const ros::Time& time_base) {
-  int seg_cnt = 0;
-  waypointSegments.clear();
-  ROS_ASSERT(nh.getParam("segment_cnt", seg_cnt));
-  for (int i = 0; i < seg_cnt; ++i) {
-    load_seg(nh, i, time_base);
-    if (i > 0) {
-      ROS_ASSERT(waypointSegments[i - 1].header.stamp < waypointSegments[i].header.stamp);
+  void load_seg(int segid, const rclcpp::Time& time_base) {
+    std::string seg_str = boost::str(bfmt("seg%d/") % segid);
+    double yaw;
+    double time_from_start;
+    RCLCPP_INFO(this->get_logger(), "Getting segment %d", segid);
+    
+    this->declare_parameter<double>(seg_str + "yaw", 0.0);
+    this->declare_parameter<double>(seg_str + "time_from_start", 0.0);
+    this->declare_parameter<std::vector<double>>(seg_str + "x", std::vector<double>());
+    this->declare_parameter<std::vector<double>>(seg_str + "y", std::vector<double>());
+    this->declare_parameter<std::vector<double>>(seg_str + "z", std::vector<double>());
+    
+    yaw = this->get_parameter(seg_str + "yaw").as_double();
+    time_from_start = this->get_parameter(seg_str + "time_from_start").as_double();
+    
+    RCLCPP_ASSERT_MSG(this->get_logger(), (yaw > -3.1499999) && (yaw < 3.14999999), "yaw=%.3f", yaw);
+    RCLCPP_ASSERT_MSG(this->get_logger(), time_from_start >= 0.0, "time_from_start must be >= 0");
+
+    std::vector<double> ptx = this->get_parameter(seg_str + "x").as_double_array();
+    std::vector<double> pty = this->get_parameter(seg_str + "y").as_double_array();
+    std::vector<double> ptz = this->get_parameter(seg_str + "z").as_double_array();
+
+    RCLCPP_ASSERT_MSG(this->get_logger(), ptx.size() > 0, "x vector must not be empty");
+    RCLCPP_ASSERT_MSG(this->get_logger(), ptx.size() == pty.size() && ptx.size() == ptz.size(), 
+                      "x, y, z vectors must have same size");
+
+    nav_msgs::msg::Path path_msg;
+    path_msg.header.stamp = time_base + rclcpp::Duration::from_seconds(time_from_start);
+
+    double baseyaw = tf2::getYaw(odom_.pose.pose.orientation);
+
+    for (size_t k = 0; k < ptx.size(); ++k) {
+      geometry_msgs::msg::PoseStamped pt;
+      tf2::Quaternion q;
+      q.setRPY(0.0, 0.0, baseyaw + yaw);
+      pt.pose.orientation = tf2::toMsg(q);
+      
+      Eigen::Vector2d dp(ptx.at(k), pty.at(k));
+      Eigen::Vector2d rdp;
+      rdp.x() = std::cos(-baseyaw - yaw) * dp.x() + std::sin(-baseyaw - yaw) * dp.y();
+      rdp.y() = -std::sin(-baseyaw - yaw) * dp.x() + std::cos(-baseyaw - yaw) * dp.y();
+      pt.pose.position.x = rdp.x() + odom_.pose.pose.position.x;
+      pt.pose.position.y = rdp.y() + odom_.pose.pose.position.y;
+      pt.pose.position.z = ptz.at(k) + odom_.pose.pose.position.z;
+      path_msg.poses.push_back(pt);
     }
-  }
-  ROS_INFO("Overall load %zu segments", waypointSegments.size());
-}
 
-void publish_waypoints() {
-  waypoints.header.frame_id = std::string("world");
-  waypoints.header.stamp = ros::Time::now();
-  pub1.publish(waypoints);
-  geometry_msgs::PoseStamped init_pose;
-  init_pose.header = odom.header;
-  init_pose.pose = odom.pose.pose;
-  waypoints.poses.insert(waypoints.poses.begin(), init_pose);
-  // pub2.publish(waypoints);
-  waypoints.poses.clear();
-}
-
-void publish_waypoints_vis() {
-  nav_msgs::Path wp_vis = waypoints;
-  geometry_msgs::PoseArray poseArray;
-  poseArray.header.frame_id = std::string("world");
-  poseArray.header.stamp = ros::Time::now();
-
-  {
-    geometry_msgs::Pose init_pose;
-    init_pose = odom.pose.pose;
-    poseArray.poses.push_back(init_pose);
+    waypointSegments_.push_back(path_msg);
   }
 
-  for (auto it = waypoints.poses.begin(); it != waypoints.poses.end(); ++it) {
-    geometry_msgs::Pose p;
-    p = it->pose;
-    poseArray.poses.push_back(p);
-  }
-  pub2.publish(poseArray);
-}
-
-void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
-  is_odom_ready = true;
-  odom = *msg;
-
-  if (waypointSegments.size()) {
-    ros::Time expected_time = waypointSegments.front().header.stamp;
-    if (odom.header.stamp >= expected_time) {
-      waypoints = waypointSegments.front();
-
-      std::stringstream ss;
-      ss << bfmt("Series send %.3f from start:\n") % trigged_time.toSec();
-      for (auto& pose_stamped : waypoints.poses) {
-        ss << bfmt("P[%.2f, %.2f, %.2f] q(%.2f,%.2f,%.2f,%.2f)") % pose_stamped.pose.position.x %
-                pose_stamped.pose.position.y % pose_stamped.pose.position.z %
-                pose_stamped.pose.orientation.w % pose_stamped.pose.orientation.x %
-                pose_stamped.pose.orientation.y % pose_stamped.pose.orientation.z
-           << std::endl;
+  void load_waypoints(const rclcpp::Time& time_base) {
+    int seg_cnt = 0;
+    waypointSegments_.clear();
+    
+    this->declare_parameter<int>("segment_cnt", 0);
+    seg_cnt = this->get_parameter("segment_cnt").as_int();
+    
+    for (int i = 0; i < seg_cnt; ++i) {
+      load_seg(i, time_base);
+      if (i > 0) {
+        RCLCPP_ASSERT_MSG(this->get_logger(), 
+                          waypointSegments_[i - 1].header.stamp < waypointSegments_[i].header.stamp,
+                          "Segments must be in chronological order");
       }
-      ROS_INFO_STREAM(ss.str());
-
-      publish_waypoints_vis();
-      publish_waypoints();
-
-      waypointSegments.pop_front();
     }
+    RCLCPP_INFO(this->get_logger(), "Overall load %zu segments", waypointSegments_.size());
   }
-}
 
-void goal_callback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-  /*    if (!is_odom_ready) {
-          ROS_ERROR("[waypoint_generator] No odom!");
-          return;
-      }*/
+  void publish_waypoints() {
+    waypoints_.header.frame_id = std::string("world");
+    waypoints_.header.stamp = this->now();
+    pub1_->publish(waypoints_);
+    geometry_msgs::msg::PoseStamped init_pose;
+    init_pose.header = odom_.header;
+    init_pose.pose = odom_.pose.pose;
+    waypoints_.poses.insert(waypoints_.poses.begin(), init_pose);
+    waypoints_.poses.clear();
+  }
 
-  trigged_time = ros::Time::now();  // odom.header.stamp;
-  // ROS_ASSERT(trigged_time > ros::Time(0));
+  void publish_waypoints_vis() {
+    nav_msgs::msg::Path wp_vis = waypoints_;
+    geometry_msgs::msg::PoseArray poseArray;
+    poseArray.header.frame_id = std::string("world");
+    poseArray.header.stamp = this->now();
 
-  ros::NodeHandle n("~");
-  n.param("waypoint_type", waypoint_type, string("manual"));
-
-  if (waypoint_type == string("circle")) {
-    waypoints = circle();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("eight")) {
-    waypoints = eight();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("point")) {
-    waypoints = point();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("series")) {
-    load_waypoints(n, trigged_time);
-  } else if (waypoint_type == string("manual-lonely-waypoint")) {
-    if (msg->pose.position.z > -0.1) {
-      // if height > 0, it's a valid goal;
-      geometry_msgs::PoseStamped pt = *msg;
-      waypoints.poses.clear();
-      waypoints.poses.push_back(pt);
-      publish_waypoints_vis();
-      publish_waypoints();
-    } else {
-      ROS_WARN("[waypoint_generator] invalid goal in manual-lonely-waypoint mode.");
+    {
+      geometry_msgs::msg::Pose init_pose;
+      init_pose = odom_.pose.pose;
+      poseArray.poses.push_back(init_pose);
     }
-  } else {
-    if (msg->pose.position.z > 0) {
-      // if height > 0, it's a normal goal;
-      geometry_msgs::PoseStamped pt = *msg;
-      if (waypoint_type == string("noyaw")) {
-        double yaw = tf::getYaw(odom.pose.pose.orientation);
-        pt.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-      }
-      waypoints.poses.push_back(pt);
-      publish_waypoints_vis();
-    } else if (msg->pose.position.z > -1.0) {
-      // if 0 > height > -1.0, remove last goal;
-      if (waypoints.poses.size() >= 1) {
-        waypoints.poses.erase(std::prev(waypoints.poses.end()));
-      }
-      publish_waypoints_vis();
-    } else {
-      // if -1.0 > height, end of input
-      if (waypoints.poses.size() >= 1) {
+
+    for (auto it = waypoints_.poses.begin(); it != waypoints_.poses.end(); ++it) {
+      geometry_msgs::msg::Pose p;
+      p = it->pose;
+      poseArray.poses.push_back(p);
+    }
+    pub2_->publish(poseArray);
+  }
+
+  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    is_odom_ready_ = true;
+    odom_ = *msg;
+
+    if (waypointSegments_.size()) {
+      rclcpp::Time expected_time = waypointSegments_.front().header.stamp;
+      if (rclcpp::Time(odom_.header.stamp) >= expected_time) {
+        waypoints_ = waypointSegments_.front();
+
+        std::stringstream ss;
+        ss << bfmt("Series send %.3f from start:\n") % trigged_time_.seconds();
+        for (auto& pose_stamped : waypoints_.poses) {
+          ss << bfmt("P[%.2f, %.2f, %.2f] q(%.2f,%.2f,%.2f,%.2f)") % pose_stamped.pose.position.x %
+                  pose_stamped.pose.position.y % pose_stamped.pose.position.z %
+                  pose_stamped.pose.orientation.w % pose_stamped.pose.orientation.x %
+                  pose_stamped.pose.orientation.y % pose_stamped.pose.orientation.z
+             << std::endl;
+        }
+        RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+
         publish_waypoints_vis();
         publish_waypoints();
+
+        waypointSegments_.pop_front();
       }
     }
   }
-}
 
-void traj_start_trigger_callback(const geometry_msgs::PoseStamped& msg) {
-  if (!is_odom_ready) {
-    ROS_ERROR("[waypoint_generator] No odom!");
-    return;
+  void goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    trigged_time_ = this->now();
+
+    // Update waypoint_type parameter
+    this->declare_parameter<std::string>("waypoint_type", "manual");
+    waypoint_type_ = this->get_parameter("waypoint_type").as_string();
+
+    if (waypoint_type_ == string("circle")) {
+      waypoints_ = circle();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("eight")) {
+      waypoints_ = eight();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("point")) {
+      waypoints_ = point();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("series")) {
+      load_waypoints(trigged_time_);
+    } else if (waypoint_type_ == string("manual-lonely-waypoint")) {
+      if (msg->pose.position.z > -0.1) {
+        geometry_msgs::msg::PoseStamped pt = *msg;
+        waypoints_.poses.clear();
+        waypoints_.poses.push_back(pt);
+        publish_waypoints_vis();
+        publish_waypoints();
+      } else {
+        RCLCPP_WARN(this->get_logger(), "[waypoint_generator] invalid goal in manual-lonely-waypoint mode.");
+      }
+    } else {
+      if (msg->pose.position.z > 0) {
+        geometry_msgs::msg::PoseStamped pt = *msg;
+        if (waypoint_type_ == string("noyaw")) {
+          double yaw = tf2::getYaw(odom_.pose.pose.orientation);
+          tf2::Quaternion q;
+          q.setRPY(0.0, 0.0, yaw);
+          pt.pose.orientation = tf2::toMsg(q);
+        }
+        waypoints_.poses.push_back(pt);
+        publish_waypoints_vis();
+      } else if (msg->pose.position.z > -1.0) {
+        if (waypoints_.poses.size() >= 1) {
+          waypoints_.poses.erase(std::prev(waypoints_.poses.end()));
+        }
+        publish_waypoints_vis();
+      } else {
+        if (waypoints_.poses.size() >= 1) {
+          publish_waypoints_vis();
+          publish_waypoints();
+        }
+      }
+    }
   }
 
-  ROS_WARN("[waypoint_generator] Trigger!");
-  trigged_time = odom.header.stamp;
-  ROS_ASSERT(trigged_time > ros::Time(0));
+  void traj_start_trigger_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+    (void)msg; // Unused parameter
+    
+    if (!is_odom_ready_) {
+      RCLCPP_ERROR(this->get_logger(), "[waypoint_generator] No odom!");
+      return;
+    }
 
-  ros::NodeHandle n("~");
-  n.param("waypoint_type", waypoint_type, string("manual"));
+    RCLCPP_WARN(this->get_logger(), "[waypoint_generator] Trigger!");
+    trigged_time_ = rclcpp::Time(odom_.header.stamp);
+    RCLCPP_ASSERT_MSG(this->get_logger(), trigged_time_ > rclcpp::Time(0), "Trigged time must be > 0");
 
-  ROS_ERROR_STREAM("Pattern " << waypoint_type << " generated!");
-  if (waypoint_type == string("free")) {
-    waypoints = point();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("circle")) {
-    waypoints = circle();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("eight")) {
-    waypoints = eight();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("point")) {
-    waypoints = point();
-    publish_waypoints_vis();
-    publish_waypoints();
-  } else if (waypoint_type == string("series")) {
-    load_waypoints(n, trigged_time);
+    // Update waypoint_type parameter
+    this->declare_parameter<std::string>("waypoint_type", "manual");
+    waypoint_type_ = this->get_parameter("waypoint_type").as_string();
+
+    RCLCPP_ERROR_STREAM(this->get_logger(), "Pattern " << waypoint_type_ << " generated!");
+    if (waypoint_type_ == string("free")) {
+      waypoints_ = point();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("circle")) {
+      waypoints_ = circle();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("eight")) {
+      waypoints_ = eight();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("point")) {
+      waypoints_ = point();
+      publish_waypoints_vis();
+      publish_waypoints();
+    } else if (waypoint_type_ == string("series")) {
+      load_waypoints(trigged_time_);
+    }
   }
-}
+};
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "waypoint_generator");
-  ros::NodeHandle n("~");
-  n.param("waypoint_type", waypoint_type, string("manual"));
-  ros::Subscriber sub1 = n.subscribe("odom", 10, odom_callback);
-  ros::Subscriber sub2 = n.subscribe("goal", 10, goal_callback);
-  ros::Subscriber sub3 = n.subscribe("traj_start_trigger", 10, traj_start_trigger_callback);
-  pub1 = n.advertise<nav_msgs::Path>("waypoints", 50);
-  pub2 = n.advertise<geometry_msgs::PoseArray>("waypoints_vis", 10);
-
-  trigged_time = ros::Time(0);
-
-  ros::spin();
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<WaypointGenerator>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
   return 0;
 }
