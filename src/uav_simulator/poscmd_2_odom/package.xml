@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>poscmd_2_odom</name>
+  <version>0.0.0</version>
+  <description>The poscmd_2_odom package</description>
+  <maintainer email="zzzx@todo.todo">todo</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>quadrotor_msgs</build_depend>
+  <build_depend>eigen</build_depend>
+
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>quadrotor_msgs</exec_depend>
+  <exec_depend>eigen</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

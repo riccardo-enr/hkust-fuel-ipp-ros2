@@ -1,0 +1,53 @@
+cmake_minimum_required(VERSION 3.5)
+project(so3_quadrotor_simulator)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(quadrotor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(uav_utils REQUIRED)
+find_package(cmake_utils REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+add_library(quadrotor_dynamics src/dynamics/Quadrotor.cpp)
+target_include_directories(quadrotor_dynamics PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/ode>
+  $<INSTALL_INTERFACE:include>
+  ${EIGEN3_INCLUDE_DIR}
+)
+
+add_executable(quadrotor_simulator_so3 src/quadrotor_simulator_so3.cpp)
+target_include_directories(quadrotor_simulator_so3 PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${EIGEN3_INCLUDE_DIR}
+)
+target_link_libraries(quadrotor_simulator_so3
+  quadrotor_dynamics
+)
+ament_target_dependencies(quadrotor_simulator_so3
+  rclcpp
+  quadrotor_msgs
+  nav_msgs
+  sensor_msgs
+  uav_utils
+  Eigen3
+)
+
+install(TARGETS quadrotor_dynamics quadrotor_simulator_so3
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+ament_package()
