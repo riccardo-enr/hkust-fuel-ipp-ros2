@@ -123,12 +123,19 @@ int Astar::search(Eigen::Vector3d start_pt, Eigen::Vector3d end_pt, bool dynamic
   return NO_PATH;
 }
 
-void Astar::setParam(ros::NodeHandle& nh) {
-  nh.param("astar/resolution_astar", resolution_, -1.0);
-  nh.param("astar/time_resolution", time_resolution_, -1.0);
-  nh.param("astar/lambda_heu", lambda_heu_, -1.0);
-  nh.param("astar/margin", margin_, -1.0);
-  nh.param("astar/allocate_num", allocate_num_, -1);
+void Astar::setParam(rclcpp::Node::SharedPtr nh) {
+  nh->declare_parameter("astar/resolution_astar", -1.0);
+  nh->declare_parameter("astar/time_resolution", -1.0);
+  nh->declare_parameter("astar/lambda_heu", -1.0);
+  nh->declare_parameter("astar/margin", -1.0);
+  nh->declare_parameter("astar/allocate_num", -1);
+  
+  nh->get_parameter("astar/resolution_astar", resolution_);
+  nh->get_parameter("astar/time_resolution", time_resolution_);
+  nh->get_parameter("astar/lambda_heu", lambda_heu_);
+  nh->get_parameter("astar/margin", margin_);
+  nh->get_parameter("astar/allocate_num", allocate_num_);
+  
   tie_breaker_ = 1.0 + 1.0 / 10000;
   cout << "margin:" << margin_ << endl;
 }
