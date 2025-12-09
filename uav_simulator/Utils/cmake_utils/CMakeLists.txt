@@ -1,13 +1,34 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(cmake_utils)
 
-find_package(catkin REQUIRED COMPONENTS roscpp)
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-file(GLOB CMAKE_UILTS_FILES cmake/*.cmake)
+file(GLOB CMAKE_UTILS_FILES cmake/*.cmake)
 
-catkin_package(
-  CFG_EXTRAS ${CMAKE_UILTS_FILES}
+# Install cmake files
+install(
+  FILES ${CMAKE_UTILS_FILES}
+  DESTINATION share/${PROJECT_NAME}/cmake
+)
+
+# Testing
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package(
+  CONFIG_EXTRAS_POST ${CMAKE_UTILS_FILES}
 )
 

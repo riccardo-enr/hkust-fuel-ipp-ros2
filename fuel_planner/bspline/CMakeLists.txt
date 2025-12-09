@@ -1,56 +1,73 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(bspline)
 
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11")
-set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(plan_env REQUIRED)
+find_package(cv_bridge REQUIRED)
+
+# Generate messages
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Bspline.msg"
+  DEPENDENCIES std_msgs geometry_msgs
+)
+
+include_directories( 
+  include 
+  ${EIGEN3_INCLUDE_DIRS} 
+  ${PCL_INCLUDE_DIRS}
+)
+
+add_library(bspline 
+  src/non_uniform_bspline.cpp 
+)
+
+ament_target_dependencies(bspline
+  rclcpp
   std_msgs
   visualization_msgs
   plan_env
   cv_bridge
-  message_generation
 )
 
-# Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  Bspline.msg
-  )
-  
-# Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
+# Install
+install(TARGETS bspline
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
-
-catkin_package(
- INCLUDE_DIRS include
- LIBRARIES bspline
- CATKIN_DEPENDS message_runtime
-#  DEPENDS system_lib
+install(DIRECTORY include/
+  DESTINATION include
 )
 
-include_directories( 
-    SYSTEM 
-    include 
-    ${catkin_INCLUDE_DIRS}
-    ${Eigen3_INCLUDE_DIRS} 
-    ${PCL_INCLUDE_DIRS}
-)
+# Testing
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
-add_library( bspline 
-    src/non_uniform_bspline.cpp 
-    )
-target_link_libraries( bspline
-    ${catkin_LIBRARIES} 
-    )  
+ament_export_dependencies(rosidl_default_runtime)
+ament_export_include_directories(include)
+ament_export_libraries(bspline)
+
+ament_package()  
