@@ -1,18 +1,12 @@
 {
   "name": "FUEL ROS 2 Jazzy",
-  "image": "osrf/ros:jazzy-desktop-full",
-  
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "installOhMyZsh": true,
-      "upgradePackages": true,
-      "username": "vscode",
-      "userUid": "1000",
-      "userGid": "1000"
-    },
-    "ghcr.io/devcontainers/features/git:1": {
-      "version": "latest"
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "args": {
+      "USERNAME": "vscode",
+      "USER_UID": "1000",
+      "USER_GID": "1000"
     }
   },
 
@@ -63,8 +57,6 @@
     "QT_X11_NO_MITSHM": "1",
     "LIBGL_ALWAYS_SOFTWARE": "1"
   },
-
-  "postCreateCommand": "bash .devcontainer/setup.sh",
 
   "remoteUser": "vscode",
   

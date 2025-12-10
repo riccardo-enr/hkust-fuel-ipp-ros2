@@ -1,11 +1,11 @@
 # FUEL ROS 2 Jazzy Development Container
 
-This devcontainer provides a complete development environment for FUEL with ROS 2 Jazzy.
+This devcontainer provides a complete development environment for FUEL with ROS 2 Jazzy, built using a Dockerfile for optimal performance and reproducibility.
 
 ## Features
 
 - **Base Image**: ROS 2 Jazzy Desktop Full (Ubuntu 24.04)
-- **Pre-installed Dependencies**:
+- **Pre-built Dependencies** (installed during image build):
   - NLopt v2.7.1 (as specified in project README)
   - Armadillo (linear algebra library)
   - PCL (Point Cloud Library)
@@ -29,6 +29,15 @@ This devcontainer provides a complete development environment for FUEL with ROS 
   - `cbs <package>` - Build package and dependencies
   - `cclean` - Clean build artifacts
 
+## Dockerfile Approach
+
+This devcontainer uses a Dockerfile instead of post-create scripts for several advantages:
+
+- **Faster Startup:** All dependencies are pre-installed during image build
+- **Better Caching:** Docker layers are cached, making rebuilds faster  
+- **Reproducibility:** Same image can be used across different environments
+- **Portability:** Can be built and run outside VS Code if needed
+
 ## Usage
 
 ### Opening in VS Code
@@ -38,13 +47,13 @@ This devcontainer provides a complete development environment for FUEL with ROS 
 3. Click on the green button in the bottom-left corner
 4. Select "Reopen in Container"
 
-The first time you open the container, it will:
-- Pull the ROS 2 Jazzy Docker image
-- Install all dependencies
+The first time you open the container, it will build the Docker image:
+- Build ROS 2 Jazzy base image
+- Install all system dependencies
 - Build and install NLopt v2.7.1
-- Set up your development environment
+- Set up the development environment
 
-This may take 10-15 minutes on the first run.
+This may take 10-15 minutes on the first build. Subsequent starts are much faster thanks to Docker caching.
 
 ### Building the Workspace
 
@@ -119,11 +128,20 @@ The devcontainer runs as user `vscode` (UID 1000). If you encounter permission i
 sudo chown -R vscode:vscode /workspace
 ```
 
+## Rebuilding the Container
+
+If you make changes to the Dockerfile or need to update dependencies:
+
+1. Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
+2. Select "Dev Containers: Rebuild Container"
+
+This will rebuild the Docker image with any changes you've made.
+
 ## Customization
 
 You can customize the devcontainer by editing:
-- `.devcontainer/devcontainer.json` - Container configuration
-- `.devcontainer/setup.sh` - Post-create setup script
+- `.devcontainer/Dockerfile` - Docker image configuration and dependencies
+- `.devcontainer/devcontainer.json` - VS Code dev container settings
 
 ## Additional Resources
 
