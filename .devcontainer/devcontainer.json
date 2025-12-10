@@ -1,0 +1,77 @@
+{
+  "name": "FUEL ROS 2 Jazzy",
+  "image": "osrf/ros:jazzy-desktop-full",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "ms-python.python",
+        "ms-iot.vscode-ros",
+        "dotjoshjohnson.xml",
+        "redhat.vscode-yaml",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "cmake.configureOnOpen": false,
+        "python.autoComplete.extraPaths": [
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/opt/ros/jazzy/local/lib/python3.12/dist-packages"
+        ],
+        "python.analysis.extraPaths": [
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/opt/ros/jazzy/local/lib/python3.12/dist-packages"
+        ],
+        "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+        "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+        "C_Cpp.default.cStandard": "c11",
+        "C_Cpp.default.cppStandard": "c++17"
+      }
+    }
+  },
+
+  "runArgs": [
+    "--network=host",
+    "--cap-add=SYS_PTRACE",
+    "--security-opt=seccomp=unconfined",
+    "--security-opt=apparmor=unconfined",
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw",
+    "--volume=/dev:/dev:rw",
+    "--privileged"
+  ],
+
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "QT_X11_NO_MITSHM": "1",
+    "LIBGL_ALWAYS_SOFTWARE": "1"
+  },
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
+  ],
+
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+}
