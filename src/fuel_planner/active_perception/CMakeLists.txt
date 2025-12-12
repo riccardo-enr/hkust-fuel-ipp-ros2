@@ -28,14 +28,15 @@ include_directories(
   include 
   ${EIGEN3_INCLUDE_DIRS} 
   ${PCL_INCLUDE_DIRS}
+  ${bspline_INCLUDE_DIRS}
 )
 
 add_library(active_perception
   src/traj_visibility.cpp 
-  src/heading_planner.cpp
-  src/frontier_finder.cpp
-  src/graph_node.cpp
-  src/perception_utils.cpp
+  # src/heading_planner.cpp
+  # src/frontier_finder.cpp
+  # src/graph_node.cpp
+  # src/perception_utils.cpp
 )
 
 ament_target_dependencies(active_perception

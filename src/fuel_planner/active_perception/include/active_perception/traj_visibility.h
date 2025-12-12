@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <utility>
 #include <bspline/non_uniform_bspline.h>
+#include <rclcpp/rclcpp.hpp>
 
 class RayCaster;
 
@@ -37,7 +38,7 @@ private:
 
 public:
   VisibilityUtil();
-  VisibilityUtil(const ros::NodeHandle& nh);
+  VisibilityUtil(rclcpp::Node::SharedPtr node);
   ~VisibilityUtil();
   void setEDTEnvironment(const EDTEnvironment::Ptr& edt);
 
