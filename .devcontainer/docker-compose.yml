@@ -5,16 +5,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
       args:
         USERNAME: ubuntu
         USER_UID: 1000
         USER_GID: 1000
     volumes:
       - ../:/workspace:cached
-      # Mount user's Neovim config
       - ~/.config/nvim:/home/ubuntu/.config/nvim:cached
       - ~/.local/share/nvim:/home/ubuntu/.local/share/nvim:cached
-      # Mount user's SSH folder for Git authentication
+      - ~/.ssh:/home/ubuntu/.ssh:cached
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /dev:/dev:rw
       - /dev/dri:/dev/dri:cached
@@ -30,4 +30,17 @@ services:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - LIBGL_ALWAYS_SOFTWARE=1
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+  fuel-runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    user: ubuntu
+    volumes:
+      - ../:/workspace:ro
+    network_mode: host
+    environment:
+      - DISPLAY=${DISPLAY}
     command: /bin/sh -c "while sleep 1000; do :; done"
