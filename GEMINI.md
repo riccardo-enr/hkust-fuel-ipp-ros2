@@ -8,7 +8,7 @@ To ensure consistency with the development environment and version control stand
 
 All the code should be executed inside the container.
 
-Identify the correct Docker container name by inspecting the `.zed/tasks.json` file in the workspace root. Prioritize executing general code and shell commands inside this container.
+Use `docker compose exec fuel-dev <command>` to execute commands inside the development container.
 
 ### Version Control
 **Important:** Execute all `git` commands on the host machine (Ubuntu 24.04), not inside the container.

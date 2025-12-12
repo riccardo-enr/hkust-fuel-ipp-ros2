@@ -25,12 +25,13 @@
 4.  `pose_utils` - Pose utilities (Armadillo).
 5.  `uav_utils` - Header-only utilities.
 6.  `cmake_utils` - CMake utilities.
+7.  `odom_visualization` - Odometry and trajectory visualization.
 
 **Simulation & Control:**
 
-7.  `so3_control` - SO3 control (migrated to Component).
-8.  `so3_disturbance_generator` - Disturbance generation (migrated `dynamic_reconfigure`).
-9.  `map_generator` - Map generation suite (`map_recorder`, `map_publisher`, `click_map`, `random_forest_sensing`).
+8.  `so3_control` - SO3 control (migrated to Component).
+9.  `so3_disturbance_generator` - Disturbance generation (migrated `dynamic_reconfigure`).
+10. `map_generator` - Map generation suite (`map_recorder`, `map_publisher`, `click_map`, `random_forest_sensing`).
 
 ### 🔄 Build System Ready (Source Pending)
 
@@ -48,7 +49,6 @@
 - `plan_manage` (Entry node migrated)
 
 **Visualization & Simulation:**
-- `odom_visualization`
 - `multi_map_server`
 - `local_sensing`
 - `so3_quadrotor_simulator`
@@ -93,8 +93,8 @@
 - [x] **1.2 waypoint_generator**
     - [x] `waypoint_generator.cpp`
     - [x] `sample_waypoints.h`
-- [ ] **1.3 odom_visualization**
-    - [ ] `odom_visualization.cpp` (Complex TF & Visualization)
+- [x] **1.3 odom_visualization**
+    - [x] `odom_visualization.cpp` (Complex TF & Visualization)
 - [x] **1.4 map_generator**
     - [x] `map_recorder.cpp`
     - [x] `map_publisher.cpp`
