@@ -115,7 +115,7 @@ public:
     length_ = 0.0;
     Eigen::Vector3d p_prev = sample_points_[0];
     Eigen::Vector3d p_cur;
-    for (int i = 1; i < sample_points_.size(); ++i) {
+    for (size_t i = 1; i < sample_points_.size(); ++i) {
       p_cur = sample_points_[i];
       length_ += (p_cur - p_prev).norm();
       p_prev = p_cur;
