@@ -1,6 +1,6 @@
 # FUEL ROS 2 Jazzy Development Container
 
-This devcontainer provides a complete development environment for FUEL with ROS 2 Jazzy, built using a Dockerfile for optimal performance and reproducibility.
+This devcontainer provides a complete development environment for FUEL with ROS 2 Jazzy, built using a Docker Compose for optimal performance and reproducibility.
 
 ## Features
 
@@ -29,14 +29,16 @@ This devcontainer provides a complete development environment for FUEL with ROS 
   - `cbs <package>` - Build package and dependencies
   - `cclean` - Clean build artifacts
 
-## Dockerfile Approach
+## Docker Compose Approach
 
-This devcontainer uses a Dockerfile instead of post-create scripts for several advantages:
+This devcontainer uses a `docker-compose.yml` file to define the service, building from a Dockerfile. This approach offers several advantages:
 
-- **Faster Startup:** All dependencies are pre-installed during image build
-- **Better Caching:** Docker layers are cached, making rebuilds faster  
-- **Reproducibility:** Same image can be used across different environments
-- **Portability:** Can be built and run outside VS Code if needed
+- **Unified Configuration:** Centralizes environment variables, volume mounts, and runtime options.
+- **Faster Startup:** All dependencies are pre-installed during image build.
+- **Better Caching:** Docker layers are cached, making rebuilds faster.
+- **Reproducibility:** Same image can be used across different environments.
+- **Portability:** Can be built and run outside VS Code if needed.
+- **Multi-service Support:** Easily extendable to include additional services if required.
 
 ## Usage
 
@@ -47,7 +49,7 @@ This devcontainer uses a Dockerfile instead of post-create scripts for several a
 3. Click on the green button in the bottom-left corner
 4. Select "Reopen in Container"
 
-The first time you open the container, it will build the Docker image:
+The first time you open the container, it will build the Docker image defined in `docker-compose.yml`:
 - Build ROS 2 Jazzy base image
 - Install all system dependencies
 - Build and install NLopt v2.7.1
@@ -130,7 +132,7 @@ sudo chown -R vscode:vscode /workspace
 
 ## Rebuilding the Container
 
-If you make changes to the Dockerfile or need to update dependencies:
+If you make changes to the Dockerfile, `docker-compose.yml`, or need to update dependencies:
 
 1. Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
 2. Select "Dev Containers: Rebuild Container"
@@ -141,6 +143,7 @@ This will rebuild the Docker image with any changes you've made.
 
 You can customize the devcontainer by editing:
 - `.devcontainer/Dockerfile` - Docker image configuration and dependencies
+- `.devcontainer/docker-compose.yml` - Docker Compose service definitions
 - `.devcontainer/devcontainer.json` - VS Code dev container settings
 
 ## Additional Resources

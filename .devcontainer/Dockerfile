@@ -1,16 +1,14 @@
 FROM osrf/ros:jazzy-desktop-full
 
-# Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install build tools and dependencies
 RUN apt-get update && apt-get install -y \
-    # Build tools
     build-essential \
     cmake \
     git \
     wget \
-    # Required libraries from README
+    # Required libraries for FUEL
     libarmadillo-dev \
     libpcl-dev \
     libeigen3-dev \
@@ -26,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-rviz2 \
     ros-jazzy-rqt \
     ros-jazzy-rqt-common-plugins \
-    # Colcon build tools
     python3-colcon-common-extensions \
     python3-colcon-mixin \
     python3-rosdep \
@@ -34,60 +31,64 @@ RUN apt-get update && apt-get install -y \
     gdb \
     vim \
     nano \
-    bash-completion \
+    curl \
+    openssh-client \
+    less \
+    sudo \
+    ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
-# Install NLopt v2.7.1 as specified in README
+# Install Neovim from tarball
+RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz \
+    && tar xzvf nvim-linux-x86_64.tar.gz \
+    && mv nvim-linux-x86_64 /opt/nvim \
+    && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
+    && rm nvim-linux-x86_64.tar.gz
+
+# Install Lazygit
+RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*') \
+    && curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" \
+    && tar xf lazygit.tar.gz -C /usr/local/bin \
+    && rm lazygit.tar.gz
+
+# Install NLopt v2.7.1
 RUN cd /tmp && \
     git clone -b v2.7.1 https://github.com/stevengj/nlopt.git && \
     cd nlopt && \
-    mkdir -p build && \
-    cd build && \
+    mkdir build && cd build && \
     cmake .. && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
-    cd / && \
     rm -rf /tmp/nlopt
 
-# Initialize rosdep
-RUN rosdep init || true && \
-    rosdep update
-
-# Create a non-root user
-ARG USERNAME=vscode
+# Create the user
+ARG USERNAME=ubuntu
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && apt-get update \
-    && apt-get install -y sudo \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+RUN if ! getent group $USER_GID > /dev/null 2>&1; then \
+        groupadd --gid $USER_GID $USERNAME; \
+    fi && \
+    if ! getent passwd $USER_UID > /dev/null 2>&1; then \
+        useradd --uid $USER_UID --gid $USER_GID -m $USERNAME; \
+    fi && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME \
-    && rm -rf /var/lib/apt/lists/*
+    && usermod -aG sudo $USERNAME
 
-# Switch to non-root user
-USER $USERNAME
+# Ensure home directory permissions for Neovim mounts
+RUN mkdir -p /home/$USERNAME/.config/nvim \
+    /home/$USERNAME/.local/share/nvim \
+    /home/$USERNAME/.local/state/nvim \
+    /home/$USERNAME/.ssh \
+    && chown -R $USERNAME:$USER_GID /home/$USERNAME
 
-# Setup bash environment for the user
-RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/$USERNAME/.bashrc && \
-    echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/$USERNAME/.bashrc && \
-    echo "# Source workspace overlay (uncomment after first build)" >> /home/$USERNAME/.bashrc && \
-    echo "# source /workspace/install/setup.bash" >> /home/$USERNAME/.bashrc && \
-    echo "" >> /home/$USERNAME/.bashrc && \
-    echo "# FUEL workspace aliases" >> /home/$USERNAME/.bashrc && \
-    echo "alias cb='colcon build --symlink-install'" >> /home/$USERNAME/.bashrc && \
-    echo "alias ct='colcon test'" >> /home/$USERNAME/.bashrc && \
-    echo "alias cbp='colcon build --symlink-install --packages-select'" >> /home/$USERNAME/.bashrc && \
-    echo "alias cbs='colcon build --symlink-install --packages-up-to'" >> /home/$USERNAME/.bashrc && \
-    echo "alias cclean='rm -rf build install log'" >> /home/$USERNAME/.bashrc
+# Initialize rosdep
+RUN rosdep init || true && rosdep update
 
-# Set working directory
 WORKDIR /workspace
 
-# Reset DEBIAN_FRONTEND
 ENV DEBIAN_FRONTEND=dialog
 
-# Source ROS 2 setup in entrypoint
 CMD ["/bin/bash"]

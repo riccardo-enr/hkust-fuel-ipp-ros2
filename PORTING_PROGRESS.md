@@ -7,12 +7,12 @@
 **Project:** FUEL - Fast UAV Exploration
 **Goal:** Port entire codebase from ROS 1 (Noetic) to ROS 2 (Humble/Jazzy).
 
-| Metric | Status | Details |
-| :--- | :--- | :--- |
-| **Packages** | 25/25 | All package manifests (`package.xml`) migrated. |
-| **Build System** | 24/25 | `CMakeLists.txt` migrated for 96% of packages. (Only `rviz_plugins` pending). |
-| **Source Code** | In Progress | Core patterns established. Key utilities and simple nodes migrated. |
-| **Launch Files** | Pending | To be addressed after source code migration. |
+| Metric           | Status      | Details                                                                       |
+| :--------------- | :---------- | :---------------------------------------------------------------------------- |
+| **Packages**     | 25/25       | All package manifests (`package.xml`) migrated.                               |
+| **Build System** | 24/25       | `CMakeLists.txt` migrated for 96% of packages. (Only `rviz_plugins` pending). |
+| **Source Code**  | In Progress | Core patterns established. Key utilities and simple nodes migrated.           |
+| **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
 
@@ -27,6 +27,7 @@
 6.  `cmake_utils` - CMake utilities.
 
 **Simulation & Control:**
+
 7.  `so3_control` - SO3 control (migrated to Component).
 8.  `so3_disturbance_generator` - Disturbance generation (migrated `dynamic_reconfigure`).
 9.  `map_generator` - Map generation suite (`map_recorder`, `map_publisher`, `click_map`, `random_forest_sensing`).
@@ -34,6 +35,7 @@
 ### 🔄 Build System Ready (Source Pending)
 
 **Planning Libraries:**
+
 - `bspline` (Partially source migrated)
 - `bspline_opt`
 - `path_searching` (Partially source migrated)
@@ -61,17 +63,17 @@
 
 **Reference for converting C++ source code.**
 
-| Concept | ROS 1 | ROS 2 |
-| :--- | :--- | :--- |
-| **Headers** | `#include <ros/ros.h>` | `#include <rclcpp/rclcpp.hpp>` |
-| **Messages** | `#include <pkg/Msg.h>` | `#include <pkg/msg/msg.hpp>` |
-| **Node** | `ros::NodeHandle nh;` | Inherit `rclcpp::Node` |
-| **Logging** | `ROS_INFO(...)` | `RCLCPP_INFO(this->get_logger(), ...)` |
-| **Time** | `ros::Time::now()` | `this->now()` |
-| **Params** | `nh.param("key", val, def)` | `val = this->declare_parameter("key", def);` |
-| **Rate** | `ros::Rate r(10); r.sleep();` | `create_wall_timer(100ms, callback);` |
-| **Pub** | `pub.publish(msg)` | `pub->publish(msg)` (Use SharedPtr) |
-| **Sub** | `ConstPtr` in callback | `SharedPtr` in callback |
+| Concept      | ROS 1                         | ROS 2                                        |
+| :----------- | :---------------------------- | :------------------------------------------- |
+| **Headers**  | `#include <ros/ros.h>`        | `#include <rclcpp/rclcpp.hpp>`               |
+| **Messages** | `#include <pkg/Msg.h>`        | `#include <pkg/msg/msg.hpp>`                 |
+| **Node**     | `ros::NodeHandle nh;`         | Inherit `rclcpp::Node`                       |
+| **Logging**  | `ROS_INFO(...)`               | `RCLCPP_INFO(this->get_logger(), ...)`       |
+| **Time**     | `ros::Time::now()`            | `this->now()`                                |
+| **Params**   | `nh.param("key", val, def)`   | `val = this->declare_parameter("key", def);` |
+| **Rate**     | `ros::Rate r(10); r.sleep();` | `create_wall_timer(100ms, callback);`        |
+| **Pub**      | `pub.publish(msg)`            | `pub->publish(msg)` (Use SharedPtr)          |
+| **Sub**      | `ConstPtr` in callback        | `SharedPtr` in callback                      |
 
 **Key Rules:**
 1.  **Class-based Nodes:** Avoid global state. Wrap logic in a class inheriting from `rclcpp::Node`.

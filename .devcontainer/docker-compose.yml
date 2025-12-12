@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  fuel-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ubuntu
+        USER_UID: 1000
+        USER_GID: 1000
+    volumes:
+      - ../:/workspace:cached
+      # Mount user's Neovim config
+      - ~/.config/nvim:/home/ubuntu/.config/nvim:cached
+      - ~/.local/share/nvim:/home/ubuntu/.local/share/nvim:cached
+      # Mount user's SSH folder for Git authentication
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev:rw
+      - /dev/dri:/dev/dri:cached
+    network_mode: host
+    privileged: true
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    user: ubuntu
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - LIBGL_ALWAYS_SOFTWARE=1
+    command: /bin/sh -c "while sleep 1000; do :; done"
