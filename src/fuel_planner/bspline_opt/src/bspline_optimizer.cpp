@@ -22,35 +22,68 @@ const int BsplineOptimizer::GUIDE_PHASE = BsplineOptimizer::SMOOTHNESS | Bspline
 const int BsplineOptimizer::NORMAL_PHASE = BsplineOptimizer::SMOOTHNESS | BsplineOptimizer::DISTANCE |
     BsplineOptimizer::FEASIBILITY | BsplineOptimizer::START | BsplineOptimizer::END;
 
-void BsplineOptimizer::setParam(ros::NodeHandle& nh) {
-  nh.param("optimization/ld_smooth", ld_smooth_, -1.0);
-  nh.param("optimization/ld_dist", ld_dist_, -1.0);
-  nh.param("optimization/ld_feasi", ld_feasi_, -1.0);
-  nh.param("optimization/ld_start", ld_start_, -1.0);
-  nh.param("optimization/ld_end", ld_end_, -1.0);
-  nh.param("optimization/ld_guide", ld_guide_, -1.0);
-  nh.param("optimization/ld_waypt", ld_waypt_, -1.0);
-  nh.param("optimization/ld_view", ld_view_, -1.0);
-  nh.param("optimization/ld_time", ld_time_, -1.0);
+void BsplineOptimizer::setParam(rclcpp::Node::SharedPtr node) {
+  node_ = node;
+  clock_ = node_->get_clock();
+  
+  node_->declare_parameter("optimization/ld_smooth", -1.0);
+  node_->declare_parameter("optimization/ld_dist", -1.0);
+  node_->declare_parameter("optimization/ld_feasi", -1.0);
+  node_->declare_parameter("optimization/ld_start", -1.0);
+  node_->declare_parameter("optimization/ld_end", -1.0);
+  node_->declare_parameter("optimization/ld_guide", -1.0);
+  node_->declare_parameter("optimization/ld_waypt", -1.0);
+  node_->declare_parameter("optimization/ld_view", -1.0);
+  node_->declare_parameter("optimization/ld_time", -1.0);
+  
+  node_->declare_parameter("optimization/dist0", -1.0);
+  node_->declare_parameter("optimization/max_vel", -1.0);
+  node_->declare_parameter("optimization/max_acc", -1.0);
+  node_->declare_parameter("optimization/dlmin", -1.0);
+  node_->declare_parameter("optimization/wnl", -1.0);
+  
+  node_->declare_parameter("optimization/max_iteration_num1", -1);
+  node_->declare_parameter("optimization/max_iteration_num2", -1);
+  node_->declare_parameter("optimization/max_iteration_num3", -1);
+  node_->declare_parameter("optimization/max_iteration_num4", -1);
+  
+  node_->declare_parameter("optimization/max_iteration_time1", -1.0);
+  node_->declare_parameter("optimization/max_iteration_time2", -1.0);
+  node_->declare_parameter("optimization/max_iteration_time3", -1.0);
+  node_->declare_parameter("optimization/max_iteration_time4", -1.0);
+  
+  node_->declare_parameter("optimization/algorithm1", -1);
+  node_->declare_parameter("optimization/algorithm2", -1);
+  node_->declare_parameter("manager/bspline_degree", 3);
 
-  nh.param("optimization/dist0", dist0_, -1.0);
-  nh.param("optimization/max_vel", max_vel_, -1.0);
-  nh.param("optimization/max_acc", max_acc_, -1.0);
-  nh.param("optimization/dlmin", dlmin_, -1.0);
-  nh.param("optimization/wnl", wnl_, -1.0);
+  node_->get_parameter("optimization/ld_smooth", ld_smooth_);
+  node_->get_parameter("optimization/ld_dist", ld_dist_);
+  node_->get_parameter("optimization/ld_feasi", ld_feasi_);
+  node_->get_parameter("optimization/ld_start", ld_start_);
+  node_->get_parameter("optimization/ld_end", ld_end_);
+  node_->get_parameter("optimization/ld_guide", ld_guide_);
+  node_->get_parameter("optimization/ld_waypt", ld_waypt_);
+  node_->get_parameter("optimization/ld_view", ld_view_);
+  node_->get_parameter("optimization/ld_time", ld_time_);
 
-  nh.param("optimization/max_iteration_num1", max_iteration_num_[0], -1);
-  nh.param("optimization/max_iteration_num2", max_iteration_num_[1], -1);
-  nh.param("optimization/max_iteration_num3", max_iteration_num_[2], -1);
-  nh.param("optimization/max_iteration_num4", max_iteration_num_[3], -1);
-  nh.param("optimization/max_iteration_time1", max_iteration_time_[0], -1.0);
-  nh.param("optimization/max_iteration_time2", max_iteration_time_[1], -1.0);
-  nh.param("optimization/max_iteration_time3", max_iteration_time_[2], -1.0);
-  nh.param("optimization/max_iteration_time4", max_iteration_time_[3], -1.0);
+  node_->get_parameter("optimization/dist0", dist0_);
+  node_->get_parameter("optimization/max_vel", max_vel_);
+  node_->get_parameter("optimization/max_acc", max_acc_);
+  node_->get_parameter("optimization/dlmin", dlmin_);
+  node_->get_parameter("optimization/wnl", wnl_);
 
-  nh.param("optimization/algorithm1", algorithm1_, -1);
-  nh.param("optimization/algorithm2", algorithm2_, -1);
-  nh.param("manager/bspline_degree", bspline_degree_, 3);
+  node_->get_parameter("optimization/max_iteration_num1", max_iteration_num_[0]);
+  node_->get_parameter("optimization/max_iteration_num2", max_iteration_num_[1]);
+  node_->get_parameter("optimization/max_iteration_num3", max_iteration_num_[2]);
+  node_->get_parameter("optimization/max_iteration_num4", max_iteration_num_[3]);
+  node_->get_parameter("optimization/max_iteration_time1", max_iteration_time_[0]);
+  node_->get_parameter("optimization/max_iteration_time2", max_iteration_time_[1]);
+  node_->get_parameter("optimization/max_iteration_time3", max_iteration_time_[2]);
+  node_->get_parameter("optimization/max_iteration_time4", max_iteration_time_[3]);
+
+  node_->get_parameter("optimization/algorithm1", algorithm1_);
+  node_->get_parameter("optimization/algorithm2", algorithm2_);
+  node_->get_parameter("manager/bspline_degree", bspline_degree_);
 
   time_lb_ = -1;  // Not used by in most case
 }
@@ -110,7 +143,7 @@ void BsplineOptimizer::setTimeLowerBound(const double& lb) {
 void BsplineOptimizer::optimize(Eigen::MatrixXd& points, double& dt, const int& cost_function,
                                 const int& max_num_id, const int& max_time_id) {
   if (start_state_.empty()) {
-    ROS_ERROR("Initial state undefined!");
+    RCLCPP_ERROR(logger_, "Initial state undefined!");
     return;
   }
   control_points_ = points;
@@ -129,7 +162,7 @@ void BsplineOptimizer::optimize(Eigen::MatrixXd& points, double& dt, const int& 
   optimize_time_ = cost_function_ & MINTIME;
   variable_num_ = optimize_time_ ? dim_ * point_num_ + 1 : dim_ * point_num_;
   if (variable_num_ <= 0) {
-    ROS_ERROR("Empty varibale to optimization solver.");
+    RCLCPP_ERROR(logger_, "Empty variable to optimization solver.");
     return;
   }
 
@@ -220,7 +253,7 @@ void BsplineOptimizer::optimize() {
     opt.set_upper_bounds(ub);
   }
 
-  auto t1 = ros::Time::now();
+  auto t1 = clock_->now();
   try {
     double final_cost;
     nlopt::result result = opt.optimize(q, final_cost);
@@ -233,7 +266,7 @@ void BsplineOptimizer::optimize() {
   if (optimize_time_) knot_span_ = best_variable_[variable_num_ - 1];
 
   if (cost_function_ & MINTIME) {
-    std::cout << "Iter num: " << iter_num_ << ", time: " << (ros::Time::now() - t1).toSec()
+    std::cout << "Iter num: " << iter_num_ << ", time: " << (clock_->now() - t1).seconds()
               << ", point num: " << point_num_ << ", comb time: " << comb_time << std::endl;
   }
 
@@ -554,7 +587,7 @@ void BsplineOptimizer::combineCost(const std::vector<double>& x, std::vector<dou
     // }
   }
 
-  ros::Time t1 = ros::Time::now();
+  rclcpp::Time t1 = clock_->now();
 
   for (int i = 0; i < point_num_; ++i) {
     for (int j = 0; j < dim_; ++j)
@@ -643,7 +676,7 @@ void BsplineOptimizer::combineCost(const std::vector<double>& x, std::vector<dou
     grad[variable_num_ - 1] += ld_time_ * gt_time;
   }
 
-  comb_time += (ros::Time::now() - t1).toSec();
+  comb_time += (clock_->now() - t1).seconds();
 
   // // Join thread and retrive cost/gradient
   // for (int i = 0; i < cost_thread.size(); ++i)

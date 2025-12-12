@@ -16,10 +16,14 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(plan_env REQUIRED)
 find_package(active_perception REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(bspline REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
@@ -32,6 +36,7 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS} 
   ${PCL_INCLUDE_DIRS}
   ${NLOPT_INCLUDE_DIR}  
+  ${bspline_INCLUDE_DIRS}
 )
 
 add_library(bspline_opt 
@@ -41,10 +46,14 @@ add_library(bspline_opt
 ament_target_dependencies(bspline_opt
   rclcpp
   std_msgs
+  geometry_msgs
+  nav_msgs
+  sensor_msgs
   visualization_msgs
   plan_env
   active_perception
   cv_bridge
+  bspline
 )
 
 target_link_libraries(bspline_opt
@@ -75,7 +84,7 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(bspline_opt)
-ament_export_dependencies(rclcpp std_msgs visualization_msgs plan_env active_perception cv_bridge)
+ament_export_dependencies(rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs visualization_msgs plan_env active_perception cv_bridge bspline)
 
 ament_package()
 
