@@ -2,6 +2,7 @@ fuel_planner/.vscode
 
 *.vscode/
 *.clang-format
+.cache
 
 fuel_planner/utils/lkh_tsp_solver/resource/*.par
 fuel_planner/utils/lkh_tsp_solver/resource/*.tsp
