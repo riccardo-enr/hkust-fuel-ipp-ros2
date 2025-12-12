@@ -3,11 +3,16 @@
 
 #include <Eigen/Eigen>
 #include <algorithm>
-#include <geometry_msgs/PoseStamped.h>
 #include <iostream>
 #include <list>
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
+#include <memory>
+#include <random>
+
+#include <rclcpp/rclcpp.hpp>
+
+// ROS 2 Message types
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 using std::cout;
 using std::endl;
@@ -72,7 +77,7 @@ class ObjHistory {
 public:
   static int skip_num_;
   static int queue_size_;
-  static ros::Time global_start_time_;
+  static rclcpp::Time global_start_time_;
 
   ObjHistory() {
   }
@@ -81,7 +86,7 @@ public:
 
   void init(int id);
 
-  void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
+  void poseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg);
 
   void clear() {
     history_.clear();
@@ -101,15 +106,17 @@ private:
 /* ========== predict future trajectory using history ========== */
 class ObjPredictor {
 private:
-  ros::NodeHandle node_handle_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Logger logger_ = rclcpp::get_logger("ObjPredictor");
+  rclcpp::Clock::SharedPtr clock_;
 
   int obj_num_;
   double lambda_;
   double predict_rate_;
 
-  vector<ros::Subscriber> pose_subs_;
-  ros::Subscriber marker_sub_;
-  ros::Timer predict_timer_;
+  vector<rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr> pose_subs_;
+  rclcpp::Subscription<visualization_msgs::msg::Marker>::SharedPtr marker_sub_;
+  rclcpp::TimerBase::SharedPtr predict_timer_;
   vector<shared_ptr<ObjHistory>> obj_histories_;
 
   /* share data with planner */
@@ -117,15 +124,15 @@ private:
   ObjScale obj_scale_;
   vector<bool> scale_init_;
 
-  void markerCallback(const visualization_msgs::MarkerConstPtr& msg);
+  void markerCallback(const visualization_msgs::msg::Marker::ConstSharedPtr msg);
 
-  void predictCallback(const ros::TimerEvent& e);
+  void predictCallback();
   void predictPolyFit();
   void predictConstVel();
 
 public:
   ObjPredictor(/* args */);
-  ObjPredictor(ros::NodeHandle& node);
+  ObjPredictor(rclcpp::Node::SharedPtr node);
   ~ObjPredictor();
 
   void init();

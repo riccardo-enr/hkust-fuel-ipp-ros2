@@ -5,7 +5,7 @@
 #include <Eigen/StdVector>
 
 #include <queue>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <tuple>
 
 #include <pcl/point_cloud.h>
@@ -31,7 +31,7 @@ public:
 
   enum OCCUPANCY { UNKNOWN, FREE, OCCUPIED };
 
-  void initMap(ros::NodeHandle& nh);
+  void initMap(rclcpp::Node::SharedPtr node);
   void inputPointCloud(const pcl::PointCloud<pcl::PointXYZ>& points, const int& point_num,
                        const Eigen::Vector3d& camera_pos);
 

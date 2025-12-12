@@ -7,11 +7,16 @@
 #include <message_filters/time_synchronizer.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Odometry.h>
+#include <cv_bridge/cv_bridge.hpp>
+
+// ROS 2 Message types
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <memory>
 #include <random>
@@ -29,14 +34,15 @@ public:
   ~MapROS();
   void setMap(SDFMap* map);
   void init();
+  void setNode(rclcpp::Node::SharedPtr node);
 
 private:
-  void depthPoseCallback(const sensor_msgs::ImageConstPtr& img,
-                         const geometry_msgs::PoseStampedConstPtr& pose);
-  void cloudPoseCallback(const sensor_msgs::PointCloud2ConstPtr& msg,
-                         const geometry_msgs::PoseStampedConstPtr& pose);
-  void updateESDFCallback(const ros::TimerEvent& /*event*/);
-  void visCallback(const ros::TimerEvent& /*event*/);
+  void depthPoseCallback(const sensor_msgs::msg::Image::ConstSharedPtr img,
+                         const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose);
+  void cloudPoseCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg,
+                         const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose);
+  void updateESDFCallback(); // ROS2 timers don't pass event by default
+  void visCallback(); // ROS2 timers don't pass event by default
 
   void publishMapAll();
   void publishMapLocal();
@@ -48,25 +54,37 @@ private:
   void proessDepthImage();
 
   SDFMap* map_;
-  // may use ExactTime?
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, geometry_msgs::PoseStamped>
-      SyncPolicyImagePose;
-  typedef shared_ptr<message_filters::Synchronizer<SyncPolicyImagePose>> SynchronizerImagePose;
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2,
-                                                          geometry_msgs::PoseStamped>
-      SyncPolicyCloudPose;
-  typedef shared_ptr<message_filters::Synchronizer<SyncPolicyCloudPose>> SynchronizerCloudPose;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Logger logger_ = rclcpp::get_logger("MapROS");
+  rclcpp::Clock::SharedPtr clock_;
 
-  ros::NodeHandle node_;
-  shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> depth_sub_;
-  shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>> cloud_sub_;
-  shared_ptr<message_filters::Subscriber<geometry_msgs::PoseStamped>> pose_sub_;
+  // Message filters
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, geometry_msgs::msg::PoseStamped>
+      SyncPolicyImagePose;
+  typedef std::shared_ptr<message_filters::Synchronizer<SyncPolicyImagePose>> SynchronizerImagePose;
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2,
+                                                          geometry_msgs::msg::PoseStamped>
+      SyncPolicyCloudPose;
+  typedef std::shared_ptr<message_filters::Synchronizer<SyncPolicyCloudPose>> SynchronizerCloudPose;
+
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> depth_sub_;
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> cloud_sub_;
+  std::shared_ptr<message_filters::Subscriber<geometry_msgs::msg::PoseStamped>> pose_sub_;
   SynchronizerImagePose sync_image_pose_;
   SynchronizerCloudPose sync_cloud_pose_;
 
-  ros::Publisher map_local_pub_, map_local_inflate_pub_, esdf_pub_, map_all_pub_, unknown_pub_,
-      update_range_pub_, depth_pub_;
-  ros::Timer esdf_timer_, vis_timer_;
+  // Publishers
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_local_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_local_inflate_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr esdf_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_all_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr unknown_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr update_range_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr depth_pub_;
+
+  // Timers
+  rclcpp::TimerBase::SharedPtr esdf_timer_;
+  rclcpp::TimerBase::SharedPtr vis_timer_;
 
   // params, depth projection
   double cx_, cy_, fx_, fy_;
@@ -97,8 +115,7 @@ private:
   normal_distribution<double> rand_noise_;
   default_random_engine eng_;
 
-  ros::Time map_start_time_;
-
+  rclcpp::Time map_start_time_;
   friend SDFMap;
 };
 }

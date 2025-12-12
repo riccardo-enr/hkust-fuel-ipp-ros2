@@ -16,9 +16,18 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(pcl_ros REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
@@ -43,9 +52,18 @@ add_library(plan_env
 ament_target_dependencies(plan_env
   rclcpp
   std_msgs
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
   visualization_msgs
   cv_bridge
   message_filters
+  pcl_conversions
+  pcl_ros
+  tf2
+  tf2_ros
+  tf2_eigen
+  tf2_geometry_msgs
 )
 
 target_link_libraries(plan_env
@@ -64,6 +82,12 @@ add_executable(obj_generator
 ament_target_dependencies(obj_generator
   rclcpp
   std_msgs
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  visualization_msgs
+  pcl_conversions
+  pcl_ros
 )
 
 # Install
@@ -85,6 +109,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(plan_env)
-ament_export_dependencies(rclcpp std_msgs visualization_msgs cv_bridge message_filters)
+ament_export_dependencies(rclcpp std_msgs sensor_msgs geometry_msgs nav_msgs visualization_msgs cv_bridge message_filters pcl_conversions pcl_ros tf2 tf2_ros tf2_eigen tf2_geometry_msgs)
 
 ament_package()

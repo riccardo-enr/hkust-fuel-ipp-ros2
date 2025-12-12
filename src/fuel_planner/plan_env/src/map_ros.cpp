@@ -3,7 +3,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <fstream>
 
@@ -18,24 +18,30 @@ void MapROS::setMap(SDFMap* map) {
   this->map_ = map;
 }
 
-void MapROS::init() {
-  node_.param("map_ros/fx", fx_, -1.0);
-  node_.param("map_ros/fy", fy_, -1.0);
-  node_.param("map_ros/cx", cx_, -1.0);
-  node_.param("map_ros/cy", cy_, -1.0);
-  node_.param("map_ros/depth_filter_maxdist", depth_filter_maxdist_, -1.0);
-  node_.param("map_ros/depth_filter_mindist", depth_filter_mindist_, -1.0);
-  node_.param("map_ros/depth_filter_margin", depth_filter_margin_, -1);
-  node_.param("map_ros/k_depth_scaling_factor", k_depth_scaling_factor_, -1.0);
-  node_.param("map_ros/skip_pixel", skip_pixel_, -1);
+void MapROS::setNode(rclcpp::Node::SharedPtr node) {
+  node_ = node;
+  logger_ = node_->get_logger();
+  clock_ = node_->get_clock();
+}
 
-  node_.param("map_ros/esdf_slice_height", esdf_slice_height_, -0.1);
-  node_.param("map_ros/visualization_truncate_height", visualization_truncate_height_, -0.1);
-  node_.param("map_ros/visualization_truncate_low", visualization_truncate_low_, -0.1);
-  node_.param("map_ros/show_occ_time", show_occ_time_, false);
-  node_.param("map_ros/show_esdf_time", show_esdf_time_, false);
-  node_.param("map_ros/show_all_map", show_all_map_, false);
-  node_.param("map_ros/frame_id", frame_id_, string("world"));
+void MapROS::init() {
+  fx_ = node_->declare_parameter("map_ros/fx", -1.0);
+  fy_ = node_->declare_parameter("map_ros/fy", -1.0);
+  cx_ = node_->declare_parameter("map_ros/cx", -1.0);
+  cy_ = node_->declare_parameter("map_ros/cy", -1.0);
+  depth_filter_maxdist_ = node_->declare_parameter("map_ros/depth_filter_maxdist", -1.0);
+  depth_filter_mindist_ = node_->declare_parameter("map_ros/depth_filter_mindist", -1.0);
+  depth_filter_margin_ = node_->declare_parameter("map_ros/depth_filter_margin", -1);
+  k_depth_scaling_factor_ = node_->declare_parameter("map_ros/k_depth_scaling_factor", -1.0);
+  skip_pixel_ = node_->declare_parameter("map_ros/skip_pixel", -1);
+
+  esdf_slice_height_ = node_->declare_parameter("map_ros/esdf_slice_height", -0.1);
+  visualization_truncate_height_ = node_->declare_parameter("map_ros/visualization_truncate_height", -0.1);
+  visualization_truncate_low_ = node_->declare_parameter("map_ros/visualization_truncate_low", -0.1);
+  show_occ_time_ = node_->declare_parameter("map_ros/show_occ_time", false);
+  show_esdf_time_ = node_->declare_parameter("map_ros/show_esdf_time", false);
+  show_all_map_ = node_->declare_parameter("map_ros/show_all_map", false);
+  frame_id_ = node_->declare_parameter("map_ros/frame_id", string("world"));
 
   proj_points_.resize(640 * 480 / (skip_pixel_ * skip_pixel_));
   point_cloud_.points.resize(640 * 480 / (skip_pixel_ * skip_pixel_));
@@ -56,40 +62,43 @@ void MapROS::init() {
   random_device rd;
   eng_ = default_random_engine(rd());
 
-  esdf_timer_ = node_.createTimer(ros::Duration(0.05), &MapROS::updateESDFCallback, this);
-  vis_timer_ = node_.createTimer(ros::Duration(0.05), &MapROS::visCallback, this);
+  esdf_timer_ = node_->create_wall_timer(std::chrono::milliseconds(50), std::bind(&MapROS::updateESDFCallback, this));
+  vis_timer_ = node_->create_wall_timer(std::chrono::milliseconds(50), std::bind(&MapROS::visCallback, this));
 
-  map_all_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/occupancy_all", 10);
-  map_local_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/occupancy_local", 10);
+  map_all_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/occupancy_all", rclcpp::QoS(10));
+  map_local_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/occupancy_local", rclcpp::QoS(10));
   map_local_inflate_pub_ =
-      node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/occupancy_local_inflate", 10);
-  unknown_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/unknown", 10);
-  esdf_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/esdf", 10);
-  update_range_pub_ = node_.advertise<visualization_msgs::Marker>("/sdf_map/update_range", 10);
-  depth_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/sdf_map/depth_cloud", 10);
+      node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/occupancy_local_inflate", rclcpp::QoS(10));
+  unknown_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/unknown", rclcpp::QoS(10));
+  esdf_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/esdf", rclcpp::QoS(10));
+  update_range_pub_ = node_->create_publisher<visualization_msgs::msg::Marker>("/sdf_map/update_range", rclcpp::QoS(10));
+  depth_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/depth_cloud", rclcpp::QoS(10));
 
-  depth_sub_.reset(new message_filters::Subscriber<sensor_msgs::Image>(node_, "/map_ros/depth", 50));
+  depth_sub_.reset(new message_filters::Subscriber<sensor_msgs::msg::Image>(node_, "/map_ros/depth", rclcpp::QoS(50).get_rmw_qos_profile()));
   cloud_sub_.reset(
-      new message_filters::Subscriber<sensor_msgs::PointCloud2>(node_, "/map_ros/cloud", 50));
+      new message_filters::Subscriber<sensor_msgs::msg::PointCloud2>(node_, "/map_ros/cloud", rclcpp::QoS(50).get_rmw_qos_profile()));
   pose_sub_.reset(
-      new message_filters::Subscriber<geometry_msgs::PoseStamped>(node_, "/map_ros/pose", 25));
+      new message_filters::Subscriber<geometry_msgs::msg::PoseStamped>(node_, "/map_ros/pose", rclcpp::QoS(25).get_rmw_qos_profile()));
 
   sync_image_pose_.reset(new message_filters::Synchronizer<MapROS::SyncPolicyImagePose>(
       MapROS::SyncPolicyImagePose(100), *depth_sub_, *pose_sub_));
-  sync_image_pose_->registerCallback(boost::bind(&MapROS::depthPoseCallback, this, _1, _2));
+  sync_image_pose_->registerCallback(std::bind(&MapROS::depthPoseCallback, this, std::placeholders::_1, std::placeholders::_2));
   sync_cloud_pose_.reset(new message_filters::Synchronizer<MapROS::SyncPolicyCloudPose>(
       MapROS::SyncPolicyCloudPose(100), *cloud_sub_, *pose_sub_));
-  sync_cloud_pose_->registerCallback(boost::bind(&MapROS::cloudPoseCallback, this, _1, _2));
+  sync_cloud_pose_->registerCallback(std::bind(&MapROS::cloudPoseCallback, this, std::placeholders::_1, std::placeholders::_2));
 
-  map_start_time_ = ros::Time::now();
+  map_start_time_ = clock_->now();
 }
 
-void MapROS::visCallback(const ros::TimerEvent& e) {
+void MapROS::visCallback() {
   publishMapLocal();
   if (show_all_map_) {
     // Limit the frequency of all map
     static double tpass = 0.0;
-    tpass += (e.current_real - e.last_real).toSec();
+    static rclcpp::Time last_publish_time = clock_->now();
+    rclcpp::Time current_time = clock_->now();
+    tpass += (current_time - last_publish_time).seconds();
+    last_publish_time = current_time;
     if (tpass > 0.1) {
       publishMapAll();
       tpass = 0.0;
@@ -102,24 +111,23 @@ void MapROS::visCallback(const ros::TimerEvent& e) {
   // publishDepth();
 }
 
-void MapROS::updateESDFCallback(const ros::TimerEvent& /*event*/) {
+void MapROS::updateESDFCallback() {
   if (!esdf_need_update_) return;
-  auto t1 = ros::Time::now();
+  rclcpp::Time t1 = clock_->now();
 
   map_->updateESDF3d();
   esdf_need_update_ = false;
 
-  auto t2 = ros::Time::now();
-  esdf_time_ += (t2 - t1).toSec();
-  max_esdf_time_ = max(max_esdf_time_, (t2 - t1).toSec());
+  rclcpp::Time t2 = clock_->now();
+  esdf_time_ += (t2 - t1).seconds();
+  max_esdf_time_ = max(max_esdf_time_, (t2 - t1).seconds());
   esdf_num_++;
   if (show_esdf_time_)
-    ROS_WARN("ESDF t: cur: %lf, avg: %lf, max: %lf", (t2 - t1).toSec(), esdf_time_ / esdf_num_,
-             max_esdf_time_);
+    RCLCPP_WARN(logger_, "ESDF t: cur: %lf, avg: %lf, %lf, max: %lf", (t2 - t1).seconds(), esdf_time_ / esdf_num_, max_esdf_time_);
 }
 
-void MapROS::depthPoseCallback(const sensor_msgs::ImageConstPtr& img,
-                               const geometry_msgs::PoseStampedConstPtr& pose) {
+void MapROS::depthPoseCallback(const sensor_msgs::msg::Image::ConstSharedPtr img,
+                               const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose) {
   camera_pos_(0) = pose->pose.position.x;
   camera_pos_(1) = pose->pose.position.y;
   camera_pos_(2) = pose->pose.position.z;
@@ -133,7 +141,7 @@ void MapROS::depthPoseCallback(const sensor_msgs::ImageConstPtr& img,
     (cv_ptr->image).convertTo(cv_ptr->image, CV_16UC1, k_depth_scaling_factor_);
   cv_ptr->image.copyTo(*depth_image_);
 
-  auto t1 = ros::Time::now();
+  rclcpp::Time t1 = clock_->now();
 
   // generate point cloud, update map
   proessDepthImage();
@@ -144,17 +152,17 @@ void MapROS::depthPoseCallback(const sensor_msgs::ImageConstPtr& img,
     local_updated_ = false;
   }
 
-  auto t2 = ros::Time::now();
-  fuse_time_ += (t2 - t1).toSec();
-  max_fuse_time_ = max(max_fuse_time_, (t2 - t1).toSec());
+  rclcpp::Time t2 = clock_->now();
+  fuse_time_ += (t2 - t1).seconds();
+  max_fuse_time_ = max(max_fuse_time_, (t2 - t1).seconds());
   fuse_num_ += 1;
   if (show_occ_time_)
-    ROS_WARN("Fusion t: cur: %lf, avg: %lf, max: %lf", (t2 - t1).toSec(), fuse_time_ / fuse_num_,
-             max_fuse_time_);
+    RCLCPP_WARN(logger_, "Fusion t: cur: %lf, avg: %lf, max: %lf", (t2 - t1).seconds(), fuse_time_ / fuse_num_,
+                max_fuse_time_);
 }
 
-void MapROS::cloudPoseCallback(const sensor_msgs::PointCloud2ConstPtr& msg,
-                               const geometry_msgs::PoseStampedConstPtr& pose) {
+void MapROS::cloudPoseCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg,
+                               const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose) {
   camera_pos_(0) = pose->pose.position.x;
   camera_pos_(1) = pose->pose.position.y;
   camera_pos_(2) = pose->pose.position.z;
@@ -235,12 +243,12 @@ void MapROS::publishMapAll() {
   cloud1.height = 1;
   cloud1.is_dense = true;
   cloud1.header.frame_id = frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud1, cloud_msg);
-  map_all_pub_.publish(cloud_msg);
+  map_all_pub_->publish(cloud_msg);
 
   // Output time and known volumn
-  double time_now = (ros::Time::now() - map_start_time_).toSec();
+  double time_now = (clock_->now() - map_start_time_).seconds();
   double known_volumn = 0;
 
   for (int x = map_->mp_->box_min_(0) /* + 1 */; x < map_->mp_->box_max_(0); ++x)
@@ -306,12 +314,12 @@ void MapROS::publishMapLocal() {
   cloud2.height = 1;
   cloud2.is_dense = true;
   cloud2.header.frame_id = frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
 
   pcl::toROSMsg(cloud, cloud_msg);
-  map_local_pub_.publish(cloud_msg);
+  map_local_pub_->publish(cloud_msg);
   pcl::toROSMsg(cloud2, cloud_msg);
-  map_local_inflate_pub_.publish(cloud_msg);
+  map_local_inflate_pub_->publish(cloud_msg);
 }
 
 void MapROS::publishUnknown() {
@@ -340,9 +348,9 @@ void MapROS::publishUnknown() {
   cloud.height = 1;
   cloud.is_dense = true;
   cloud.header.frame_id = frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
-  unknown_pub_.publish(cloud_msg);
+  unknown_pub_->publish(cloud_msg);
 }
 
 void MapROS::publishDepth() {
@@ -355,23 +363,23 @@ void MapROS::publishDepth() {
   cloud.height = 1;
   cloud.is_dense = true;
   cloud.header.frame_id = frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
-  depth_pub_.publish(cloud_msg);
+  depth_pub_->publish(cloud_msg);
 }
 
 void MapROS::publishUpdateRange() {
   Eigen::Vector3d esdf_min_pos, esdf_max_pos, cube_pos, cube_scale;
-  visualization_msgs::Marker mk;
+  visualization_msgs::msg::Marker mk;
   map_->indexToPos(map_->md_->local_bound_min_, esdf_min_pos);
   map_->indexToPos(map_->md_->local_bound_max_, esdf_max_pos);
 
   cube_pos = 0.5 * (esdf_min_pos + esdf_max_pos);
   cube_scale = esdf_max_pos - esdf_min_pos;
   mk.header.frame_id = frame_id_;
-  mk.header.stamp = ros::Time::now();
-  mk.type = visualization_msgs::Marker::CUBE;
-  mk.action = visualization_msgs::Marker::ADD;
+  mk.header.stamp = clock_->now();
+  mk.type = visualization_msgs::msg::Marker::CUBE;
+  mk.action = visualization_msgs::msg::Marker::ADD;
   mk.id = 0;
   mk.pose.position.x = cube_pos(0);
   mk.pose.position.y = cube_pos(1);
@@ -388,7 +396,7 @@ void MapROS::publishUpdateRange() {
   mk.pose.orientation.y = 0.0;
   mk.pose.orientation.z = 0.0;
 
-  update_range_pub_.publish(mk);
+  update_range_pub_->publish(mk);
 }
 
 void MapROS::publishESDF() {
@@ -427,11 +435,11 @@ void MapROS::publishESDF() {
   cloud.height = 1;
   cloud.is_dense = true;
   cloud.header.frame_id = frame_id_;
-  sensor_msgs::PointCloud2 cloud_msg;
+  sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud, cloud_msg);
 
-  esdf_pub_.publish(cloud_msg);
+  esdf_pub_->publish(cloud_msg);
 
-  // ROS_INFO("pub esdf");
+  // RCLCPP_INFO(logger_, "pub esdf");
 }
 }
