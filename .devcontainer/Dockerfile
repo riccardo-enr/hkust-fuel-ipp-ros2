@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
   libpcl-dev \
   libeigen3-dev \
   # ROS 2 packages
+  ros-dev-tools \
   ros-jazzy-tf2-geometry-msgs \
   ros-jazzy-tf2-eigen \
   ros-jazzy-visualization-msgs \
@@ -103,9 +104,16 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
   && tar xf lazygit.tar.gz -C /usr/local/bin \
   && rm lazygit.tar.gz
 
+# Source ROS 2 and workspace in .bashrc for interactive shells
+RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/ubuntu/.bashrc && \
+    echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> /home/ubuntu/.bashrc
+
 WORKDIR /workspace
 
 ENV DEBIAN_FRONTEND=dialog
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 CMD ["/bin/bash"]
 
@@ -119,8 +127,7 @@ WORKDIR /workspace
 
 ENV DEBIAN_FRONTEND=dialog
 
-# If you have an entrypoint script for running the ROS 2 application
-# COPY my_entrypoint.sh /usr/local/bin/
-# ENTRYPOINT ["/usr/local/bin/my_entrypoint.sh"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 CMD ["/bin/bash"]
