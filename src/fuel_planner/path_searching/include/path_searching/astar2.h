@@ -4,8 +4,7 @@
 #include <Eigen/Eigen>
 #include <iostream>
 #include <map>
-#include <ros/console.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <unordered_map>
 #include "plan_env/edt_environment.h"
@@ -41,7 +40,7 @@ public:
   ~Astar();
   enum { REACH_END = 1, NO_PATH = 2 };
 
-  void init(ros::NodeHandle& nh, const EDTEnvironment::Ptr& env);
+  void init(rclcpp::Node::SharedPtr node, const EDTEnvironment::Ptr& env);
   void reset();
   int search(const Eigen::Vector3d& start_pt, const Eigen::Vector3d& end_pt);
   void setResolution(const double& res);
@@ -60,6 +59,8 @@ private:
   double getDiagHeu(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2);
   double getManhHeu(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2);
   double getEuclHeu(const Eigen::Vector3d& x1, const Eigen::Vector3d& x2);
+
+  rclcpp::Clock::SharedPtr clock_;
 
   // main data structure
   vector<NodePtr> path_node_pool_;

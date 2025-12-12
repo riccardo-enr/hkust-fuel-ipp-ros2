@@ -14,11 +14,13 @@ Astar::~Astar() {
     delete path_node_pool_[i];
 }
 
-void Astar::init(ros::NodeHandle& nh, const EDTEnvironment::Ptr& env) {
-  nh.param("astar/resolution_astar", resolution_, -1.0);
-  nh.param("astar/lambda_heu", lambda_heu_, -1.0);
-  nh.param("astar/max_search_time", max_search_time_, -1.0);
-  nh.param("astar/allocate_num", allocate_num_, -1);
+void Astar::init(rclcpp::Node::SharedPtr node, const EDTEnvironment::Ptr& env) {
+  resolution_ = node->declare_parameter("astar/resolution_astar", -1.0);
+  lambda_heu_ = node->declare_parameter("astar/lambda_heu", -1.0);
+  max_search_time_ = node->declare_parameter("astar/max_search_time", -1.0);
+  allocate_num_ = node->declare_parameter("astar/allocate_num", -1);
+
+  clock_ = node->get_clock();
 
   tie_breaker_ = 1.0 + 1.0 / 1000;
 
@@ -59,7 +61,7 @@ int Astar::search(const Eigen::Vector3d& start_pt, const Eigen::Vector3d& end_pt
   open_set_map_.insert(make_pair(cur_node->index, cur_node));
   use_node_num_ += 1;
 
-  const auto t1 = ros::Time::now();
+  const auto t1 = clock_->now();
 
   /* ---------- search loop ---------- */
   while (!open_set_.empty()) {
@@ -72,7 +74,7 @@ int Astar::search(const Eigen::Vector3d& start_pt, const Eigen::Vector3d& end_pt
     }
 
     // Early termination if time up
-    if ((ros::Time::now() - t1).toSec() > max_search_time_) {
+    if ((clock_->now() - t1).seconds() > max_search_time_) {
       // std::cout << "early";
       early_terminate_cost_ = cur_node->g_score + getDiagHeu(cur_node->position, end_pt);
       return NO_PATH;

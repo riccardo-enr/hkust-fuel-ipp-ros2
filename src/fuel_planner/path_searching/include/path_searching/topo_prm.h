@@ -2,6 +2,7 @@
 #define _TOPO_PRM_H
 
 #include <plan_env/edt_environment.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <random>
 
@@ -88,6 +89,8 @@ public:
 class TopologyPRM {
 private:
   /* data */
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_ = rclcpp::get_logger("TopologyPRM");
   EDTEnvironment::Ptr edt_environment_;  // environment representation
 
   // sampling generator
