@@ -73,9 +73,9 @@ struct PPR_OUTPUT_DATA {
 
 #define TYPE_PPR_GAINS 'g'
 struct PPR_GAINS {
-  int16_t Kp;
-  int16_t Kd;
-  int16_t Kp_yaw;
-  int16_t Kd_yaw;
+  int16_t kp;
+  int16_t kd;
+  int16_t kp_yaw;
+  int16_t kd_yaw;
 };
 #endif

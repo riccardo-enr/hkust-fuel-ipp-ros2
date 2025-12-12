@@ -1,21 +1,21 @@
-#include <iostream>
-#include <string.h>
-#include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2/LinearMath/Transform.h"
+#include "armadillo"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "sensor_msgs/msg/range.hpp"
-#include "visualization_msgs/msg/marker.hpp"
-#include "std_msgs/msg/color_rgba.hpp"
-#include "armadillo"
 #include "pose_utils.h"
 #include "quadrotor_msgs/msg/position_command.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/range.hpp"
+#include "std_msgs/msg/color_rgba.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Transform.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "visualization_msgs/msg/marker.hpp"
+#include <iostream>
+#include <memory>
+#include <string.h>
 
 using namespace arma;
 using namespace std;
@@ -24,7 +24,9 @@ class OdomVisualization : public rclcpp::Node {
 public:
   OdomVisualization() : Node("odom_visualization") {
     // Declare and get parameters
-    this->declare_parameter("mesh_resource", "package://odom_visualization/meshes/hummingbird.mesh");
+    this->declare_parameter(
+        "mesh_resource",
+        "package://odom_visualization/meshes/hummingbird.mesh");
     this->declare_parameter("color/r", 1.0);
     this->declare_parameter("color/g", 0.0);
     this->declare_parameter("color/b", 0.0);
@@ -57,21 +59,28 @@ public:
     // Initialize members
     isOriginSet_ = false;
     poseOrigin_ = colvec(6);
-    
+
     // Initialize time tracking variables
     prevt_ = this->now();
     pt_ = this->now();
     ppose_ = zeros<colvec>(6);
 
     // Create publishers
-    posePub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("pose", 100);
+    posePub_ =
+        this->create_publisher<geometry_msgs::msg::PoseStamped>("pose", 100);
     pathPub_ = this->create_publisher<nav_msgs::msg::Path>("path", 100);
-    velPub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity", 100);
-    covPub_ = this->create_publisher<visualization_msgs::msg::Marker>("covariance", 100);
-    covVelPub_ = this->create_publisher<visualization_msgs::msg::Marker>("covariance_velocity", 100);
-    trajPub_ = this->create_publisher<visualization_msgs::msg::Marker>("trajectory", 100);
-    sensorPub_ = this->create_publisher<visualization_msgs::msg::Marker>("sensor", 100);
-    meshPub_ = this->create_publisher<visualization_msgs::msg::Marker>("robot", 100);
+    velPub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "velocity", 100);
+    covPub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "covariance", 100);
+    covVelPub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "covariance_velocity", 100);
+    trajPub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "trajectory", 100);
+    sensorPub_ =
+        this->create_publisher<visualization_msgs::msg::Marker>("sensor", 100);
+    meshPub_ =
+        this->create_publisher<visualization_msgs::msg::Marker>("robot", 100);
     heightPub_ = this->create_publisher<sensor_msgs::msg::Range>("height", 100);
 
     // Create TF broadcaster
@@ -79,9 +88,13 @@ public:
 
     // Create subscribers
     sub_odom_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "odom", 100, std::bind(&OdomVisualization::odom_callback, this, std::placeholders::_1));
+        "odom", 100,
+        std::bind(&OdomVisualization::odom_callback, this,
+                  std::placeholders::_1));
     sub_cmd_ = this->create_subscription<quadrotor_msgs::msg::PositionCommand>(
-        "cmd", 100, std::bind(&OdomVisualization::cmd_callback, this, std::placeholders::_1));
+        "cmd", 100,
+        std::bind(&OdomVisualization::cmd_callback, this,
+                  std::placeholders::_1));
 
     RCLCPP_INFO(this->get_logger(), "Odometry visualization node started");
   }
@@ -113,7 +126,8 @@ private:
 
   // Subscribers
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odom_;
-  rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr sub_cmd_;
+  rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr
+      sub_cmd_;
 
   // TF broadcaster
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -135,7 +149,8 @@ private:
   colvec ppose_;
 
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    if (msg->header.frame_id == string("null")) return;
+    if (msg->header.frame_id == string("null"))
+      return;
     colvec pose(6);
     pose(0) = msg->pose.pose.position.x;
     pose(1) = msg->pose.pose.position.y;
@@ -486,7 +501,8 @@ private:
   }
 
   void cmd_callback(const quadrotor_msgs::msg::PositionCommand::SharedPtr cmd) {
-    if (cmd->header.frame_id == string("null")) return;
+    if (cmd->header.frame_id == string("null"))
+      return;
 
     colvec pose(6);
     pose(0) = cmd->position.x;
@@ -531,7 +547,7 @@ private:
   }
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<OdomVisualization>();
   rclcpp::spin(node);

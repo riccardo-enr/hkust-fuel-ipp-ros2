@@ -15,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 include_directories(
@@ -37,12 +38,16 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Odometry.msg"
   "msg/PolynomialTrajectory.msg"
   "msg/LQRTrajectory.msg"
-  DEPENDENCIES geometry_msgs nav_msgs
+  DEPENDENCIES geometry_msgs nav_msgs std_msgs
 )
 
 # Libraries
 add_library(decode_msgs src/decode_msgs.cpp)
 add_library(encode_msgs src/encode_msgs.cpp)
+
+rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+target_link_libraries(decode_msgs "${cpp_typesupport_target}")
+target_link_libraries(encode_msgs "${cpp_typesupport_target}")
 
 target_include_directories(decode_msgs PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

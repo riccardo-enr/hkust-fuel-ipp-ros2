@@ -4,7 +4,7 @@
 
 namespace quadrotor_msgs {
 
-bool decodeOutputData(const std::vector<uint8_t>& data, quadrotor_msgs::OutputData& output) {
+bool decodeOutputData(const std::vector<uint8_t>& data, quadrotor_msgs::msg::OutputData& output) {
   struct OUTPUT_DATA output_data;
   if (data.size() != sizeof(output_data)) return false;
 
@@ -50,7 +50,7 @@ bool decodeOutputData(const std::vector<uint8_t>& data, quadrotor_msgs::OutputDa
   return true;
 }
 
-bool decodeStatusData(const std::vector<uint8_t>& data, quadrotor_msgs::StatusData& status) {
+bool decodeStatusData(const std::vector<uint8_t>& data, quadrotor_msgs::msg::StatusData& status) {
   struct STATUS_DATA status_data;
   if (data.size() != sizeof(status_data)) return false;
   memcpy(&status_data, &data[0], sizeof(status_data));
@@ -62,7 +62,7 @@ bool decodeStatusData(const std::vector<uint8_t>& data, quadrotor_msgs::StatusDa
   return true;
 }
 
-bool decodePPROutputData(const std::vector<uint8_t>& data, quadrotor_msgs::PPROutputData& output) {
+bool decodePPROutputData(const std::vector<uint8_t>& data, quadrotor_msgs::msg::PPROutputData& output) {
   struct PPR_OUTPUT_DATA output_data;
   if (data.size() != sizeof(output_data)) return false;
   memcpy(&output_data, &data[0], sizeof(output_data));

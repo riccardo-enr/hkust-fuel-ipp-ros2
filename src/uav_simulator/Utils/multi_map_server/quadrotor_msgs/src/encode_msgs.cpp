@@ -54,10 +54,10 @@ void encodeTRPYCommand(const quadrotor_msgs::TRPYCommand& trpy_command, std::vec
 
 void encodePPRGains(const quadrotor_msgs::Gains& gains, std::vector<uint8_t>& output) {
   struct PPR_GAINS ppr_gains;
-  ppr_gains.Kp = gains.Kp;
-  ppr_gains.Kd = gains.Kd;
-  ppr_gains.Kp_yaw = gains.Kp_yaw;
-  ppr_gains.Kd_yaw = gains.Kd_yaw;
+  ppr_gains.kp = gains.kp;
+  ppr_gains.kd = gains.kd;
+  ppr_gains.kp_yaw = gains.kp_yaw;
+  ppr_gains.kd_yaw = gains.kd_yaw;
 
   output.resize(sizeof(ppr_gains));
   memcpy(&output[0], &ppr_gains, sizeof(ppr_gains));
