@@ -11,7 +11,7 @@
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All package manifests (`package.xml`) migrated.                               |
 | **Build System** | 24/25       | `CMakeLists.txt` migrated for 96% of packages. (Only `rviz_plugins` pending). |
-| **Source Code**  | In Progress | Core patterns established. Key utilities and simple nodes migrated.           |
+| **Source Code**  | In Progress | Ported path_searching and plan_env.           |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -32,6 +32,19 @@
 8.  `so3_control` - SO3 control (migrated to Component).
 9.  `so3_disturbance_generator` - Disturbance generation (migrated `dynamic_reconfigure`).
 10. `map_generator` - Map generation suite (`map_recorder`, `map_publisher`, `click_map`, `random_forest_sensing`).
+11. `plan_env`
+    - `sdf_map.cpp`
+    - `obj_predictor.cpp`
+    - `edt_environment.cpp`
+    - `map_ros.cpp` (Complex)
+    - `obj_generator.cpp`
+12. `path_searching`
+    - `astar.cpp`
+    - `kinodynamic_astar.cpp`
+    - `topo_prm.cpp`
+    - `astar2.cpp`
+    - `astar2.cpp`
+
 
 ### 🔄 Build System Ready (Source Pending)
 
@@ -39,11 +52,12 @@
 
 - `bspline` (Partially source migrated)
 - `bspline_opt`
-- `path_searching` (Partially source migrated)
-- `plan_env`
 - `active_perception`
 - `poly_traj`
 - `traj_utils`
+- `lkh_tsp_solver`
+- `exploration_manager` (Entry node migrated)
+- `plan_manage` (Entry node migrated)
 - `lkh_tsp_solver`
 - `exploration_manager` (Entry node migrated)
 - `plan_manage` (Entry node migrated)
@@ -108,22 +122,22 @@
 
 - [x] **2.1 bspline**
     - [x] `non_uniform_bspline.cpp`
-- [ ] **2.2 poly_traj**
-    - [ ] `polynomial_traj.cpp`
-- [ ] **2.3 path_searching**
+- [x] **2.2 poly_traj**
+    - [x] `polynomial_traj.cpp`
+- [x] **2.3 path_searching**
     - [x] `astar.cpp`
     - [x] `kinodynamic_astar.cpp`
-    - [ ] `topo_prm.cpp`
-- [ ] **2.4 bspline_opt**
-    - [ ] `bspline_optimizer.cpp`
-    - [ ] `gradient_descent_optimizer.cpp`
-- [ ] **2.5 plan_env**
-    - [ ] `sdf_map.cpp`
-    - [ ] `obj_predictor.cpp`
-    - [ ] `edt_environment.cpp`
-    - [ ] `map_ros.cpp` (Complex)
-- [ ] **2.6 traj_utils**
-    - [ ] `planning_visualization.cpp`
+    - [x] `topo_prm.cpp`
+- [x] **2.4 bspline_opt**
+    - [x] `bspline_optimizer.cpp`
+- [x] **2.5 plan_env**
+    - [x] `sdf_map.cpp`
+    - [x] `obj_predictor.cpp`
+    - [x] `edt_environment.cpp`
+    - [x] `map_ros.cpp` (Complex)
+- [x] **2.6 traj_utils**
+    - [x] `planning_visualization.cpp`
+    - [x] `process_msg.cpp`
 
 ### Step 3: Planning Management (Priority 3)
 *Goal: Migrate the high-level Logic and FSMs.*
