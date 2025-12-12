@@ -37,11 +37,11 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
 )
 
-add_library(bspline 
+add_library(${PROJECT_NAME}_lib 
   src/non_uniform_bspline.cpp 
 )
 
-ament_target_dependencies(bspline
+ament_target_dependencies(${PROJECT_NAME}_lib
   rclcpp
   std_msgs
   visualization_msgs
@@ -50,7 +50,7 @@ ament_target_dependencies(bspline
 )
 
 # Install
-install(TARGETS bspline
+install(TARGETS ${PROJECT_NAME}_lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -68,6 +68,6 @@ endif()
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_export_include_directories(include)
-ament_export_libraries(bspline)
+ament_export_libraries(${PROJECT_NAME}_lib)
 
 ament_package()  
