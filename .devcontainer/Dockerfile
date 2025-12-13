@@ -1,6 +1,6 @@
 # Stage 0: base
 # Contains core ROS 2 environment, basic build tools, and common libraries.
-FROM osrf/ros:jazzy-desktop-full as base
+FROM osrf/ros:jazzy-desktop-full AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -75,7 +75,7 @@ RUN rosdep init || true && rosdep update
 
 # Stage 1: dev
 # Extends 'base' with development tools like Neovim, debuggers, LSP, etc.
-FROM base as dev
+FROM base AS dev
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -90,6 +90,12 @@ RUN apt-get update && apt-get install -y \
   xclip \
   clangd \
   && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (for Codex CLI) and the Gemin/Codex tooling
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+  apt-get install -y nodejs && \
+  npm install -g @openai/codex && \
+  rm -rf /var/lib/apt/lists/*
 
 # Install Neovim from tarball
 RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz \
@@ -106,7 +112,7 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
 
 # Source ROS 2 and workspace in .bashrc for interactive shells
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/ubuntu/.bashrc && \
-    echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> /home/ubuntu/.bashrc
+  echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> /home/ubuntu/.bashrc
 
 WORKDIR /workspace
 
@@ -121,7 +127,7 @@ CMD ["/bin/bash"]
 
 # Stage 2: runtime
 # Optimized for running the application, minimal dependencies.
-FROM base as runtime
+FROM base AS runtime
 
 WORKDIR /workspace
 
