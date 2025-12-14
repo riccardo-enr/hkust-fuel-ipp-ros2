@@ -10,6 +10,8 @@ services:
         USERNAME: ubuntu
         USER_UID: 1000
         USER_GID: 1000
+        GITHUB_USER_NAME: ${GITHUB_USER_NAME}
+        GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL}
     volumes:
       - ../:/workspace:cached
       - ~/.config/nvim:/home/ubuntu/.config/nvim:cached
@@ -39,6 +41,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runtime
+      args:
+        GITHUB_USER_NAME: ${GITHUB_USER_NAME}
+        GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL}
     user: ubuntu
     volumes:
       - ../:/workspace:ro

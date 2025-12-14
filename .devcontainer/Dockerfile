@@ -61,6 +61,7 @@ RUN if ! getent group $USER_GID > /dev/null 2>&1; then \
   && chmod 0440 /etc/sudoers.d/$USERNAME \
   && usermod -aG sudo $USERNAME
 
+
 # Ensure home directory permissions for potential mounts
 RUN mkdir -p /home/$USERNAME/.config/nvim \
   /home/$USERNAME/.local/share/nvim \
@@ -92,7 +93,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js (for Codex CLI) and the Gemin/Codex tooling
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
   apt-get install -y nodejs && \
   npm install -g @openai/codex && \
   rm -rf /var/lib/apt/lists/*
