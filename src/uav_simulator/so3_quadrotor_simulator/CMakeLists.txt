@@ -17,6 +17,9 @@ find_package(uav_utils REQUIRED)
 find_package(cmake_utils REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -43,6 +46,9 @@ ament_target_dependencies(quadrotor_simulator_so3
   quadrotor_msgs
   uav_utils
   cmake_utils
+  nav_msgs
+  sensor_msgs
+  geometry_msgs
 )
 
 target_link_libraries(quadrotor_simulator_so3 
