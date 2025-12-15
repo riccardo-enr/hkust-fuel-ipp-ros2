@@ -1,13 +1,14 @@
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
+#include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/search/kdtree.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <Eigen/Dense>
 #include <fstream>
 #include <iostream>
@@ -17,213 +18,209 @@
 using namespace std;
 using namespace Eigen;
 
-ros::Publisher pub_cloud, pub_pose;
+class PCLRenderNode : public rclcpp::Node {
+public:
+  PCLRenderNode() : Node("pcl_render_node") {
+    // Declare and get parameters
+    this->declare_parameter("sensing_horizon", 0.0);
+    this->declare_parameter("sensing_rate", 0.0);
+    this->declare_parameter("estimation_rate", 0.0);
+    this->declare_parameter("map/x_size", 0.0);
+    this->declare_parameter("map/y_size", 0.0);
+    this->declare_parameter("map/z_size", 0.0);
 
-sensor_msgs::PointCloud2 local_map_pcl;
-sensor_msgs::PointCloud2 local_depth_pcl;
+    sensing_horizon_ = this->get_parameter("sensing_horizon").as_double();
+    sensing_rate_ = this->get_parameter("sensing_rate").as_double();
+    estimation_rate_ = this->get_parameter("estimation_rate").as_double();
 
-ros::Subscriber odom_sub;
-ros::Subscriber global_map_sub, local_map_sub;
+    x_size_ = this->get_parameter("map/x_size").as_double();
+    y_size_ = this->get_parameter("map/y_size").as_double();
+    z_size_ = this->get_parameter("map/z_size").as_double();
 
-ros::Timer local_sensing_timer, pose_timer;
+    // Subscribers
+    global_map_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+      "global_map", 1, std::bind(&PCLRenderNode::rcvGlobalPointCloudCallBack, this, std::placeholders::_1));
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "odometry", 50, std::bind(&PCLRenderNode::rcvOdometryCallbck, this, std::placeholders::_1));
 
-bool has_global_map(false);
-bool has_local_map(false);
-bool has_odom(false);
+    // Publishers
+    pub_cloud_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/pcl_render_node/cloud", 10);
+    pub_pose_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/pcl_render_node/sensor_pose", 10);
 
-nav_msgs::Odometry odom_;
-Eigen::Matrix4d sensor2body, sensor2world;
+    // Timers
+    double sensing_duration = 1.0 / sensing_rate_;
+    double estimate_duration = 1.0 / estimation_rate_;
+    
+    local_sensing_timer_ = this->create_wall_timer(
+      std::chrono::duration<double>(sensing_duration), std::bind(&PCLRenderNode::renderSensedPoints, this));
+    pose_timer_ = this->create_wall_timer(
+      std::chrono::duration<double>(estimate_duration), std::bind(&PCLRenderNode::pubSensorPose, this));
 
-double sensing_horizon, sensing_rate, estimation_rate;
-double x_size, y_size, z_size;
-double gl_xl, gl_yl, gl_zl;
-double resolution, inv_resolution;
-int GLX_SIZE, GLY_SIZE, GLZ_SIZE;
+    // Initialize grid variables
+    inv_resolution_ = 1.0 / resolution_; // Warning: resolution_ is not initialized from param in original code? 
+                                         // In original code: inv_resolution = 1.0 / resolution; but resolution is global var.
+                                         // It seems resolution is not set in params of main. 
+                                         // Let's check where resolution comes from. 
+                                         // It was a global variable 'double resolution, inv_resolution;' but never assigned a value in main from param.
+                                         // Assuming 0.1 or similar default if it was missing? 
+                                         // Actually in original code it might be uninitialized which is a bug or I missed it.
+                                         // Wait, 'gridIndex2coord' uses 'gl_xl', 'resolution'.
+                                         // I will add a default resolution parameter to be safe, e.g., 0.1
+    
+    this->declare_parameter("resolution", 0.1);
+    resolution_ = this->get_parameter("resolution").as_double();
+    inv_resolution_ = 1.0 / resolution_;
 
-ros::Time last_odom_stamp = ros::TIME_MAX;
+    gl_xl_ = -x_size_ / 2.0;
+    gl_yl_ = -y_size_ / 2.0;
+    gl_zl_ = 0.0;
+    GLX_SIZE_ = (int)(x_size_ * inv_resolution_);
+    GLY_SIZE_ = (int)(y_size_ * inv_resolution_);
+    GLZ_SIZE_ = (int)(z_size_ * inv_resolution_);
 
-inline Eigen::Vector3d gridIndex2coord(const Eigen::Vector3i& index)
-{
-  Eigen::Vector3d pt;
-  pt(0) = ((double)index(0) + 0.5) * resolution + gl_xl;
-  pt(1) = ((double)index(1) + 0.5) * resolution + gl_yl;
-  pt(2) = ((double)index(2) + 0.5) * resolution + gl_zl;
+    sensor2body_ << 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
+    
+    has_global_map_ = false;
+    has_local_map_ = false;
+    has_odom_ = false;
+  }
 
-  return pt;
-};
+private:
+  void rcvOdometryCallbck(const nav_msgs::msg::Odometry::SharedPtr odom) {
+    has_odom_ = true;
+    odom_ = *odom;
 
-inline Eigen::Vector3i coord2gridIndex(const Eigen::Vector3d& pt)
-{
-  Eigen::Vector3i idx;
-  idx(0) = std::min(std::max(int((pt(0) - gl_xl) * inv_resolution), 0), GLX_SIZE - 1);
-  idx(1) = std::min(std::max(int((pt(1) - gl_yl) * inv_resolution), 0), GLY_SIZE - 1);
-  idx(2) = std::min(std::max(int((pt(2) - gl_zl) * inv_resolution), 0), GLZ_SIZE - 1);
+    Matrix4d body2world = Matrix4d::Identity();
 
-  return idx;
-};
+    Eigen::Quaterniond pose;
+    pose.x() = odom->pose.pose.orientation.x;
+    pose.y() = odom->pose.pose.orientation.y;
+    pose.z() = odom->pose.pose.orientation.z;
+    pose.w() = odom->pose.pose.orientation.w;
+    body2world.block<3, 3>(0, 0) = pose.toRotationMatrix();
+    body2world(0, 3) = odom->pose.pose.position.x;
+    body2world(1, 3) = odom->pose.pose.position.y;
+    body2world(2, 3) = odom->pose.pose.position.z;
 
-void rcvOdometryCallbck(const nav_msgs::Odometry& odom)
-{
-  /*if(!has_global_map)
-    return;*/
-  has_odom = true;
-  odom_ = odom;
+    // convert to cam pose
+    sensor2world_ = body2world * sensor2body_;
+  }
 
-  Matrix4d body2world = Matrix4d::Identity();
+  void rcvGlobalPointCloudCallBack(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_map) {
+    if (has_global_map_)
+      return;
 
-  Eigen::Vector3d request_position;
-  Eigen::Quaterniond pose;
-  pose.x() = odom.pose.pose.orientation.x;
-  pose.y() = odom.pose.pose.orientation.y;
-  pose.z() = odom.pose.pose.orientation.z;
-  pose.w() = odom.pose.pose.orientation.w;
-  body2world.block<3, 3>(0, 0) = pose.toRotationMatrix();
-  body2world(0, 3) = odom.pose.pose.position.x;
-  body2world(1, 3) = odom.pose.pose.position.y;
-  body2world(2, 3) = odom.pose.pose.position.z;
+    RCLCPP_WARN(this->get_logger(), "Global Pointcloud received..");
 
-  // convert to cam pose
-  sensor2world = body2world * sensor2body;
-}
+    pcl::PointCloud<pcl::PointXYZ> cloud_input;
+    pcl::fromROSMsg(*pointcloud_map, cloud_input);
 
-pcl::PointCloud<pcl::PointXYZ> cloud_all_map, local_map;
-pcl::VoxelGrid<pcl::PointXYZ> _voxel_sampler;
-sensor_msgs::PointCloud2 local_map_pcd;
+    _voxel_sampler_.setLeafSize(0.1f, 0.1f, 0.1f);
+    _voxel_sampler_.setInputCloud(cloud_input.makeShared());
+    _voxel_sampler_.filter(cloud_all_map_);
 
-pcl::search::KdTree<pcl::PointXYZ> _kdtreeLocalMap;
-vector<int> pointIdxRadiusSearch;
-vector<float> pointRadiusSquaredDistance;
+    _kdtreeLocalMap_.setInputCloud(cloud_all_map_.makeShared());
 
-void rcvGlobalPointCloudCallBack(const sensor_msgs::PointCloud2& pointcloud_map)
-{
-  if (has_global_map)
-    return;
+    has_global_map_ = true;
+  }
 
-  ROS_WARN("Global Pointcloud received..");
+  void renderSensedPoints() {
+    if (!has_global_map_ || !has_odom_)
+      return;
 
-  pcl::PointCloud<pcl::PointXYZ> cloud_input;
-  pcl::fromROSMsg(pointcloud_map, cloud_input);
+    Eigen::Quaterniond q;
+    q.x() = odom_.pose.pose.orientation.x;
+    q.y() = odom_.pose.pose.orientation.y;
+    q.z() = odom_.pose.pose.orientation.z;
+    q.w() = odom_.pose.pose.orientation.w;
 
-  _voxel_sampler.setLeafSize(0.1f, 0.1f, 0.1f);
-  _voxel_sampler.setInputCloud(cloud_input.makeShared());
-  _voxel_sampler.filter(cloud_all_map);
+    Eigen::Vector3d pos;
+    pos << odom_.pose.pose.position.x, odom_.pose.pose.position.y, odom_.pose.pose.position.z;
 
-  _kdtreeLocalMap.setInputCloud(cloud_all_map.makeShared());
+    Eigen::Matrix3d rot;
+    rot = q;
+    Eigen::Vector3d yaw_vec = rot.col(0);
 
-  has_global_map = true;
-}
+    local_map_.points.clear();
+    pcl::PointXYZ searchPoint(odom_.pose.pose.position.x, odom_.pose.pose.position.y, odom_.pose.pose.position.z);
+    pointIdxRadiusSearch_.clear();
+    pointRadiusSquaredDistance_.clear();
 
-void renderSensedPoints(const ros::TimerEvent& event)
-{
-  if (!has_global_map || !has_odom)
-    return;
+    if (_kdtreeLocalMap_.radiusSearch(searchPoint, sensing_horizon_, pointIdxRadiusSearch_, pointRadiusSquaredDistance_) > 0) {
+      for (size_t i = 0; i < pointIdxRadiusSearch_.size(); ++i) {
+        auto pt = cloud_all_map_.points[pointIdxRadiusSearch_[i]];
+        Eigen::Vector3d pt3;
+        pt3[0] = pt.x;
+        pt3[1] = pt.y;
+        pt3[2] = pt.z;
+        auto dir = pt3 - pos;
 
-  Eigen::Quaterniond q;
-  q.x() = odom_.pose.pose.orientation.x;
-  q.y() = odom_.pose.pose.orientation.y;
-  q.z() = odom_.pose.pose.orientation.z;
-  q.w() = odom_.pose.pose.orientation.w;
+        if (fabs(dir[2]) > dir.head<2>().norm() * tan(M_PI / 6.0))
+          continue;
 
-  Eigen::Vector3d pos;
-  pos << odom_.pose.pose.position.x, odom_.pose.pose.position.y, odom_.pose.pose.position.z;
+        if (dir.dot(yaw_vec) < 0)
+          continue;
 
-  Eigen::Matrix3d rot;
-  rot = q;
-  Eigen::Vector3d yaw_vec = rot.col(0);
+        local_map_.points.push_back(pt);
+      }
+      local_map_.width = local_map_.points.size();
+      local_map_.height = 1;
+      local_map_.is_dense = true;
 
-  local_map.points.clear();
-  pcl::PointXYZ searchPoint(odom_.pose.pose.position.x, odom_.pose.pose.position.y, odom_.pose.pose.position.z);
-  pointIdxRadiusSearch.clear();
-  pointRadiusSquaredDistance.clear();
-
-  if (_kdtreeLocalMap.radiusSearch(searchPoint, sensing_horizon, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0)
-  {
-    for (size_t i = 0; i < pointIdxRadiusSearch.size(); ++i)
-    {
-      auto pt = cloud_all_map.points[pointIdxRadiusSearch[i]];
-      Eigen::Vector3d pt3;
-      pt3[0] = pt.x;
-      pt3[1] = pt.y;
-      pt3[2] = pt.z;
-      auto dir = pt3 - pos;
-
-      if (fabs(dir[2]) > dir.head<2>().norm() * tan(M_PI / 6.0))
-        continue;
-
-      if (dir.dot(yaw_vec) < 0)
-        continue;
-
-      local_map.points.push_back(pt);
+      pcl::toROSMsg(local_map_, local_map_pcd_);
+      local_map_pcd_.header = odom_.header;
+      pub_cloud_->publish(local_map_pcd_);
     }
-    local_map.width = local_map.points.size();
-    local_map.height = 1;
-    local_map.is_dense = true;
-
-    pcl::toROSMsg(local_map, local_map_pcd);
-    local_map_pcd.header = odom_.header;
-    pub_cloud.publish(local_map_pcd);
   }
-}
 
-void pubSensorPose(const ros::TimerEvent& e)
-{
-  Eigen::Quaterniond q;
-  q = sensor2world.block<3, 3>(0, 0);
+  void pubSensorPose() {
+    Eigen::Quaterniond q;
+    q = sensor2world_.block<3, 3>(0, 0);
 
-  geometry_msgs::PoseStamped sensor_pose;
-  sensor_pose.header = odom_.header;
-  sensor_pose.header.frame_id = "/map";
-  sensor_pose.pose.position.x = sensor2world(0, 3);
-  sensor_pose.pose.position.y = sensor2world(1, 3);
-  sensor_pose.pose.position.z = sensor2world(2, 3);
-  sensor_pose.pose.orientation.w = q.w();
-  sensor_pose.pose.orientation.x = q.x();
-  sensor_pose.pose.orientation.y = q.y();
-  sensor_pose.pose.orientation.z = q.z();
-  pub_pose.publish(sensor_pose);
-}
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "pcl_render");
-  ros::NodeHandle nh("~");
-
-  nh.getParam("sensing_horizon", sensing_horizon);
-  nh.getParam("sensing_rate", sensing_rate);
-  nh.getParam("estimation_rate", estimation_rate);
-
-  nh.getParam("map/x_size", x_size);
-  nh.getParam("map/y_size", y_size);
-  nh.getParam("map/z_size", z_size);
-
-  // subscribe point cloud
-  global_map_sub = nh.subscribe("global_map", 1, rcvGlobalPointCloudCallBack);
-  odom_sub = nh.subscribe("odometry", 50, rcvOdometryCallbck);
-
-  // publisher depth image and color image
-  pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("/pcl_render_node/cloud", 10);
-  pub_pose = nh.advertise<geometry_msgs::PoseStamped>("/pcl_render_node/sensor_pose", 10);
-  double sensing_duration = 1.0 / sensing_rate;
-  double estimate_duration = 1.0 / estimation_rate;
-  local_sensing_timer = nh.createTimer(ros::Duration(sensing_duration), renderSensedPoints);
-  pose_timer = nh.createTimer(ros::Duration(estimate_duration), pubSensorPose);
-
-  inv_resolution = 1.0 / resolution;
-  gl_xl = -x_size / 2.0;
-  gl_yl = -y_size / 2.0;
-  gl_zl = 0.0;
-  GLX_SIZE = (int)(x_size * inv_resolution);
-  GLY_SIZE = (int)(y_size * inv_resolution);
-  GLZ_SIZE = (int)(z_size * inv_resolution);
-
-  sensor2body << 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
-
-  ros::Rate rate(100);
-  bool status = ros::ok();
-  while (status)
-  {
-    ros::spinOnce();
-    status = ros::ok();
-    rate.sleep();
+    geometry_msgs::msg::PoseStamped sensor_pose;
+    sensor_pose.header = odom_.header;
+    sensor_pose.header.frame_id = "map";
+    sensor_pose.pose.position.x = sensor2world_(0, 3);
+    sensor_pose.pose.position.y = sensor2world_(1, 3);
+    sensor_pose.pose.position.z = sensor2world_(2, 3);
+    sensor_pose.pose.orientation.w = q.w();
+    sensor_pose.pose.orientation.x = q.x();
+    sensor_pose.pose.orientation.y = q.y();
+    sensor_pose.pose.orientation.z = q.z();
+    pub_pose_->publish(sensor_pose);
   }
+
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_cloud_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr global_map_sub_;
+  rclcpp::TimerBase::SharedPtr local_sensing_timer_;
+  rclcpp::TimerBase::SharedPtr pose_timer_;
+
+  sensor_msgs::msg::PointCloud2 local_map_pcd_;
+  nav_msgs::msg::Odometry odom_;
+  Eigen::Matrix4d sensor2body_, sensor2world_;
+
+  bool has_global_map_;
+  bool has_local_map_;
+  bool has_odom_;
+
+  double sensing_horizon_, sensing_rate_, estimation_rate_;
+  double x_size_, y_size_, z_size_;
+  double gl_xl_, gl_yl_, gl_zl_;
+  double resolution_, inv_resolution_;
+  int GLX_SIZE_, GLY_SIZE_, GLZ_SIZE_;
+
+  pcl::PointCloud<pcl::PointXYZ> cloud_all_map_, local_map_;
+  pcl::VoxelGrid<pcl::PointXYZ> _voxel_sampler_;
+  pcl::search::KdTree<pcl::PointXYZ> _kdtreeLocalMap_;
+  vector<int> pointIdxRadiusSearch_;
+  vector<float> pointRadiusSquaredDistance_;
+};
+
+int main(int argc, char** argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<PCLRenderNode>());
+  rclcpp::shutdown();
+  return 0;
 }

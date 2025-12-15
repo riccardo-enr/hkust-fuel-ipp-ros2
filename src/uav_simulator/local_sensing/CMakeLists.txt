@@ -23,10 +23,12 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
-find_package(cmake_modules REQUIRED)
+find_package(cmake_utils REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(image_transport REQUIRED)
 
 include_directories(
   include 
@@ -39,8 +41,9 @@ if(ENABLE_CUDA)
   # CUDA support - would require additional setup
   message(WARNING "CUDA support not yet fully implemented for ROS 2")
 else()
+  # Build pcl_render_node (pointcloud filter)
   add_executable(pcl_render_node
-    src/depth_render_node.cpp
+    src/pointcloud_render_node.cpp
   )
   
   ament_target_dependencies(pcl_render_node
@@ -51,16 +54,41 @@ else()
     geometry_msgs
     nav_msgs
     quadrotor_msgs
+    pcl_conversions
+    cmake_utils
   )
   
   target_link_libraries(pcl_render_node
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
   )
+
+  # Build depth_render_node (CPU depth renderer)
+  add_executable(depth_render_node
+    src/depth_render_node.cpp
+  )
+  
+  ament_target_dependencies(depth_render_node
+    rclcpp
+    cv_bridge
+    pcl_ros
+    sensor_msgs
+    geometry_msgs
+    nav_msgs
+    quadrotor_msgs
+    pcl_conversions
+    image_transport
+    cmake_utils
+  )
+  
+  target_link_libraries(depth_render_node
+    ${PCL_LIBRARIES}
+    ${OpenCV_LIBS}
+  )
 endif()
 
 # Install
-install(TARGETS pcl_render_node
+install(TARGETS pcl_render_node depth_render_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
