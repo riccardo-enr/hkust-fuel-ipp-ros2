@@ -9,73 +9,59 @@
 
 | Metric           | Status      | Details                                                                       |
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
-| **Packages**     | 25/25       | All package manifests (`package.xml`) migrated.                               |
-| **Build System** | 24/25       | `CMakeLists.txt` migrated for 96% of packages. (Only `rviz_plugins` pending). |
-| **Source Code**  | Done        | Ported path_searching, plan_env, plan_manage, active_perception, exploration_manager, simulator. |
+| **Packages**     | 24/25       | All but `src/uav_simulator/Utils/multi_map_server/quadrotor_msgs` are format 3; that duplicate message pkg is still Catkin/format 1. |
+| **Build System** | 23/25       | `rviz_plugins` remains Catkin and `multi_map_server` targets still rely on ROS 1 APIs despite the ament build. |
+| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, `poly_traj`'s `traj_generator`, legacy `plan_manage` tools (`traj_server`, tests). |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
 
 ### ✅ Fully Migrated Packages (Build & Source)
 
+The following packages build and run on ROS 2 without ROS 1 dependencies:
+
 **Core Utilities & Messages:**
-1.  `poscmd_2_odom` - Position command to odometry converter.
-2.  `waypoint_generator` - Waypoint generation with TF2.
-3.  `quadrotor_msgs` - Custom quadrotor messages.
-4.  `pose_utils` - Pose utilities (Armadillo).
-5.  `uav_utils` - Header-only utilities.
-6.  `cmake_utils` - CMake utilities.
-7.  `odom_visualization` - Odometry and trajectory visualization.
+1.  `poscmd_2_odom`
+2.  `waypoint_generator`
+3.  `quadrotor_msgs` *(primary copy under `src/uav_simulator/Utils/quadrotor_msgs`)*
+4.  `pose_utils`
+5.  `uav_utils`
+6.  `cmake_utils`
+7.  `odom_visualization`
 
 **Simulation & Control:**
 
-8.  `so3_control` - SO3 control (migrated to Component).
-9.  `so3_disturbance_generator` - Disturbance generation (migrated `dynamic_reconfigure`).
-10. `map_generator` - Map generation suite (`map_recorder`, `map_publisher`, `click_map`, `random_forest_sensing`).
+8.  `so3_control`
+9.  `so3_disturbance_generator`
+10. `map_generator`
 11. `plan_env`
-    - `sdf_map.cpp`
-    - `obj_predictor.cpp`
-    - `edt_environment.cpp`
-    - `map_ros.cpp` (Complex)
-    - `obj_generator.cpp`
 12. `path_searching`
-    - `astar.cpp`
-    - `kinodynamic_astar.cpp`
-    - `topo_prm.cpp`
-    - `astar2.cpp`
-    - `astar2.cpp`
-13. `plan_manage`
-    - `fast_planner_node.cpp` (Entry point)
-    - `kino_replan_fsm.cpp`
-    - `topo_replan_fsm.cpp`
-    - `planner_manager.cpp`
+13. `plan_manage` *(ROS 2 entry point only; legacy ROS 1 tools remain, see “Pending Source”)*
 14. `active_perception`
-    - `frontier_finder.cpp`
-    - `perception_utils.cpp`
-    - `heading_planner.cpp`
 15. `exploration_manager`
-    - `exploration_node.cpp`
-    - `fast_exploration_fsm.cpp`
-    - `fast_exploration_manager.cpp`
 16. `so3_quadrotor_simulator`
-    - `quadrotor_simulator_so3.cpp`
 17. `local_sensing`
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
-    - [x] `pcl_render_node.cpp` (CUDA version, disabled by default)
 
 ### 🔄 Build System Ready (Source Pending)
 
-**Planning Libraries:**
+These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or headers that must be ported:
 
-- `bspline` (Partially source migrated)
-- `bspline_opt`
+- `plan_manage`
+  - `traj_server.cpp`, `traj_server_backup.cpp`, and legacy tests under `test/` still use `ros::` APIs.
+- `local_sensing`
+  - `pcl_render_node.cpp` (CUDA-based) is still a ROS 1 node.
 - `poly_traj`
-- `traj_utils`
-- `lkh_tsp_solver`
-
-**Visualization & Simulation:**
+  - `traj_generator.cpp` is unported.
 - `multi_map_server`
+  - Visualization binary and headers (`Map2D/Map3D`) depend on `roscpp`, `tf`, and `ros::Time`.
+- `multi_map_server/quadrotor_msgs`
+  - Duplicate Catkin message package; remove or migrate to ROS 2 (still Catkin build).
+
+### ⏳ Pending Build System
+
+- `rviz_plugins` (Requires Qt5/RViz2 specific updates and full ament port).
 
 ### ⏳ Pending Build System
 
@@ -132,8 +118,9 @@
 
 - [x] **2.1 bspline**
     - [x] `non_uniform_bspline.cpp`
-- [x] **2.2 poly_traj**
+- [ ] **2.2 poly_traj**
     - [x] `polynomial_traj.cpp`
+    - [ ] `traj_generator.cpp` (ROS 1 node pending)
 - [x] **2.3 path_searching**
     - [x] `astar.cpp`
     - [x] `kinodynamic_astar.cpp`
@@ -152,11 +139,12 @@
 ### Step 3: Planning Management (Priority 3)
 *Goal: Migrate the high-level Logic and FSMs.*
 
-- [x] **3.1 plan_manage**
+- [ ] **3.1 plan_manage**
     - [x] `fast_planner_node.cpp` (Entry point)
     - [x] `kino_replan_fsm.cpp`
     - [x] `topo_replan_fsm.cpp`
     - [x] `planner_manager.cpp`
+    - [ ] `traj_server.cpp` & tools/tests (ROS 1)
 - [x] **3.2 active_perception**
     - [x] `frontier_finder.cpp`
     - [x] `perception_utils.cpp`
@@ -174,10 +162,10 @@
     - [x] `SO3Control.cpp`
 - [x] **4.2 so3_quadrotor_simulator**
     - [x] `quadrotor_simulator_so3.cpp`
-- [x] **4.3 local_sensing**
+- [ ] **4.3 local_sensing**
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
-    - [x] `depth_render.cu` (CUDA - Build disabled, source available)
+    - [ ] `pcl_render_node.cpp` (CUDA ROS 1 path)
 
 ### Step 5: Finalization
 - [ ] **5.1 Launch Files:** Convert all XML launch files to Python.
