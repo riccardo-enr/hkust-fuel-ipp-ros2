@@ -10,8 +10,8 @@ services:
         USERNAME: ubuntu
         USER_UID: 1000
         USER_GID: 1000
-        GITHUB_USER_NAME: ${GITHUB_USER_NAME:-Riccardo Enrico}
-        GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL:-riccardo.enrico97@gmail.com}
+        GITHUB_USER_NAME: ${GITHUB_USER_NAME}
+        GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL}
     volumes:
       - ../:/workspace:cached
       - ~/.config/nvim:/home/ubuntu/.config/nvim:cached

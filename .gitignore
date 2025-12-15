@@ -11,3 +11,5 @@ fuel_planner/utils/lkh_tsp_solver/resource/*.txtGEMINI.md
 build/
 install/
 log/
+
+.devcontainer/.env
