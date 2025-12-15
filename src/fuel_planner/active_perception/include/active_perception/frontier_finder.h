@@ -1,7 +1,7 @@
 #ifndef _FRONTIER_FINDER_H_
 #define _FRONTIER_FINDER_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <Eigen/Eigen>
 #include <memory>
 #include <vector>
@@ -52,7 +52,7 @@ struct Frontier {
 
 class FrontierFinder {
 public:
-  FrontierFinder(const shared_ptr<EDTEnvironment>& edt, ros::NodeHandle& nh);
+  FrontierFinder(const shared_ptr<EDTEnvironment>& edt, const rclcpp::Node::SharedPtr& node);
   ~FrontierFinder();
 
   void searchFrontiers();
@@ -128,6 +128,7 @@ private:
   // Utils
   shared_ptr<EDTEnvironment> edt_env_;
   unique_ptr<RayCaster> raycaster_;
+  rclcpp::Node::SharedPtr node_;
 };
 
 }  // namespace fast_planner

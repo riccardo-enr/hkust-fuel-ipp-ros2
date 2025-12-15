@@ -1,7 +1,7 @@
 #ifndef _PERCEPTION_UTILS_H_
 #define _PERCEPTION_UTILS_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <Eigen/Eigen>
 
@@ -17,7 +17,7 @@ using std::vector;
 namespace fast_planner {
 class PerceptionUtils {
 public:
-  PerceptionUtils(ros::NodeHandle& nh);
+  PerceptionUtils(const rclcpp::Node::SharedPtr& node);
   ~PerceptionUtils() {
   }
   // Set position and yaw

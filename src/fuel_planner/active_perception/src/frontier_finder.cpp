@@ -20,24 +20,38 @@
 #include <Eigen/Eigenvalues>
 
 namespace fast_planner {
-FrontierFinder::FrontierFinder(const EDTEnvironment::Ptr& edt, ros::NodeHandle& nh) {
+FrontierFinder::FrontierFinder(const EDTEnvironment::Ptr& edt, const rclcpp::Node::SharedPtr& node) {
   this->edt_env_ = edt;
+  this->node_ = node;
   int voxel_num = edt->sdf_map_->getVoxelNum();
   frontier_flag_ = vector<char>(voxel_num, 0);
   fill(frontier_flag_.begin(), frontier_flag_.end(), 0);
 
-  nh.param("frontier/cluster_min", cluster_min_, -1);
-  nh.param("frontier/cluster_size_xy", cluster_size_xy_, -1.0);
-  nh.param("frontier/cluster_size_z", cluster_size_z_, -1.0);
-  nh.param("frontier/min_candidate_dist", min_candidate_dist_, -1.0);
-  nh.param("frontier/min_candidate_clearance", min_candidate_clearance_, -1.0);
-  nh.param("frontier/candidate_dphi", candidate_dphi_, -1.0);
-  nh.param("frontier/candidate_rmax", candidate_rmax_, -1.0);
-  nh.param("frontier/candidate_rmin", candidate_rmin_, -1.0);
-  nh.param("frontier/candidate_rnum", candidate_rnum_, -1);
-  nh.param("frontier/down_sample", down_sample_, -1);
-  nh.param("frontier/min_visib_num", min_visib_num_, -1);
-  nh.param("frontier/min_view_finish_fraction", min_view_finish_fraction_, -1.0);
+  node->declare_parameter("frontier/cluster_min", -1);
+  node->declare_parameter("frontier/cluster_size_xy", -1.0);
+  node->declare_parameter("frontier/cluster_size_z", -1.0);
+  node->declare_parameter("frontier/min_candidate_dist", -1.0);
+  node->declare_parameter("frontier/min_candidate_clearance", -1.0);
+  node->declare_parameter("frontier/candidate_dphi", -1.0);
+  node->declare_parameter("frontier/candidate_rmax", -1.0);
+  node->declare_parameter("frontier/candidate_rmin", -1.0);
+  node->declare_parameter("frontier/candidate_rnum", -1);
+  node->declare_parameter("frontier/down_sample", -1);
+  node->declare_parameter("frontier/min_visib_num", -1);
+  node->declare_parameter("frontier/min_view_finish_fraction", -1.0);
+
+  cluster_min_ = node->get_parameter("frontier/cluster_min").as_int();
+  cluster_size_xy_ = node->get_parameter("frontier/cluster_size_xy").as_double();
+  cluster_size_z_ = node->get_parameter("frontier/cluster_size_z").as_double();
+  min_candidate_dist_ = node->get_parameter("frontier/min_candidate_dist").as_double();
+  min_candidate_clearance_ = node->get_parameter("frontier/min_candidate_clearance").as_double();
+  candidate_dphi_ = node->get_parameter("frontier/candidate_dphi").as_double();
+  candidate_rmax_ = node->get_parameter("frontier/candidate_rmax").as_double();
+  candidate_rmin_ = node->get_parameter("frontier/candidate_rmin").as_double();
+  candidate_rnum_ = node->get_parameter("frontier/candidate_rnum").as_int();
+  down_sample_ = node->get_parameter("frontier/down_sample").as_int();
+  min_visib_num_ = node->get_parameter("frontier/min_visib_num").as_int();
+  min_view_finish_fraction_ = node->get_parameter("frontier/min_view_finish_fraction").as_double();
 
   raycaster_.reset(new RayCaster);
   resolution_ = edt_env_->sdf_map_->getResolution();
@@ -45,14 +59,14 @@ FrontierFinder::FrontierFinder(const EDTEnvironment::Ptr& edt, ros::NodeHandle& 
   edt_env_->sdf_map_->getRegion(origin, size);
   raycaster_->setParams(resolution_, origin);
 
-  percep_utils_.reset(new PerceptionUtils(nh));
+  percep_utils_.reset(new PerceptionUtils(node));
 }
 
 FrontierFinder::~FrontierFinder() {
 }
 
 void FrontierFinder::searchFrontiers() {
-  ros::Time t1 = ros::Time::now();
+  rclcpp::Time t1 = node_->now();
   tmp_frontiers_.clear();
 
   // Bounding box of updated region
@@ -117,13 +131,13 @@ void FrontierFinder::searchFrontiers() {
       }
   splitLargeFrontiers(tmp_frontiers_);
 
-  ROS_WARN_THROTTLE(5.0, "Frontier t: %lf", (ros::Time::now() - t1).toSec());
+  RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 5000, "Frontier t: %lf", (node_->now() - t1).seconds());
 }
 
 void FrontierFinder::expandFrontier(
     const Eigen::Vector3i& first /* , const int& depth, const int& parent_id */) {
   // std::cout << "depth: " << depth << std::endl;
-  auto t1 = ros::Time::now();
+  // auto t1 = node_->now();
 
   // Data for clustering
   queue<Eigen::Vector3i> cell_queue;

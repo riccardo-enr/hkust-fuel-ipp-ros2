@@ -33,10 +33,10 @@ include_directories(
 
 add_library(active_perception
   src/traj_visibility.cpp 
-  # src/heading_planner.cpp
-  # src/frontier_finder.cpp
-  # src/graph_node.cpp
-  # src/perception_utils.cpp
+  src/heading_planner.cpp
+  src/frontier_finder.cpp
+  src/graph_node.cpp
+  src/perception_utils.cpp
 )
 
 ament_target_dependencies(active_perception

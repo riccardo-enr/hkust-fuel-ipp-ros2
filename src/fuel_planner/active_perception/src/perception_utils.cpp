@@ -3,12 +3,18 @@
 #include <pcl/filters/voxel_grid.h>
 
 namespace fast_planner {
-PerceptionUtils::PerceptionUtils(ros::NodeHandle& nh) {
-  nh.param("perception_utils/top_angle", top_angle_, -1.0);
-  nh.param("perception_utils/left_angle", left_angle_, -1.0);
-  nh.param("perception_utils/right_angle", right_angle_, -1.0);
-  nh.param("perception_utils/max_dist", max_dist_, -1.0);
-  nh.param("perception_utils/vis_dist", vis_dist_, -1.0);
+PerceptionUtils::PerceptionUtils(const rclcpp::Node::SharedPtr& node) {
+  node->declare_parameter("perception_utils/top_angle", -1.0);
+  node->declare_parameter("perception_utils/left_angle", -1.0);
+  node->declare_parameter("perception_utils/right_angle", -1.0);
+  node->declare_parameter("perception_utils/max_dist", -1.0);
+  node->declare_parameter("perception_utils/vis_dist", -1.0);
+
+  top_angle_ = node->get_parameter("perception_utils/top_angle").as_double();
+  left_angle_ = node->get_parameter("perception_utils/left_angle").as_double();
+  right_angle_ = node->get_parameter("perception_utils/right_angle").as_double();
+  max_dist_ = node->get_parameter("perception_utils/max_dist").as_double();
+  vis_dist_ = node->get_parameter("perception_utils/vis_dist").as_double();
 
   n_top_ << 0.0, sin(M_PI_2 - top_angle_), cos(M_PI_2 - top_angle_);
   n_bottom_ << 0.0, -sin(M_PI_2 - top_angle_), cos(M_PI_2 - top_angle_);

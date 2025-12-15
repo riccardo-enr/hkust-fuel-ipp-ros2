@@ -4,7 +4,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <iostream>
 #include <future>
@@ -95,22 +95,31 @@ void Graph::dijkstraSearch(const int& start, const int& goal, vector<YawVertex::
     }
   }
 
-  ROS_ERROR("Dijkstra can't find path!");
-  ROS_ASSERT(false);
+  // RCLCPP_ERROR(rclcpp::get_logger("HeadingPlanner"), "Dijkstra can't find path!");
+  assert(false);
 }
 
-HeadingPlanner::HeadingPlanner(ros::NodeHandle& nh) {
-  frontier_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/heading_planner/frontier", 20);
-  visib_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/heading_planner/visib", 20);
-  box_pub_ = nh.advertise<visualization_msgs::Marker>("/heading_planner/box", 20);
+HeadingPlanner::HeadingPlanner(const rclcpp::Node::SharedPtr& node) : node_(node) {
+  frontier_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/heading_planner/frontier", 20);
+  visib_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/heading_planner/visib", 20);
+  box_pub_ = node_->create_publisher<visualization_msgs::msg::Marker>("/heading_planner/box", 20);
 
-  nh.param("heading_planner/yaw_diff", yaw_diff_, -1.0);
-  nh.param("heading_planner/lambda1", lambda1_, -1.0);
-  nh.param("heading_planner/lambda2", lambda2_, -1.0);
-  nh.param("heading_planner/half_vert_num", half_vert_num_, -1);
-  nh.param("heading_planner/max_yaw_rate", max_yaw_rate_, -1.0);
-  nh.param("heading_planner/w", w_, -1.0);
-  nh.param("heading_planner/weight_type", weight_type_, -1);
+  node_->declare_parameter("heading_planner/yaw_diff", -1.0);
+  node_->declare_parameter("heading_planner/lambda1", -1.0);
+  node_->declare_parameter("heading_planner/lambda2", -1.0);
+  node_->declare_parameter("heading_planner/half_vert_num", -1);
+  node_->declare_parameter("heading_planner/max_yaw_rate", -1.0);
+  node_->declare_parameter("heading_planner/w", -1.0);
+  node_->declare_parameter("heading_planner/weight_type", -1);
+
+  yaw_diff_ = node_->get_parameter("heading_planner/yaw_diff").as_double();
+  lambda1_ = node_->get_parameter("heading_planner/lambda1").as_double();
+  lambda2_ = node_->get_parameter("heading_planner/lambda2").as_double();
+  half_vert_num_ = node_->get_parameter("heading_planner/half_vert_num").as_int();
+  max_yaw_rate_ = node_->get_parameter("heading_planner/max_yaw_rate").as_double();
+  w_ = node_->get_parameter("heading_planner/w").as_double();
+  weight_type_ = node_->get_parameter("heading_planner/weight_type").as_int();
+
   std::cout << "yaw diff: " << yaw_diff_ << std::endl;
   std::cout << "max yaw diff: " << max_yaw_rate_ << std::endl;
   std::cout << "vert num: " << half_vert_num_ << std::endl;
@@ -178,7 +187,7 @@ void HeadingPlanner::searchPathOfYaw(const vector<Eigen::Vector3d>& pts, const v
 
   for (int i = 0; i < yaws.size(); ++i) {
     // add one layer of vertice representing discretized yaws at one waypoint
-    auto t1 = ros::Time::now();
+    auto t1 = node_->now();
     bool start_end = (i == 0 || i == yaws.size() - 1);
     if (start_end) {  // start and end vertice
       YawVertex::Ptr vert(new YawVertex(yaws[i], 0, gid++));
@@ -209,7 +218,7 @@ void HeadingPlanner::searchPathOfYaw(const vector<Eigen::Vector3d>& pts, const v
     // }
     // std::cout << "" << std::endl;
     // connect vertice from last layer to this layer
-    // std::cout << "-------------" << (ros::Time::now() - t1).toSec() << " secs" <<
+    // std::cout << "-------------" << (node_->now() - t1).seconds() << " secs" <<
     // std::endl;
 
     for (auto v1 : last_layer) {
@@ -221,7 +230,7 @@ void HeadingPlanner::searchPathOfYaw(const vector<Eigen::Vector3d>& pts, const v
     last_layer.clear();
     last_layer.swap(layer);
   }
-  auto t1 = ros::Time::now();
+  auto t1 = node_->now();
   vector<YawVertex::Ptr> vert_path;
   yaw_graph.dijkstraSearch(0, gid - 1, vert_path);
 
@@ -236,7 +245,7 @@ void HeadingPlanner::searchPathOfYaw(const vector<Eigen::Vector3d>& pts, const v
 double HeadingPlanner::calcInformationGain(const Eigen::Vector3d& pt, const double& yaw,
                                            const Eigen::MatrixXd& ctrl_pts, const int& task_id) {
   // compute camera transform
-  auto t1 = ros::Time::now();
+  auto t1 = node_->now();
   Eigen::Matrix3d R_wb;
   R_wb << cos(yaw), -sin(yaw), 0.0, sin(yaw), cos(yaw), 0.0, 0.0, 0.0, 1.0;
 
@@ -313,17 +322,17 @@ double HeadingPlanner::calcInformationGain(const Eigen::Vector3d& pt, const doub
   // sensor_msgs::PointCloud2 msg;
   // pcl::toROSMsg(gain_pts, msg);
   // msg.header.frame_id = "world";
-  // visib_pub_.publish(msg);
+  // visib_pub_->publish(msg);
 
-  // ROS_WARN("gain %d is %lf, cost %lf secs", task_id, gain, (ros::Time::now() -
-  // t1).toSec());
+  // ROS_WARN("gain %d is %lf, cost %lf secs", task_id, gain, (node_->now() -
+  // t1).seconds());
   // std::cout << "gain: " << gain << std::endl;
   return gain;
 }
 
 double HeadingPlanner::calcInfoGain(const Eigen::Vector3d& pt, const double& yaw, const int& task_id) {
   // compute camera transform
-  auto t1 = ros::Time::now();
+  auto t1 = node_->now();
   Eigen::Matrix3d R_wb;
   R_wb << cos(yaw), -sin(yaw), 0.0, sin(yaw), cos(yaw), 0.0, 0.0, 0.0, 1.0;
 
@@ -385,8 +394,8 @@ double HeadingPlanner::calcInfoGain(const Eigen::Vector3d& pt, const double& yaw
   // msg.header.frame_id = "world";
   // visib_pub_.publish(msg);
 
-  // ROS_WARN("gain %d is %lf, cost %lf secs", task_id, gain, (ros::Time::now() -
-  // t1).toSec());
+  // ROS_WARN("gain %d is %lf, cost %lf secs", task_id, gain, (node_->now() -
+  // t1).seconds());
   return gain;
 }
 
@@ -418,11 +427,11 @@ void HeadingPlanner::calcFovAABB(const Eigen::Matrix3d& R_wc, const Eigen::Vecto
 }
 
 void HeadingPlanner::visualizeBox(const Eigen::Vector3d& lb, const Eigen::Vector3d& ub) {
-  visualization_msgs::Marker mk;
+  visualization_msgs::msg::Marker mk;
   mk.header.frame_id = "world";
-  mk.header.stamp = ros::Time::now();
-  mk.type = visualization_msgs::Marker::CUBE;
-  mk.action = visualization_msgs::Marker::ADD;
+  mk.header.stamp = node_->now();
+  mk.type = visualization_msgs::msg::Marker::CUBE;
+  mk.action = visualization_msgs::msg::Marker::ADD;
   mk.id = 0;
 
   Eigen::Vector3d pos = 0.5 * (lb + ub);
@@ -446,7 +455,7 @@ void HeadingPlanner::visualizeBox(const Eigen::Vector3d& lb, const Eigen::Vector
   mk.pose.orientation.y = 0.0;
   mk.pose.orientation.z = 0.0;
 
-  box_pub_.publish(mk);
+  box_pub_->publish(mk);
 }
 
 void HeadingPlanner::distToPathAndCurPos(const Eigen::Vector3d& check_pt,
@@ -515,7 +524,7 @@ void HeadingPlanner::setFrontier(const vector<vector<Eigen::Vector3d>>& frontier
 
 void HeadingPlanner::calcVisibFrontier(const Eigen::Vector3d& pt, const double& yaw,
                                        unordered_map<int, int>& visib_idx) {
-  auto t1 = ros::Time::now();
+  auto t1 = node_->now();
 
   // search relevant frontier points
   pcl::PointXYZ search_pt(pt[0], pt[1], pt[2]);
@@ -557,7 +566,7 @@ void HeadingPlanner::calcVisibFrontier(const Eigen::Vector3d& pt, const double& 
   // pcl::toROSMsg(visib_pts, msg);
   // visib_pub_.publish(msg);
 
-  // std::cout << "visib fronter time: " << (ros::Time::now() - t1).toSec() <<
+  // std::cout << "visib fronter time: " << (node_->now() - t1).seconds() <<
   // std::endl; std::cout << "visib size: " << visib_pts.points.size() << std::endl;
 }
 
@@ -589,9 +598,9 @@ void HeadingPlanner::showVisibFrontier(const vector<YawVertex::Ptr>& path) {
   // pcl::toROSMsg(output2, msg);
   // frontier_pub_.publish(msg);
 
-  sensor_msgs::PointCloud2 msg;
+  sensor_msgs::msg::PointCloud2 msg;
   pcl::toROSMsg(*frontier_, msg);
-  frontier_pub_.publish(msg);
+  frontier_pub_->publish(msg);
 }
 
 void HeadingPlanner::axisAlignedBoundingBox(const vector<Eigen::Vector3d>& points, Eigen::Vector3d& lb,

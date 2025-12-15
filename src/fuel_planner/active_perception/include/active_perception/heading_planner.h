@@ -8,7 +8,9 @@
 #include <memory>
 #include <mutex>
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -152,7 +154,7 @@ public:
 
 class HeadingPlanner {
 public:
-  HeadingPlanner(ros::NodeHandle& nh);
+  HeadingPlanner(const rclcpp::Node::SharedPtr& node);
   ~HeadingPlanner();
 
   void setMap(const shared_ptr<SDFMap>& map);
@@ -201,7 +203,10 @@ private:
   double tanyz_, tanxz_, near_, far_;
   Eigen::Matrix4d T_cb_, T_bc_;  // transform between camera and body frame
   // debug
-  ros::Publisher frontier_pub_, visib_pub_, box_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr frontier_pub_, visib_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr box_pub_;
+  rclcpp::Node::SharedPtr node_;
+
   // params
   double yaw_diff_, lambda1_, lambda2_;
   int half_vert_num_;
