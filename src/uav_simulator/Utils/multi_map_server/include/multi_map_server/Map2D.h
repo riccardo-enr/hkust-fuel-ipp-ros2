@@ -1,17 +1,31 @@
 #ifndef MAP2D_H
 #define MAP2D_H
 
+#include <cmath>
 #include <iostream>
-#include <ros/ros.h>
-#include <tf/tf.h>
-#include <nav_msgs/OccupancyGrid.h>
+#include <string>
+#include <vector>
+
+#include <builtin_interfaces/msg/time.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 using namespace std;
+using nav_msgs::msg::OccupancyGrid;
+
+inline geometry_msgs::msg::Quaternion CreateQuaternionMsgFromYaw(double yaw) {
+  tf2::Quaternion q;
+  q.setRPY(0.0, 0.0, yaw);
+  return tf2::toMsg(q);
+}
 
 class Map2D {
 
 private:
-  nav_msgs::OccupancyGrid map;
+  OccupancyGrid map;
   int expandStep;
   int binning;
   bool isBinningSet;
@@ -20,7 +34,7 @@ private:
 public:
   Map2D() {
     map.data.resize(0);
-    map.info.origin.orientation = tf::createQuaternionMsgFromYaw(0.0);
+    map.info.origin.orientation = CreateQuaternionMsgFromYaw(0.0);
     expandStep = 200;
     binning = 1;
     isBinningSet = false;
@@ -29,7 +43,7 @@ public:
 
   Map2D(int _binning) {
     map.data.resize(0);
-    map.info.origin.orientation = tf::createQuaternionMsgFromYaw(0.0);
+    map.info.origin.orientation = CreateQuaternionMsgFromYaw(0.0);
     expandStep = 200;
     binning = _binning;
     isBinningSet = true;
@@ -58,7 +72,7 @@ public:
     return updated;
   }
   void Reset() {
-    map = nav_msgs::OccupancyGrid();
+    map = OccupancyGrid();
   }
 
   void SetBinning(int _binning) {
@@ -75,7 +89,7 @@ public:
       return map.data[ym * map.info.width + xm];
   }
 
-  void Replace(nav_msgs::OccupancyGrid m) {
+  void Replace(OccupancyGrid m) {
     // Check data
     if (m.data.size() == 0) return;
     isBinningSet = true;
@@ -106,7 +120,7 @@ public:
   }
 
   // Merge submap
-  void Update(nav_msgs::OccupancyGrid m) {
+  void Update(OccupancyGrid m) {
     // Check data
     if (m.data.size() == 0) return;
     isBinningSet = true;
@@ -139,7 +153,7 @@ public:
     // Get Info
     double ox = m.info.origin.position.x;
     double oy = m.info.origin.position.y;
-    double oyaw = tf::getYaw(m.info.origin.orientation);
+    double oyaw = tf2::getYaw(m.info.origin.orientation);
     double syaw = sin(oyaw);
     double cyaw = cos(oyaw);
     int mx = m.info.width;
@@ -218,10 +232,11 @@ public:
     updated = true;
   }
 
-  const nav_msgs::OccupancyGrid& GetMap() {
-    map.header.stamp = ros::Time::now();
-    map.info.map_load_time = ros::Time::now();
-    map.header.frame_id = string("/map");
+  const OccupancyGrid& GetMap(const builtin_interfaces::msg::Time& stamp,
+                              const string& frame_id = "map") {
+    map.header.stamp = stamp;
+    map.info.map_load_time = stamp;
+    map.header.frame_id = frame_id;
     updated = false;
     return map;
   }

@@ -15,13 +15,10 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(laser_geometry REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(pose_utils REQUIRED)
-find_package(quadrotor_msgs REQUIRED)
 find_package(Armadillo REQUIRED)
 
 # Generate messages
@@ -30,7 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MultiSparseMap3D.msg"
   "msg/SparseMap3D.msg"
   "msg/VerticalOccupancyGridList.msg"
-  DEPENDENCIES geometry_msgs nav_msgs
+  DEPENDENCIES geometry_msgs nav_msgs std_msgs
 )
 
 include_directories(
@@ -44,18 +41,22 @@ ament_target_dependencies(multi_map_visualization
   rclcpp
   geometry_msgs
   nav_msgs
-  visualization_msgs
+  sensor_msgs
   tf2
-  tf2_ros
-  std_srvs
-  laser_geometry
+  tf2_geometry_msgs
   pose_utils
-  quadrotor_msgs
 )
 
 target_link_libraries(multi_map_visualization 
   ${ARMADILLO_LIBRARIES}
 )
+
+target_include_directories(multi_map_visualization PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>
+)
+
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(multi_map_visualization ${cpp_typesupport_target})
 
 # Install
 install(TARGETS multi_map_visualization

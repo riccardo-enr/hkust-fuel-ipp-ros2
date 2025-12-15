@@ -1,13 +1,25 @@
 #ifndef MAP3D_H
 #define MAP3D_H
 
+#include <chrono>
+#include <cmath>
 #include <iostream>
-#include <ros/ros.h>
-#include <tf/tf.h>
+#include <list>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <armadillo>
-#include <multi_map_server/SparseMap3D.h>
+#include <builtin_interfaces/msg/time.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <multi_map_server/msg/sparse_map3_d.hpp>
+#include <multi_map_server/msg/vertical_occupancy_grid_list.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 using namespace std;
+using multi_map_server::msg::SparseMap3D;
+using multi_map_server::msg::VerticalOccupancyGridList;
 
 // Occupancy probability of a sensor
 #define PROB_OCCUPIED 0.95
@@ -38,7 +50,7 @@ using namespace std;
 #define FREE -1
 
 // Cell Struct -----------------------------------------
-struct OccupancyGrid {
+struct OccupancyInterval {
   int upper;
   int lower;
   int mass;
@@ -54,23 +66,23 @@ public:
   ~OccupancyGridList() {
   }
 
-  void PackMsg(multi_map_server::VerticalOccupancyGridList& msg) {
+  void PackMsg(VerticalOccupancyGridList& msg) {
     msg.x = x;
     msg.y = y;
-    for (list<OccupancyGrid>::iterator k = grids.begin(); k != grids.end(); k++) {
+    for (list<OccupancyInterval>::iterator k = grids.begin(); k != grids.end(); k++) {
       msg.upper.push_back(k->upper);
       msg.lower.push_back(k->lower);
       msg.mass.push_back(k->mass);
     }
   }
 
-  void UnpackMsg(const multi_map_server::VerticalOccupancyGridList& msg) {
+  void UnpackMsg(const VerticalOccupancyGridList& msg) {
     x = msg.x;
     y = msg.y;
     updateCounter = 0;
     grids.clear();
     for (unsigned int k = 0; k < msg.mass.size(); k++) {
-      OccupancyGrid c;
+      OccupancyInterval c;
       c.upper = msg.upper[k];
       c.lower = msg.lower[k];
       c.mass = msg.mass[k];
@@ -78,9 +90,9 @@ public:
     }
   }
 
-  void GetOccupancyGrids(vector<OccupancyGrid>& _grids) {
+  void GetOccupancyGrids(vector<OccupancyInterval>& _grids) {
     _grids.clear();
-    for (list<OccupancyGrid>::iterator k = grids.begin(); k != grids.end(); k++)
+    for (list<OccupancyInterval>::iterator k = grids.begin(); k != grids.end(); k++)
       _grids.push_back((*k));
   }
 
@@ -95,13 +107,13 @@ public:
   }
 
   inline int GetOccupancyValue(int mz) {
-    for (list<OccupancyGrid>::iterator k = grids.begin(); k != grids.end(); k++)
+    for (list<OccupancyInterval>::iterator k = grids.begin(); k != grids.end(); k++)
       if (mz <= k->upper && mz >= k->lower) return k->mass / (k->upper - k->lower + 1);
     return 0;
   }
 
   inline void DeleteOccupancyGrid(int mz) {
-    for (list<OccupancyGrid>::iterator k = grids.begin(); k != grids.end(); k++) {
+    for (list<OccupancyInterval>::iterator k = grids.begin(); k != grids.end(); k++) {
       if (mz <= k->upper && mz >= k->lower) {
         grids.erase(k);
         return;
@@ -111,12 +123,12 @@ public:
   }
 
   inline void SetOccupancyValue(int mz, int value) {
-    OccupancyGrid grid;
+    OccupancyInterval grid;
     grid.upper = mz;
     grid.lower = mz;
     grid.mass = value;
 
-    list<OccupancyGrid>::iterator gend = grids.end();
+    list<OccupancyInterval>::iterator gend = grids.end();
     gend--;
 
     if (grids.size() == 0)  // Empty case
@@ -143,13 +155,13 @@ public:
       return;
     } else  // General case
     {
-      for (list<OccupancyGrid>::iterator k = grids.begin(); k != grids.end(); k++) {
+      for (list<OccupancyInterval>::iterator k = grids.begin(); k != grids.end(); k++) {
         if (mz <= k->upper && mz >= k->lower)  // Within a grid
         {
           k->mass += value;
           return;
         } else if (k != gend) {
-          list<OccupancyGrid>::iterator j = k;
+          list<OccupancyInterval>::iterator j = k;
           j++;
           if (k->lower - mz == 1 && mz - j->upper > 1)  // ###*--###
           {
@@ -181,12 +193,12 @@ public:
   inline void Merge(const OccupancyGridList& gridsIn) {
     // Create a sorted list containing both upper and lower values
     list<pair<int, int> > lp;
-    for (list<OccupancyGrid>::const_iterator k = grids.begin(); k != grids.end(); k++) {
+    for (list<OccupancyInterval>::const_iterator k = grids.begin(); k != grids.end(); k++) {
       lp.push_back(make_pair(k->upper, k->mass));
       lp.push_back(make_pair(k->lower, -1));
     }
     list<pair<int, int> > lp2;
-    for (list<OccupancyGrid>::const_iterator k = gridsIn.grids.begin(); k != gridsIn.grids.end(); k++) {
+    for (list<OccupancyInterval>::const_iterator k = gridsIn.grids.begin(); k != gridsIn.grids.end(); k++) {
       lp2.push_back(make_pair(k->upper, k->mass));
       lp2.push_back(make_pair(k->lower, -1));
     }
@@ -215,7 +227,7 @@ public:
         if (k->first - (++j)->first == 1) continue;
       }
       if (lowerCnt == upperCnt) {
-        OccupancyGrid c;
+        OccupancyInterval c;
         c.upper = currUpper;
         c.lower = currLower;
         c.mass = currMass;
@@ -226,7 +238,7 @@ public:
   }
 
   inline void Decay(int upThr, int lowThr, double factor) {
-    for (list<OccupancyGrid>::iterator k = grids.begin(); k != grids.end(); k++) {
+    for (list<OccupancyInterval>::iterator k = grids.begin(); k != grids.end(); k++) {
       int val = k->mass / (k->upper - k->lower + 1);
       if (val < upThr && val > lowThr) k->mass *= factor;
     }
@@ -243,7 +255,7 @@ private:
   };
 
   // List of vertical occupancy values
-  list<OccupancyGrid> grids;
+  list<OccupancyInterval> grids;
   // Location of the list in world frame
   double x;
   double y;
@@ -314,22 +326,25 @@ public:
     }
   }
 
-  void PackMsg(multi_map_server::SparseMap3D& msg) {
+  void PackMsg(SparseMap3D& msg, const builtin_interfaces::msg::Time& stamp,
+               const string& frame_id = "map") {
     // Basic map info
-    msg.header.stamp = ros::Time::now();
-    msg.header.frame_id = string("/map");
-    msg.info.map_load_time = ros::Time::now();
+    msg.header.stamp = stamp;
+    msg.header.frame_id = frame_id;
+    msg.info.map_load_time = stamp;
     msg.info.resolution = resolution;
     msg.info.origin.position.x = originX;
     msg.info.origin.position.y = originY;
     msg.info.origin.position.z = originZ;
     msg.info.width = mapX;
     msg.info.height = mapY;
-    msg.info.origin.orientation = tf::createQuaternionMsgFromYaw(0.0);
+    tf2::Quaternion q;
+    q.setRPY(0.0, 0.0, 0.0);
+    msg.info.origin.orientation = tf2::toMsg(q);
     // Pack columns into message
     msg.lists.clear();
     for (unsigned int k = 0; k < updateList.size(); k++) {
-      multi_map_server::VerticalOccupancyGridList c;
+      VerticalOccupancyGridList c;
       updateList[k]->PackMsg(c);
       msg.lists.push_back(c);
     }
@@ -337,7 +352,7 @@ public:
     updateCounter++;
   }
 
-  void UnpackMsg(const multi_map_server::SparseMap3D& msg) {
+  void UnpackMsg(const SparseMap3D& msg) {
     // Unpack column msgs, Replace the whole column
     for (unsigned int k = 0; k < msg.lists.size(); k++) {
       int mx, my, mz;
@@ -402,7 +417,7 @@ public:
     for (int mx = 0; mx < mapX; mx++) {
       for (int my = 0; my < mapY; my++) {
         if (mapBase[my * mapX + mx]) {
-          vector<OccupancyGrid> grids;
+          vector<OccupancyInterval> grids;
           mapBase[my * mapX + mx]->GetOccupancyGrids(grids);
           for (unsigned int k = 0; k < grids.size(); k++) {
             if ((grids[k].mass / (grids[k].upper - grids[k].lower + 1) > logOddOccupiedThr &&
@@ -506,9 +521,10 @@ private:
   void CheckDecayMap() {
     if (decayInterval < 0) return;
     // Check whether to decay
-    static ros::Time prevDecayT = ros::Time::now();
-    ros::Time t = ros::Time::now();
-    double dt = (t - prevDecayT).toSec();
+    using clock = chrono::steady_clock;
+    static auto prevDecayT = clock::now();
+    auto t = clock::now();
+    double dt = chrono::duration<double>(t - prevDecayT).count();
     if (dt > decayInterval) {
       double r = pow(LOG_ODD_DECAY_RATE, dt);
       for (int mx = 0; mx < mapX; mx++)
