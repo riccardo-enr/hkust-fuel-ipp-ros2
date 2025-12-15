@@ -112,6 +112,11 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
   && tar xf lazygit.tar.gz -C /usr/local/bin \
   && rm lazygit.tar.gz
 
+ARG GITHUB_USER_EMAIL
+ARG GITHUB_USER_NAME
+RUN git config --global user.email "$GITHUB_USER_EMAIL" && \
+  git config --global user.name "$GITHUB_USER_NAME"
+
 # Source ROS 2 and workspace in .bashrc for interactive shells
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/ubuntu/.bashrc && \
   echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> /home/ubuntu/.bashrc
