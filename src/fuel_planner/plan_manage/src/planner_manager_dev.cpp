@@ -5,9 +5,9 @@
 
 namespace fast_planner {
 void FastPlannerManager::planYawActMap(const Eigen::Vector3d& start_yaw) {
-  ROS_INFO("Plan yaw active mapping-----------------");
-  auto t1 = ros::Time::now();
-  auto t2 = ros::Time::now();
+  RCLCPP_INFO(node_->get_logger(), "Plan yaw active mapping-----------------");
+  auto t1 = node_->get_clock()->now();
+  auto t2 = node_->get_clock()->now();
 
   double t_traj = local_data_.duration_;
   // search subsequent yaws
@@ -55,10 +55,10 @@ void FastPlannerManager::planYawActMap(const Eigen::Vector3d& start_yaw) {
     waypts.emplace_back(yc, 0, 0);
   }
   spyaw[0] = start_yaw3d[0];
-  // std::cout << "discretize time: " << (ros::Time::now() - t2).toSec() <<
+  // std::cout << "discretize time: " << (node_->get_clock()->now() - t2).seconds() <<
   // std::endl;
 
-  t2 = ros::Time::now();
+  t2 = node_->get_clock()->now();
   vector<double> path;
   heading_planner_->searchPathOfYaw(pts, spyaw, dt_path, local_data_.position_traj_.getControlPoint(),
                                     path);
@@ -100,7 +100,7 @@ void FastPlannerManager::planYawActMap(const Eigen::Vector3d& start_yaw) {
   plan_data_.dt_yaw_ = dt_yaw;
   plan_data_.dt_yaw_path_ = dt_yaw * subsp;
 
-  std::cout << "plan heading: " << (ros::Time::now() - t1).toSec() << std::endl;
+  std::cout << "plan heading: " << (node_->get_clock()->now() - t1).seconds() << std::endl;
   // // debug waypt error:
   // {
   //   double duration = local_data_.yaw_traj_.getTimeSum();
@@ -118,7 +118,7 @@ void FastPlannerManager::searchFrontier(const Eigen::Vector3d& p) {
 }
 
 void FastPlannerManager::test() {
-  auto t1 = ros::Time::now();
+  auto t1 = node_->get_clock()->now();
   std::cout << "test-------------------" << std::endl;
 
   Graph graph_yaw;
@@ -127,7 +127,7 @@ void FastPlannerManager::test() {
 
 bool FastPlannerManager::localExplore(Eigen::Vector3d start, Eigen::Vector3d start_vel,
                                       Eigen::Vector3d start_acc, Eigen::Vector3d goal) {
-  local_data_.start_time_ = ros::Time::now();
+  local_data_.start_time_ = node_->get_clock()->now();
 
   Eigen::Vector3d gi;
   double dist_to_goal = (goal - start).norm();
@@ -178,7 +178,7 @@ bool FastPlannerManager::localExplore(Eigen::Vector3d start, Eigen::Vector3d sta
     points_cloud.height = 1;
     points_cloud.is_dense = true;
     points_cloud.header.frame_id = "world";
-    sensor_msgs::PointCloud2 cloud_msg;
+    sensor_msgs::msg::PointCloud2 cloud_msg;
     pcl::toROSMsg(points_cloud, cloud_msg);
 
     std::cout << "Generate sample" << std::endl;
@@ -319,7 +319,7 @@ bool FastPlannerManager::localExplore(Eigen::Vector3d start, Eigen::Vector3d sta
     bspline_optimizers_[0]->optimize(ctrl_pts, dt, cost_func, 1, 1);
   }
 
-  std::cout << "Local explore time: " << (ros::Time::now() - local_data_.start_time_).toSec()
+  std::cout << "Local explore time: " << (node_->get_clock()->now() - local_data_.start_time_).seconds()
             << std::endl;
 
   local_data_.position_traj_.setUniformBspline(ctrl_pts, 3, dt);

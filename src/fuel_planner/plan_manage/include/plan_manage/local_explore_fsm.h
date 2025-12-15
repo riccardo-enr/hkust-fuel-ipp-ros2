@@ -4,18 +4,19 @@
 #include <Eigen/Eigen>
 #include <algorithm>
 #include <iostream>
-#include <nav_msgs/Path.h>
-#include <ros/ros.h>
-#include <std_msgs/Empty.h>
-#include <nav_msgs/Odometry.h>
 #include <vector>
-#include <visualization_msgs/Marker.h>
+
+#include <rclcpp/rclcpp.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <std_msgs/msg/empty.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <bspline_opt/bspline_optimizer.h>
 #include <path_searching/kinodynamic_astar.h>
 #include <plan_env/edt_environment.h>
 #include <plan_env/obj_predictor.h>
-#include <bspline/Bspline.h>
+#include <bspline/msg/bspline.hpp>
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
 
@@ -50,10 +51,12 @@ private:
   int current_wp_;
 
   /* ROS utils */
-  ros::NodeHandle node_;
-  ros::Timer exec_timer_, safety_timer_, vis_timer_, test_something_timer_;
-  ros::Subscriber waypoint_sub_, odom_sub_;
-  ros::Publisher replan_pub_, new_pub_, bspline_pub_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::TimerBase::SharedPtr exec_timer_, safety_timer_, vis_timer_, test_something_timer_;
+  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr waypoint_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr replan_pub_, new_pub_;
+  rclcpp::Publisher<bspline::msg::Bspline>::SharedPtr bspline_pub_;
 
   /* helper functions */
   bool callKinodynamicReplan();        // front-end and back-end method
@@ -63,10 +66,10 @@ private:
   void printFSMExecState();
 
   /* ROS functions */
-  void execFSMCallback(const ros::TimerEvent& e);
-  void checkCollisionCallback(const ros::TimerEvent& e);
-  void waypointCallback(const nav_msgs::PathConstPtr& msg);
-  void odometryCallback(const nav_msgs::OdometryConstPtr& msg);
+  void execFSMCallback();
+  void checkCollisionCallback();
+  void waypointCallback(const nav_msgs::msg::Path::SharedPtr msg);
+  void odometryCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
 public:
   LocalExploreFSM(/* args */) {
@@ -74,7 +77,7 @@ public:
   ~LocalExploreFSM() {
   }
 
-  void init(ros::NodeHandle& nh);
+  void init(rclcpp::Node::SharedPtr node);
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

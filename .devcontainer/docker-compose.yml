@@ -18,6 +18,7 @@ services:
       - ~/.local/share/nvim:/home/ubuntu/.local/share/nvim:cached
       - ~/.ssh:/home/ubuntu/.ssh:cached
       - ~/.codex:/home/ubuntu/.codex:cached
+      - ~/.gemini:/home/ubuntu/.gemini:cached
       - ~/.config/gh:/home/ubuntu/.config/gh:cached
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /dev:/dev:rw

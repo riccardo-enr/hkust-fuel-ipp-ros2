@@ -96,6 +96,7 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
   apt-get install -y nodejs && \
   npm install -g @openai/codex && \
+  npm install -g @google/gemini-cli && \
   rm -rf /var/lib/apt/lists/*
 
 # Install Neovim from tarball

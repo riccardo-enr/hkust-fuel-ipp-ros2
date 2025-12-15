@@ -1,17 +1,17 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Thursday, December 11, 2025
+**Last Updated:** Monday, December 15, 2025
 
 ## 1. Executive Summary
 
 **Project:** FUEL - Fast UAV Exploration
-**Goal:** Port entire codebase from ROS 1 (Noetic) to ROS 2 (Humble/Jazzy).
+**Goal:** Port entire codebase from ROS 1 (Noetic) to ROS 2 (Jazzy).
 
 | Metric           | Status      | Details                                                                       |
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All package manifests (`package.xml`) migrated.                               |
 | **Build System** | 24/25       | `CMakeLists.txt` migrated for 96% of packages. (Only `rviz_plugins` pending). |
-| **Source Code**  | In Progress | Ported path_searching and plan_env.           |
+| **Source Code**  | In Progress | Ported path_searching, plan_env, and plan_manage.                             |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -44,6 +44,11 @@
     - `topo_prm.cpp`
     - `astar2.cpp`
     - `astar2.cpp`
+13. `plan_manage`
+    - `fast_planner_node.cpp` (Entry point)
+    - `kino_replan_fsm.cpp`
+    - `topo_replan_fsm.cpp`
+    - `planner_manager.cpp`
 
 
 ### 🔄 Build System Ready (Source Pending)
@@ -57,10 +62,6 @@
 - `traj_utils`
 - `lkh_tsp_solver`
 - `exploration_manager` (Entry node migrated)
-- `plan_manage` (Entry node migrated)
-- `lkh_tsp_solver`
-- `exploration_manager` (Entry node migrated)
-- `plan_manage` (Entry node migrated)
 
 **Visualization & Simulation:**
 - `multi_map_server`
@@ -142,11 +143,11 @@
 ### Step 3: Planning Management (Priority 3)
 *Goal: Migrate the high-level Logic and FSMs.*
 
-- [ ] **3.1 plan_manage**
+- [x] **3.1 plan_manage**
     - [x] `fast_planner_node.cpp` (Entry point)
-    - [ ] `kino_replan_fsm.cpp`
-    - [ ] `topo_replan_fsm.cpp`
-    - [ ] `planner_manager.cpp`
+    - [x] `kino_replan_fsm.cpp`
+    - [x] `topo_replan_fsm.cpp`
+    - [x] `planner_manager.cpp`
 - [ ] **3.2 active_perception**
     - [ ] `frontier_finder.cpp`
     - [ ] `perception_utils.cpp`

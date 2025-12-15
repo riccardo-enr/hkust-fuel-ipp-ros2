@@ -3,7 +3,7 @@
 
 #include <Eigen/Eigen>
 #include <vector>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <bspline/non_uniform_bspline.h>
 #include <poly_traj/polynomial_traj.h>
@@ -20,7 +20,7 @@ public:
   vector<NonUniformBspline> local_traj_;
 
   double global_duration_;
-  ros::Time global_start_time_;
+  rclcpp::Time global_start_time_;
   double local_start_time_, local_end_time_;
   double time_change_;
   double last_time_inc_;
@@ -35,7 +35,7 @@ public:
     return fabs(local_end_time_ - global_duration_) < 1e-3;
   }
 
-  void setGlobalTraj(const PolynomialTraj& traj, const ros::Time& time) {
+  void setGlobalTraj(const PolynomialTraj& traj, const rclcpp::Time& time) {
     global_traj_ = traj;
     global_duration_ = global_traj_.getTotalTime();
     global_start_time_ = time;
@@ -136,7 +136,7 @@ struct LocalTrajData {
 
   int traj_id_;
   double duration_;
-  ros::Time start_time_;
+  rclcpp::Time start_time_;
   Eigen::Vector3d start_pos_;
   NonUniformBspline position_traj_, velocity_traj_, acceleration_traj_, yaw_traj_, yawdot_traj_,
       yawdotdot_traj_;
@@ -170,7 +170,7 @@ public:
     }
   }
 
-  bool evaluate(const ros::Time& time, LocalTrajState& traj_state) {
+  bool evaluate(const rclcpp::Time& time, LocalTrajState& traj_state) {
     if (traj1_.traj_id_ == 0) {
       // not receive traj yet
       return false;
@@ -182,7 +182,7 @@ public:
       traj2_.traj_id_ = 0;
     }
 
-    double t_cur = (time - traj1_.start_time_).toSec();
+    double t_cur = (time - traj1_.start_time_).seconds();
     if (t_cur < 0) {
       cout << "[Traj server]: invalid time." << endl;
       return false;
@@ -207,13 +207,13 @@ public:
   }
 
   void resetDuration() {
-    ros::Time now = ros::Time::now();
+    rclcpp::Time now = rclcpp::Clock().now();
     if (traj1_.traj_id_ != 0) {
-      double t_stop = (now - traj1_.start_time_).toSec();
+      double t_stop = (now - traj1_.start_time_).seconds();
       traj1_.duration_ = min(t_stop, traj1_.duration_);
     }
     if (traj2_.traj_id_ != 0) {
-      double t_stop = (now - traj2_.start_time_).toSec();
+      double t_stop = (now - traj2_.start_time_).seconds();
       traj2_.duration_ = min(t_stop, traj2_.duration_);
     }
   }
