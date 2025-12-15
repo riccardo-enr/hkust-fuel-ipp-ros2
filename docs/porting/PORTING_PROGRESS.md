@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Monday, December 15, 2025 04:00 PM
+**Last Updated:** Monday, December 15, 2025 04:45 PM
 
 ## 1. Executive Summary
 
@@ -11,7 +11,7 @@
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All packages now use package format 3; the duplicate ROS 1 `multi_map_server/quadrotor_msgs` copy has been removed. |
 | **Build System** | 24/25       | Only `rviz_plugins` remains Catkin; `multi_map_server` builds natively with ament after the visualization node rewrite. |
-| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, `poly_traj`'s `traj_generator`, legacy `plan_manage` tools (`traj_server`, tests). |
+| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, legacy `plan_manage` tools (`traj_server`, tests). |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -36,11 +36,12 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 10. `map_generator`
 11. `plan_env`
 12. `path_searching`
-13. `plan_manage` *(ROS 2 entry point only; legacy ROS 1 tools remain, see “Pending Source”)*
-14. `active_perception`
-15. `exploration_manager`
-16. `so3_quadrotor_simulator`
-17. `local_sensing`
+13. `poly_traj` *(traj_generator node + ROS 2 launch/test harness)*
+14. `plan_manage` *(ROS 2 entry point only; legacy ROS 1 tools remain, see “Pending Source”)*
+15. `active_perception`
+16. `exploration_manager`
+17. `so3_quadrotor_simulator`
+18. `local_sensing`
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
 18. `multi_map_server` *(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)*
@@ -53,8 +54,6 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
   - `traj_server.cpp`, `traj_server_backup.cpp`, and legacy tests under `test/` still use `ros::` APIs.
 - `local_sensing`
   - `pcl_render_node.cpp` (CUDA-based) is still a ROS 1 node.
-- `poly_traj`
-  - `traj_generator.cpp` is unported.
 
 > Legacy note: The duplicate Catkin `src/uav_simulator/Utils/multi_map_server/quadrotor_msgs` package has been deleted; depend on the ROS 2 `quadrotor_msgs` instead.
 
@@ -113,9 +112,9 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
 
 - [x] **2.1 bspline**
     - [x] `non_uniform_bspline.cpp`
-- [ ] **2.2 poly_traj**
+- [x] **2.2 poly_traj**
     - [x] `polynomial_traj.cpp`
-    - [ ] `traj_generator.cpp` (ROS 1 node pending)
+    - [x] `traj_generator.cpp` *(ROS 2 node + launch + CI test harness)*
 - [x] **2.3 path_searching**
     - [x] `astar.cpp`
     - [x] `kinodynamic_astar.cpp`

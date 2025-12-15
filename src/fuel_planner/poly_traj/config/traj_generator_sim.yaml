@@ -1,0 +1,9 @@
+traj_generator:
+  ros__parameters:
+    use_sim_time: true
+    odom_topic: /sim/odom
+    traj_marker_topic: /traj_generator/traj_vis
+    state_marker_topic: /traj_generator/cmd_vis
+    command_topic: /drone_commander/onboard_command
+    frame_id: map
+    command_rate_hz: 50.0

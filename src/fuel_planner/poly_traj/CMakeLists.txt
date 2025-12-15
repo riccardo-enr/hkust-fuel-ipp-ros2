@@ -29,6 +29,7 @@ include_directories(
 
 add_library(poly_traj
   src/polynomial_traj.cpp
+  src/traj_generator_node.cpp
 )
 
 ament_target_dependencies(poly_traj
@@ -56,6 +57,10 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
+install(DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 add_executable(traj_generator
   src/traj_generator.cpp
 )
@@ -80,6 +85,25 @@ install(TARGETS traj_generator
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_find_gtest()
+  add_executable(traj_generator_test test/traj_generator_test.cpp)
+  target_include_directories(traj_generator_test PRIVATE ${GTEST_INCLUDE_DIRS})
+  target_link_libraries(traj_generator_test
+    poly_traj
+    ${GTEST_BOTH_LIBRARIES}
+  )
+  ament_target_dependencies(traj_generator_test
+    rclcpp
+    nav_msgs
+    geometry_msgs
+    visualization_msgs
+    swarmtal_msgs
+  )
+  add_test(
+    NAME traj_generator_test
+    COMMAND bash -c "export ROS_HOME=/workspace/.ros && mkdir -p /workspace/.ros/log && source /opt/ros/jazzy/setup.bash && source /workspace/install/setup.bash && $<TARGET_FILE:traj_generator_test>"
+  )
 endif()
 
 ament_export_include_directories(include)
