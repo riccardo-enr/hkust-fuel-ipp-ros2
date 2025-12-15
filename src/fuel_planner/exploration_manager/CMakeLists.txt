@@ -17,6 +17,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
 find_package(plan_env REQUIRED)
 find_package(path_searching REQUIRED)
@@ -46,6 +48,8 @@ ament_target_dependencies(exploration_node
   rclcpp
   std_msgs
   geometry_msgs
+  nav_msgs
+  visualization_msgs
   quadrotor_msgs
   plan_env
   path_searching

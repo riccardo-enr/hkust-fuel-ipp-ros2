@@ -11,20 +11,26 @@
 using Eigen::Vector4d;
 
 namespace fast_planner {
-void FastExplorationFSM::init(ros::NodeHandle& nh) {
+void FastExplorationFSM::init(const rclcpp::Node::SharedPtr& node) {
+  node_ = node;
   fp_.reset(new FSMParam);
   fd_.reset(new FSMData);
 
   /*  Fsm param  */
-  nh.param("fsm/thresh_replan1", fp_->replan_thresh1_, -1.0);
-  nh.param("fsm/thresh_replan2", fp_->replan_thresh2_, -1.0);
-  nh.param("fsm/thresh_replan3", fp_->replan_thresh3_, -1.0);
-  nh.param("fsm/replan_time", fp_->replan_time_, -1.0);
+  node_->declare_parameter("fsm/thresh_replan1", -1.0);
+  node_->declare_parameter("fsm/thresh_replan2", -1.0);
+  node_->declare_parameter("fsm/thresh_replan3", -1.0);
+  node_->declare_parameter("fsm/replan_time", -1.0);
+
+  fp_->replan_thresh1_ = node_->get_parameter("fsm/thresh_replan1").as_double();
+  fp_->replan_thresh2_ = node_->get_parameter("fsm/thresh_replan2").as_double();
+  fp_->replan_thresh3_ = node_->get_parameter("fsm/thresh_replan3").as_double();
+  fp_->replan_time_ = node_->get_parameter("fsm/replan_time").as_double();
 
   /* Initialize main modules */
   expl_manager_.reset(new FastExplorationManager);
-  expl_manager_->initialize(nh);
-  visualization_.reset(new PlanningVisualization(nh));
+  expl_manager_->initialize(node_);
+  visualization_.reset(new PlanningVisualization(node_));
 
   planner_manager_ = expl_manager_->planner_manager_;
   state_ = EXPL_STATE::INIT;
@@ -34,27 +40,27 @@ void FastExplorationFSM::init(ros::NodeHandle& nh) {
   fd_->trigger_ = false;
 
   /* Ros sub, pub and timer */
-  exec_timer_ = nh.createTimer(ros::Duration(0.01), &FastExplorationFSM::FSMCallback, this);
-  safety_timer_ = nh.createTimer(ros::Duration(0.05), &FastExplorationFSM::safetyCallback, this);
-  frontier_timer_ = nh.createTimer(ros::Duration(0.5), &FastExplorationFSM::frontierCallback, this);
+  exec_timer_ = node_->create_wall_timer(std::chrono::milliseconds(10), std::bind(&FastExplorationFSM::FSMCallback, this));
+  safety_timer_ = node_->create_wall_timer(std::chrono::milliseconds(50), std::bind(&FastExplorationFSM::safetyCallback, this));
+  frontier_timer_ = node_->create_wall_timer(std::chrono::milliseconds(500), std::bind(&FastExplorationFSM::frontierCallback, this));
 
   trigger_sub_ =
-      nh.subscribe("/waypoint_generator/waypoints", 1, &FastExplorationFSM::triggerCallback, this);
-  odom_sub_ = nh.subscribe("/odom_world", 1, &FastExplorationFSM::odometryCallback, this);
+      node_->create_subscription<nav_msgs::msg::Path>("/waypoint_generator/waypoints", 1, std::bind(&FastExplorationFSM::triggerCallback, this, std::placeholders::_1));
+  odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>("/odom_world", 1, std::bind(&FastExplorationFSM::odometryCallback, this, std::placeholders::_1));
 
-  replan_pub_ = nh.advertise<std_msgs::Empty>("/planning/replan", 10);
-  new_pub_ = nh.advertise<std_msgs::Empty>("/planning/new", 10);
-  bspline_pub_ = nh.advertise<bspline::Bspline>("/planning/bspline", 10);
+  replan_pub_ = node_->create_publisher<std_msgs::msg::Empty>("/planning/replan", 10);
+  new_pub_ = node_->create_publisher<std_msgs::msg::Empty>("/planning/new", 10);
+  bspline_pub_ = node_->create_publisher<bspline::msg::Bspline>("/planning/bspline", 10);
 }
 
-void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
-  ROS_INFO_STREAM_THROTTLE(1.0, "[FSM]: state: " << fd_->state_str_[int(state_)]);
+void FastExplorationFSM::FSMCallback() {
+  RCLCPP_INFO_STREAM_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000, "[FSM]: state: " << fd_->state_str_[int(state_)]);
 
   switch (state_) {
     case INIT: {
       // Wait for odometry ready
       if (!fd_->have_odom_) {
-        ROS_WARN_THROTTLE(1.0, "no odom.");
+        RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000, "no odom.");
         return;
       }
       // Go to wait trigger when odom is ok
@@ -64,12 +70,12 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
 
     case WAIT_TRIGGER: {
       // Do nothing but wait for trigger
-      ROS_WARN_THROTTLE(1.0, "wait for trigger.");
+      RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000, "wait for trigger.");
       break;
     }
 
     case FINISH: {
-      ROS_INFO_THROTTLE(1.0, "finish exploration.");
+      RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000, "finish exploration.");
       break;
     }
 
@@ -85,7 +91,7 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
       } else {
         // Replan from non-static state, starting from 'replan_time' seconds later
         LocalTrajData* info = &planner_manager_->local_data_;
-        double t_r = (ros::Time::now() - info->start_time_).toSec() + fp_->replan_time_;
+        double t_r = (node_->now() - info->start_time_).seconds() + fp_->replan_time_;
 
         fd_->start_pt_ = info->position_traj_.evaluateDeBoorT(t_r);
         fd_->start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_r);
@@ -96,7 +102,7 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
       }
 
       // Inform traj_server the replanning
-      replan_pub_.publish(std_msgs::Empty());
+      replan_pub_->publish(std_msgs::msg::Empty());
       int res = callExplorationPlanner();
       if (res == SUCCEED) {
         transitState(PUB_TRAJ, "FSM");
@@ -106,20 +112,20 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
         clearVisMarker();
       } else if (res == FAIL) {
         // Still in PLAN_TRAJ state, keep replanning
-        ROS_WARN("plan fail");
+        RCLCPP_WARN(node_->get_logger(), "plan fail");
         fd_->static_state_ = true;
       }
       break;
     }
 
     case PUB_TRAJ: {
-      double dt = (ros::Time::now() - fd_->newest_traj_.start_time).toSec();
+      double dt = (node_->now() - fd_->newest_traj_.start_time).seconds();
       if (dt > 0) {
-        bspline_pub_.publish(fd_->newest_traj_);
+        bspline_pub_->publish(fd_->newest_traj_);
         fd_->static_state_ = false;
         transitState(EXEC_TRAJ, "FSM");
 
-        thread vis_thread(&FastExplorationFSM::visualize, this);
+        std::thread vis_thread(&FastExplorationFSM::visualize, this);
         vis_thread.detach();
       }
       break;
@@ -127,25 +133,25 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
 
     case EXEC_TRAJ: {
       LocalTrajData* info = &planner_manager_->local_data_;
-      double t_cur = (ros::Time::now() - info->start_time_).toSec();
+      double t_cur = (node_->now() - info->start_time_).seconds();
 
       // Replan if traj is almost fully executed
       double time_to_end = info->duration_ - t_cur;
       if (time_to_end < fp_->replan_thresh1_) {
         transitState(PLAN_TRAJ, "FSM");
-        ROS_WARN("Replan: traj fully executed=================================");
+        RCLCPP_WARN(node_->get_logger(), "Replan: traj fully executed=================================");
         return;
       }
       // Replan if next frontier to be visited is covered
       if (t_cur > fp_->replan_thresh2_ && expl_manager_->frontier_finder_->isFrontierCovered()) {
         transitState(PLAN_TRAJ, "FSM");
-        ROS_WARN("Replan: cluster covered=====================================");
+        RCLCPP_WARN(node_->get_logger(), "Replan: cluster covered=====================================");
         return;
       }
       // Replan after some time
       if (t_cur > fp_->replan_thresh3_ && !classic_) {
         transitState(PLAN_TRAJ, "FSM");
-        ROS_WARN("Replan: periodic call=======================================");
+        RCLCPP_WARN(node_->get_logger(), "Replan: periodic call=======================================");
       }
       break;
     }
@@ -153,7 +159,7 @@ void FastExplorationFSM::FSMCallback(const ros::TimerEvent& e) {
 }
 
 int FastExplorationFSM::callExplorationPlanner() {
-  ros::Time time_r = ros::Time::now() + ros::Duration(fp_->replan_time_);
+  rclcpp::Time time_r = node_->now() + rclcpp::Duration::from_seconds(fp_->replan_time_);
 
   int res = expl_manager_->planExploreMotion(fd_->start_pt_, fd_->start_vel_, fd_->start_acc_,
                                              fd_->start_yaw_);
@@ -167,15 +173,15 @@ int FastExplorationFSM::callExplorationPlanner() {
 
   if (res == SUCCEED) {
     auto info = &planner_manager_->local_data_;
-    info->start_time_ = (ros::Time::now() - time_r).toSec() > 0 ? ros::Time::now() : time_r;
+    info->start_time_ = (node_->now() - time_r).seconds() > 0 ? node_->now() : time_r;
 
-    bspline::Bspline bspline;
+    bspline::msg::Bspline bspline;
     bspline.order = planner_manager_->pp_.bspline_degree_;
     bspline.start_time = info->start_time_;
     bspline.traj_id = info->traj_id_;
     Eigen::MatrixXd pos_pts = info->position_traj_.getControlPoint();
     for (int i = 0; i < pos_pts.rows(); ++i) {
-      geometry_msgs::Point pt;
+      geometry_msgs::msg::Point pt;
       pt.x = pos_pts(i, 0);
       pt.y = pos_pts(i, 1);
       pt.z = pos_pts(i, 2);
@@ -273,7 +279,7 @@ void FastExplorationFSM::clearVisMarker() {
   // visualization_->drawLines({}, {}, 0.03, Vector4d(1, 0, 0, 1), "current_pose", 0, 6);
 }
 
-void FastExplorationFSM::frontierCallback(const ros::TimerEvent& e) {
+void FastExplorationFSM::frontierCallback() {
   static int delay = 0;
   if (++delay < 5) return;
 
@@ -307,7 +313,7 @@ void FastExplorationFSM::frontierCallback(const ros::TimerEvent& e) {
   // {
   //   static double astar_time = 0.0;
   //   static int astar_num = 0;
-  //   auto t1 = ros::Time::now();
+  //   auto t1 = node_->now();
 
   //   planner_manager_->path_finder_->reset();
   //   planner_manager_->path_finder_->setResolution(0.4);
@@ -319,32 +325,32 @@ void FastExplorationFSM::frontierCallback(const ros::TimerEvent& e) {
   //     visualization_->drawCubes(visit, 0.3, Vector4d(0, 0, 1, 0.4), "astar-visit", 0, 6);
   //   }
   //   astar_num += 1;
-  //   astar_time = (ros::Time::now() - t1).toSec();
-  //   ROS_WARN("Average astar time: %lf", astar_time);
+  //   astar_time = (node_->now() - t1).seconds();
+  //   RCLCPP_WARN(node_->get_logger(), "Average astar time: %lf", astar_time);
   // }
 }
 
-void FastExplorationFSM::triggerCallback(const nav_msgs::PathConstPtr& msg) {
+void FastExplorationFSM::triggerCallback(const nav_msgs::msg::Path::SharedPtr msg) {
   if (msg->poses[0].pose.position.z < -0.1) return;
   if (state_ != WAIT_TRIGGER) return;
   fd_->trigger_ = true;
-  cout << "Triggered!" << endl;
+  std::cout << "Triggered!" << std::endl;
   transitState(PLAN_TRAJ, "triggerCallback");
 }
 
-void FastExplorationFSM::safetyCallback(const ros::TimerEvent& e) {
+void FastExplorationFSM::safetyCallback() {
   if (state_ == EXPL_STATE::EXEC_TRAJ) {
     // Check safety and trigger replan if necessary
     double dist;
     bool safe = planner_manager_->checkTrajCollision(dist);
     if (!safe) {
-      ROS_WARN("Replan: collision detected==================================");
+      RCLCPP_WARN(node_->get_logger(), "Replan: collision detected==================================");
       transitState(PLAN_TRAJ, "safetyCallback");
     }
   }
 }
 
-void FastExplorationFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
+void FastExplorationFSM::odometryCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
   fd_->odom_pos_(0) = msg->pose.pose.position.x;
   fd_->odom_pos_(1) = msg->pose.pose.position.y;
   fd_->odom_pos_(2) = msg->pose.pose.position.z;
@@ -367,7 +373,7 @@ void FastExplorationFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg)
 void FastExplorationFSM::transitState(EXPL_STATE new_state, string pos_call) {
   int pre_s = int(state_);
   state_ = new_state;
-  cout << "[" + pos_call + "]: from " + fd_->state_str_[pre_s] + " to " + fd_->state_str_[int(new_state)]
-       << endl;
+  std::cout << "[" + pos_call + "]: from " + fd_->state_str_[pre_s] + " to " + fd_->state_str_[int(new_state)]
+       << std::endl;
 }
 }  // namespace fast_planner

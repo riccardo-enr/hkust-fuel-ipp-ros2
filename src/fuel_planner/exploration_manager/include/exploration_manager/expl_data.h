@@ -3,7 +3,7 @@
 
 #include <Eigen/Eigen>
 #include <vector>
-#include <bspline/Bspline.h>
+#include <bspline/msg/bspline.hpp>
 
 using std::vector;
 using Eigen::Vector3d;
@@ -20,7 +20,7 @@ struct FSMData {
 
   Eigen::Vector3d start_pt_, start_vel_, start_acc_, start_yaw_;  // start state
   vector<Eigen::Vector3d> start_poss;
-  bspline::Bspline newest_traj_;
+  bspline::msg::Bspline newest_traj_;
 };
 
 struct FSMParam {

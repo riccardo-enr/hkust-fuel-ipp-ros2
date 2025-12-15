@@ -1,7 +1,7 @@
 #ifndef _EXPLORATION_MANAGER_H_
 #define _EXPLORATION_MANAGER_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <Eigen/Eigen>
 #include <memory>
 #include <vector>
@@ -26,7 +26,7 @@ public:
   FastExplorationManager();
   ~FastExplorationManager();
 
-  void initialize(ros::NodeHandle& nh);
+  void initialize(rclcpp::Node::SharedPtr node);
 
   int planExploreMotion(const Vector3d& pos, const Vector3d& vel, const Vector3d& acc,
                         const Vector3d& yaw);
@@ -55,6 +55,8 @@ private:
                        vector<Vector3d>& refined_pts, vector<double>& refined_yaws);
 
   void shortenPath(vector<Vector3d>& path);
+
+  rclcpp::Node::SharedPtr node_;
 
 public:
   typedef shared_ptr<FastExplorationManager> Ptr;
