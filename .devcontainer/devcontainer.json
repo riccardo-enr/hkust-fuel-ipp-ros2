@@ -1,0 +1,37 @@
+{
+  "name": "FUEL ROS 2 Jazzy",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "fuel-dev",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "ms-python.python",
+        "Ranch-Hand-Robotics.rde-pack",
+        "dotjoshjohnson.xml",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "cmake.configureOnOpen": false,
+        "python.autoComplete.extraPaths": [
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/opt/ros/jazzy/local/lib/python3.12/dist-packages"
+        ],
+        "python.analysis.extraPaths": [
+          "/opt/ros/jazzy/lib/python3.12/site-packages",
+          "/opt/ros/jazzy/local/lib/python3.12/dist-packages"
+        ],
+        "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+        "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+        "C_Cpp.default.cStandard": "c11",
+        "C_Cpp.default.cppStandard": "c++17"
+      }
+    }
+  },
+  "remoteUser": "ubuntu"
+}

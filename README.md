@@ -1,11 +1,17 @@
-# FUEL
+# FUEL - ROS 2 Port
+
+__Status:__ This is a ROS 2 port of the original FUEL project. Migration is in progress.
+
+__Original Project:__ [HKUST-Aerial-Robotics/FUEL](https://github.com/HKUST-Aerial-Robotics/FUEL)
 
 __News:__
 
+- Dec 9, 2025: ROS 2 migration started
 - Feb 24, 2023: the code for **multi-UAV exploration** is released! check [this link](https://github.com/SYSU-STAR/RACER).
 - Aug 24, 2021: The CPU-based simulation is released, CUDA is no longer required. Richer exploration environments are provided.
-  
-**FUEL** is a powerful framework for **F**ast **U**AV **E**xp**L**oration.
+
+**FUEL** is a framework for **F**ast **U**AV **E**xp**L**oration.
+
 Our method is demonstrated to complete challenging exploration tasks **3-8 times** faster than state-of-the-art approaches at the time of publication.
 Central to it is a Frontier Information Structure (FIS), which maintains crucial information for exploration planning incrementally along with the online built map. Based on the FIS, a hierarchical planner plans frontier coverage paths, refine local viewpoints, and generates minimum-time trajectories in sequence to explore unknown environment agilely and safely. Try [Quick Start](#quick-start) to run a demo in a few minutes!  
 
@@ -58,10 +64,14 @@ Please kindly star :star: this project if it helps you. We take great efforts to
 
 ## Quick Start
 
-This project has been tested on Ubuntu 18.04(ROS Melodic) and 20.04(ROS Noetic).
+**Note: This repository is being ported to ROS 2.** The migration is in progress. Some features may not work correctly until the migration is complete.
+
+This project is being migrated from ROS 1 to ROS 2. The original version was tested on Ubuntu 18.04 (ROS Melodic) and 20.04 (ROS Noetic). The ROS 2 version targets Ubuntu 22.04 (ROS 2 Humble) or Ubuntu 24.04 (ROS 2 Jazzy).
+
+### Dependencies
 
 Firstly, you should install __nlopt v2.7.1__:
-```
+```bash
 git clone -b v2.7.1 https://github.com/stevengj/nlopt.git
 cd nlopt
 mkdir build
@@ -72,31 +82,29 @@ sudo make install
 ```
 
 Next, you can run the following commands to install other required tools:
-```
+```bash
 sudo apt-get install libarmadillo-dev
 ```
 
-<!-- To simulate the depth camera, we use a simulator based on CUDA Toolkit. Please install it first following the [instruction of CUDA](https://developer.nvidia.com/zh-cn/cuda-toolkit). 
+### Building with ROS 2
 
-After successful installation, in the **local_sensing** package in **uav_simulator**, remember to change the 'arch' and 'code' flags in CMakelist.txt according to your graphics card devices. You can check the right code [here](https://github.com/tpruvot/ccminer/wiki/Compatibility). For example:
+Then simply clone and compile our package:
 
-```
-  set(CUDA_NVCC_FLAGS 
-    -gencode arch=compute_61,code=sm_61;
-  ) 
-``` -->
-
-Then simply clone and compile our package (using ssh here):
-
-```
+```bash
 cd ${YOUR_WORKSPACE_PATH}/src
-git clone git@github.com:HKUST-Aerial-Robotics/FUEL.git
-cd ../ 
-catkin_make
+git clone git@github.com:riccardo-enr/hkust-fuel-ipp-ros2.git
+cd ../
+colcon build
 ```
 
-After compilation you can start a sample exploration demo. Firstly run ```Rviz``` for visualization: 
+**Note:** The build instructions are for ROS 2. For the original ROS 1 version, please use the main FUEL repository.
 
+### Running (Work in Progress)
+
+After compilation you can start a sample exploration demo. The launch files are being converted to ROS 2 format.
+
+<!-- Original ROS 1 instructions:
+Firstly run ```Rviz``` for visualization: 
 ```
 source devel/setup.bash && roslaunch exploration_manager rviz.launch
 ```
@@ -104,10 +112,9 @@ then run the simulation (run in a new terminals):
 ```
 source devel/setup.bash && roslaunch exploration_manager exploration.launch
 ```
+-->
 
 By default you can see an office-like environment. Trigger the quadrotor to start exploration by the ```2D Nav Goal``` tool in ```Rviz```. A sample is shown below, where unexplored structures are shown in grey and explored ones are shown in colorful voxels. The FoV and trajectories of the quadrotor are also displayed.
-
-<!-- You will find a cluttered scene to be explored (20m x 12m x 2m) and the drone . You can trigger the exploration to start by  A sample simulation is shown in the figure. The unknown obstacles are shown in grey, while the frontiers are shown as colorful voxels. The planned and executed trajectories are also displayed. -->
 
  <p id="demo1" align="center">
   <img src="files/office.gif" width = "600" height = "325"/>
