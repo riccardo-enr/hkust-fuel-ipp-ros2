@@ -20,6 +20,10 @@
 using namespace arma;
 using namespace std;
 
+namespace {
+constexpr double kPi = 3.14159265358979323846;
+}
+
 class OdomVisualization : public rclcpp::Node {
 public:
   OdomVisualization() : Node("odom_visualization") {
@@ -421,7 +425,7 @@ private:
     q(3) = msg->pose.pose.orientation.z;
     if (cross_config_) {
       colvec ypr = R_to_ypr(quaternion_to_R(q));
-      ypr(0) += 45.0 * PI / 180.0;
+      ypr(0) += 45.0 * kPi / 180.0;
       q = R_to_quaternion(ypr_to_R(ypr));
     }
     meshROS_.pose.orientation.w = q(0);
@@ -528,7 +532,7 @@ private:
 
     if (cross_config_) {
       colvec ypr = R_to_ypr(quaternion_to_R(q));
-      ypr(0) += 45.0 * PI / 180.0;
+      ypr(0) += 45.0 * kPi / 180.0;
       q = R_to_quaternion(ypr_to_R(ypr));
     }
     meshROS_.pose.orientation.w = q(0);
