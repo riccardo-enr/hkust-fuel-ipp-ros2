@@ -69,6 +69,12 @@ RUN mkdir -p /home/$USERNAME/.config/nvim \
   /home/$USERNAME/.ssh \
   && chown -R $USERNAME:$USER_GID /home/$USERNAME
 
+# Source ROS 2 and the workspace for interactive shells
+RUN for shell_rc in /root/.bashrc /home/$USERNAME/.bashrc; do \
+  echo "source /opt/ros/jazzy/setup.bash" >> ${shell_rc}; \
+  echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> ${shell_rc}; \
+  done
+
 # Initialize rosdep
 RUN rosdep init || true && rosdep update
 
@@ -116,10 +122,6 @@ ARG GITHUB_USER_EMAIL
 ARG GITHUB_USER_NAME
 RUN git config --global user.email "$GITHUB_USER_EMAIL" && \
   git config --global user.name "$GITHUB_USER_NAME"
-
-# Source ROS 2 and workspace in .bashrc for interactive shells
-RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/ubuntu/.bashrc && \
-  echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> /home/ubuntu/.bashrc
 
 WORKDIR /workspace
 
