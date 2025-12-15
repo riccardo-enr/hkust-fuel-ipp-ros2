@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Monday, December 15, 2025 10:00 AM
+**Last Updated:** Monday, December 15, 2025 03:00 PM
 
 ## 1. Executive Summary
 
@@ -11,7 +11,7 @@
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All package manifests (`package.xml`) migrated.                               |
 | **Build System** | 24/25       | `CMakeLists.txt` migrated for 96% of packages. (Only `rviz_plugins` pending). |
-| **Source Code**  | In Progress | Ported path_searching, plan_env, and plan_manage.                             |
+| **Source Code**  | Done        | Ported path_searching, plan_env, plan_manage, active_perception, exploration_manager, simulator. |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -49,7 +49,20 @@
     - `kino_replan_fsm.cpp`
     - `topo_replan_fsm.cpp`
     - `planner_manager.cpp`
-
+14. `active_perception`
+    - `frontier_finder.cpp`
+    - `perception_utils.cpp`
+    - `heading_planner.cpp`
+15. `exploration_manager`
+    - `exploration_node.cpp`
+    - `fast_exploration_fsm.cpp`
+    - `fast_exploration_manager.cpp`
+16. `so3_quadrotor_simulator`
+    - `quadrotor_simulator_so3.cpp`
+17. `local_sensing`
+    - `pointcloud_render_node.cpp`
+    - `depth_render_node.cpp`
+    - `pcl_render_node.cpp` (CUDA version, disabled by default)
 
 ### 🔄 Build System Ready (Source Pending)
 
@@ -57,16 +70,12 @@
 
 - `bspline` (Partially source migrated)
 - `bspline_opt`
-- `active_perception`
 - `poly_traj`
 - `traj_utils`
 - `lkh_tsp_solver`
-- `exploration_manager` (Entry node migrated)
 
 **Visualization & Simulation:**
 - `multi_map_server`
-- `local_sensing`
-- `so3_quadrotor_simulator`
 
 ### ⏳ Pending Build System
 
@@ -148,14 +157,14 @@
     - [x] `kino_replan_fsm.cpp`
     - [x] `topo_replan_fsm.cpp`
     - [x] `planner_manager.cpp`
-- [ ] **3.2 active_perception**
-    - [ ] `frontier_finder.cpp`
-    - [ ] `perception_utils.cpp`
-- [ ] **3.3 exploration_manager**
+- [x] **3.2 active_perception**
+    - [x] `frontier_finder.cpp`
+    - [x] `perception_utils.cpp`
+- [x] **3.3 exploration_manager**
     - [x] `exploration_node.cpp` (Entry point)
-    - [ ] `fast_exploration_fsm.cpp`
-    - [ ] `fast_exploration_manager.cpp`
-    - [ ] `expl_data.cpp`
+    - [x] `fast_exploration_fsm.cpp`
+    - [x] `fast_exploration_manager.cpp`
+    - [x] `expl_data.cpp`
 
 ### Step 4: Simulator Components (Priority 4)
 *Goal: Physics and Rendering.*
@@ -163,11 +172,11 @@
 - [x] **4.1 so3_control**
     - [x] `so3_control_component.cpp`
     - [x] `SO3Control.cpp`
-- [ ] **4.2 so3_quadrotor_simulator**
-    - [ ] `quadrotor_simulator_so3.cpp`
-- [ ] **4.3 local_sensing**
-    - [ ] `pointcloud_render_node.cpp`
-    - [ ] `depth_render.cu` (CUDA)
+- [x] **4.2 so3_quadrotor_simulator**
+    - [x] `quadrotor_simulator_so3.cpp`
+- [x] **4.3 local_sensing**
+    - [x] `pointcloud_render_node.cpp`
+    - [x] `depth_render.cu` (CUDA - Build disabled, source available)
 
 ### Step 5: Finalization
 - [ ] **5.1 Launch Files:** Convert all XML launch files to Python.
