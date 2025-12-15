@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Monday, December 15, 2025 03:00 PM
+**Last Updated:** Monday, December 15, 2025 03:05 PM
 
 ## 1. Executive Summary
 
@@ -60,9 +60,9 @@
 16. `so3_quadrotor_simulator`
     - `quadrotor_simulator_so3.cpp`
 17. `local_sensing`
-    - `pointcloud_render_node.cpp`
-    - `depth_render_node.cpp`
-    - `pcl_render_node.cpp` (CUDA version, disabled by default)
+    - [x] `pointcloud_render_node.cpp`
+    - [x] `depth_render_node.cpp`
+    - [x] `pcl_render_node.cpp` (CUDA version, disabled by default)
 
 ### 🔄 Build System Ready (Source Pending)
 
@@ -176,6 +176,7 @@
     - [x] `quadrotor_simulator_so3.cpp`
 - [x] **4.3 local_sensing**
     - [x] `pointcloud_render_node.cpp`
+    - [x] `depth_render_node.cpp`
     - [x] `depth_render.cu` (CUDA - Build disabled, source available)
 
 ### Step 5: Finalization
