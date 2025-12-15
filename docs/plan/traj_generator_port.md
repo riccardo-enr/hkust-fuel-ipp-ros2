@@ -11,12 +11,6 @@
 
 No executable for this node is registered in the ROS 2 `CMakeLists.txt`, so the source currently never builds.
 
-## Status Update (December 15, 2025)
-
-- ✅ `poly_traj/src/traj_generator.cpp` now builds as an `rclcpp::Node` with ROS 2 publishers, subscriptions, and timers. The node links against the existing `poly_traj` library and streams commands via the ROS 2 executor instead of a custom `ros::Rate` loop.
-- ✅ `swarmtal_msgs` is available as a ROS 2 interface package (`rosidl_default_generators`) providing `msg/DroneOnboardCommand.msg`, so downstream targets such as `traj_generator` have a concrete dependency to link against.
-- 🚧 Follow-up niceties (parameterizing waypoint lists, exposing launch hooks, etc.) remain optional and can happen after end-to-end testing.
-
 ## Porting Goals
 
 1. Rewrite `traj_generator.cpp` as an `rclcpp::Node` class (or `rclcpp::NodeOptions` entry point) with:
@@ -46,6 +40,7 @@ No executable for this node is registered in the ROS 2 `CMakeLists.txt`, so the 
    - Create a `TrajGeneratorNode` class inheriting from `rclcpp::Node`.
    - Move publishers/subscribers/timers into class members; replace global state with class fields (`odom_`, `have_odom_`).
    - Convert `displayPathWithColor` and `drawState` into member functions or lambdas using `rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr`.
+
 
 2. **Port ROS APIs to ROS 2**
    - Update includes to ROS 2 message headers and `rclcpp`.

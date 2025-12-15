@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Monday, December 15, 2025 05:30 PM
+**Last Updated:** Monday, December 15, 2025 05:10 PM
 
 ## 1. Executive Summary
 
@@ -9,9 +9,9 @@
 
 | Metric           | Status      | Details                                                                       |
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
-| **Packages**     | 24/25       | All but `src/uav_simulator/Utils/multi_map_server/quadrotor_msgs` are format 3; that duplicate message pkg is still Catkin/format 1. Newly added `swarmtal_msgs` already uses `rosidl_default_generators`. |
-| **Build System** | 23/25       | `rviz_plugins` remains Catkin and `multi_map_server` targets still rely on ROS 1 APIs despite the ament build. |
-| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, and legacy `plan_manage` tools/tests (`traj_server`, etc.). |
+| **Packages**     | 25/25       | All packages now use package format 3; the duplicate ROS 1 `multi_map_server/quadrotor_msgs` copy has been removed. |
+| **Build System** | 24/25       | Only `rviz_plugins` remains Catkin; `multi_map_server` builds natively with ament after the visualization node rewrite. |
+| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, `poly_traj`'s `traj_generator`, legacy `plan_manage` tools (`traj_server`, tests). |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -24,27 +24,26 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 1.  `poscmd_2_odom`
 2.  `waypoint_generator`
 3.  `quadrotor_msgs` *(primary copy under `src/uav_simulator/Utils/quadrotor_msgs`)*
-4.  `swarmtal_msgs`
-5.  `pose_utils`
-6.  `uav_utils`
-7.  `cmake_utils`
-8.  `odom_visualization`
+4.  `pose_utils`
+5.  `uav_utils`
+6.  `cmake_utils`
+7.  `odom_visualization`
 
 **Simulation & Control:**
 
-9.   `so3_control`
-10.  `so3_disturbance_generator`
-11.  `map_generator`
-12.  `plan_env`
-13.  `path_searching`
-14.  `plan_manage` *(ROS 2 entry point only; legacy ROS 1 tools remain, see “Pending Source”)*
-15.  `active_perception`
-16.  `exploration_manager`
-17.  `poly_traj`
-18.  `so3_quadrotor_simulator`
-19.  `local_sensing`
+8.  `so3_control`
+9.  `so3_disturbance_generator`
+10. `map_generator`
+11. `plan_env`
+12. `path_searching`
+13. `plan_manage` *(ROS 2 entry point only; legacy ROS 1 tools remain, see “Pending Source”)*
+14. `active_perception`
+15. `exploration_manager`
+16. `so3_quadrotor_simulator`
+17. `local_sensing`
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
+18. `multi_map_server` *(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)*
 
 ### 🔄 Build System Ready (Source Pending)
 
@@ -54,18 +53,14 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
   - `traj_server.cpp`, `traj_server_backup.cpp`, and legacy tests under `test/` still use `ros::` APIs.
 - `local_sensing`
   - `pcl_render_node.cpp` (CUDA-based) is still a ROS 1 node.
-- `multi_map_server`
-  - Visualization binary and headers (`Map2D/Map3D`) depend on `roscpp`, `tf`, and `ros::Time`.
-- `multi_map_server/quadrotor_msgs`
-  - Duplicate Catkin message package; remove or migrate to ROS 2 (still Catkin build).
+- `poly_traj`
+  - `traj_generator.cpp` is unported.
+
+> Legacy note: The duplicate Catkin `src/uav_simulator/Utils/multi_map_server/quadrotor_msgs` package has been deleted; depend on the ROS 2 `quadrotor_msgs` instead.
 
 ### ⏳ Pending Build System
 
 - `rviz_plugins` (Requires Qt5/RViz2 specific updates and full ament port).
-
-### ⏳ Pending Build System
-
-- `rviz_plugins` (Requires Qt5/RViz2 specific updates).
 
 ---
 
@@ -112,17 +107,15 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
     - [x] `random_forest_sensing.cpp`
 - [x] **1.5 so3_disturbance_generator**
     - [x] `so3_disturbance_generator.cpp`
-- [x] **1.6 swarmtal_msgs**
-    - [x] `DroneOnboardCommand.msg`
 
 ### Step 2: Core Planning Libraries (Priority 2)
 *Goal: Migrate computational cores. Minimal ROS dependency.*
 
 - [x] **2.1 bspline**
     - [x] `non_uniform_bspline.cpp`
-- [x] **2.2 poly_traj**
+- [ ] **2.2 poly_traj**
     - [x] `polynomial_traj.cpp`
-    - [x] `traj_generator.cpp` (ROS 2 node + `swarmtal_msgs` dependency)
+    - [ ] `traj_generator.cpp` (ROS 1 node pending)
 - [x] **2.3 path_searching**
     - [x] `astar.cpp`
     - [x] `kinodynamic_astar.cpp`

@@ -6,11 +6,12 @@ __Original Project:__ [HKUST-Aerial-Robotics/FUEL](https://github.com/HKUST-Aeri
 
 __News:__
 
-- Dec 9, 2024: ROS 2 migration started - package.xml files updated, nodelet converted to component
+- Dec 9, 2025: ROS 2 migration started
 - Feb 24, 2023: the code for **multi-UAV exploration** is released! check [this link](https://github.com/SYSU-STAR/RACER).
 - Aug 24, 2021: The CPU-based simulation is released, CUDA is no longer required. Richer exploration environments are provided.
-  
+
 **FUEL** is a framework for **F**ast **U**AV **E**xp**L**oration.
+
 Our method is demonstrated to complete challenging exploration tasks **3-8 times** faster than state-of-the-art approaches at the time of publication.
 Central to it is a Frontier Information Structure (FIS), which maintains crucial information for exploration planning incrementally along with the online built map. Based on the FIS, a hierarchical planner plans frontier coverage paths, refine local viewpoints, and generates minimum-time trajectories in sequence to explore unknown environment agilely and safely. Try [Quick Start](#quick-start) to run a demo in a few minutes!  
 
