@@ -16,6 +16,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(swarmtal_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 include_directories(
@@ -23,13 +27,17 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
-add_library(poly_traj 
-  src/polynomial_traj.cpp 
+add_library(poly_traj
+  src/polynomial_traj.cpp
 )
 
 ament_target_dependencies(poly_traj
   rclcpp
   std_msgs
+  nav_msgs
+  geometry_msgs
+  visualization_msgs
+  swarmtal_msgs
 )
 
 target_include_directories(poly_traj PUBLIC
@@ -48,6 +56,26 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
+add_executable(traj_generator
+  src/traj_generator.cpp
+)
+
+target_link_libraries(traj_generator
+  poly_traj
+)
+
+ament_target_dependencies(traj_generator
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  visualization_msgs
+  swarmtal_msgs
+)
+
+install(TARGETS traj_generator
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
 # Testing
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -56,6 +84,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(poly_traj)
-ament_export_dependencies(rclcpp std_msgs)
+ament_export_dependencies(rclcpp std_msgs nav_msgs geometry_msgs visualization_msgs swarmtal_msgs)
 
 ament_package()  
