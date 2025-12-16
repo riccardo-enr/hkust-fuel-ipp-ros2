@@ -17,6 +17,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
@@ -31,11 +32,25 @@ find_package(cv_bridge REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(pcl_conversions REQUIRED)
+find_library(NLOPT_LIBRARY
+  NAMES nlopt
+  PATHS /usr/local/lib /usr/lib/x86_64-linux-gnu
+  NO_DEFAULT_PATH
+)
+if(NOT NLOPT_LIBRARY)
+  find_library(NLOPT_LIBRARY
+    NAMES nlopt
+  )
+endif()
+if(NOT NLOPT_LIBRARY)
+  message(FATAL_ERROR "Failed to locate the NLopt shared library required by plan_manage.")
+endif()
 
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
+  ${bspline_INCLUDE_DIRS}
 )
 
 add_library(plan_manage 
@@ -59,6 +74,7 @@ ament_target_dependencies(plan_manage
   active_perception
   cv_bridge
   pcl_conversions
+  nav_msgs
 )
 
 target_include_directories(plan_manage PUBLIC
@@ -79,6 +95,7 @@ ament_target_dependencies(fast_planner_node
   rclcpp
   std_msgs
   sensor_msgs
+  nav_msgs
   visualization_msgs
   geometry_msgs
   quadrotor_msgs
@@ -93,14 +110,36 @@ ament_target_dependencies(fast_planner_node
   pcl_conversions
 )
 
-# add_executable(traj_server src/traj_server.cpp)
+add_executable(traj_server
+  src/traj_server.cpp
+)
 
-# ament_target_dependencies(traj_server
-#   rclcpp
-#   std_msgs
-#   geometry_msgs
-#   quadrotor_msgs
-# )
+ament_target_dependencies(traj_server
+  rclcpp
+  std_msgs
+  nav_msgs
+  geometry_msgs
+  visualization_msgs
+  quadrotor_msgs
+  bspline
+  active_perception
+)
+
+add_executable(traj_server_backup
+  src/traj_server_backup.cpp
+)
+
+ament_target_dependencies(traj_server_backup
+  rclcpp
+  std_msgs
+  geometry_msgs
+  visualization_msgs
+  quadrotor_msgs
+  bspline
+  poly_traj
+  path_searching
+  active_perception
+)
 
 # add_executable(proc_msg test/process_msg.cpp)
 
@@ -124,11 +163,21 @@ ament_target_dependencies(fast_planner_node
 #   ${PCL_LIBRARIES}
 # )
 
+set(plan_manage_third_party
+  ${bspline_LIBRARIES}
+  ${NLOPT_LIBRARY}
+)
+
+foreach(target_name IN ITEMS plan_manage fast_planner_node traj_server traj_server_backup)
+  target_link_libraries(${target_name} ${plan_manage_third_party})
+endforeach()
+
 # Install
 install(TARGETS 
   plan_manage
   fast_planner_node 
-  # traj_server
+  traj_server
+  traj_server_backup
   # proc_msg
   # proc_msg2
   ARCHIVE DESTINATION lib
@@ -144,6 +193,10 @@ install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
 )
 
+install(DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config
+)
+
 # Testing
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -152,6 +205,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(plan_manage)
-ament_export_dependencies(rclcpp std_msgs sensor_msgs visualization_msgs geometry_msgs quadrotor_msgs poly_traj plan_env path_searching bspline bspline_opt traj_utils active_perception cv_bridge pcl_conversions)
+ament_export_dependencies(rclcpp std_msgs sensor_msgs nav_msgs visualization_msgs geometry_msgs quadrotor_msgs poly_traj plan_env path_searching bspline bspline_opt traj_utils active_perception cv_bridge pcl_conversions)
 
 ament_package()
