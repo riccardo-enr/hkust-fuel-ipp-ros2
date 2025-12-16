@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Tuesday, December 16, 2025 2:45 PM
+**Last Updated:** Tuesday, December 16, 2025 4:20 PM
 
 ## 1. Executive Summary
 
@@ -14,7 +14,19 @@
 | **Source Code**  | Complete    | All runtime nodes, benchmarks, and developer utilities now use `rclcpp`/`message_filters` as of Dec 16, 2025; remaining work is launch/test coverage plus the `rviz_plugins` build migration. |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
-## 2. Detailed Status
+## 2. Build Pipeline Status
+
+Reflecting the build tasks defined in `.vscode/tasks.json`.
+
+| Task | Description | Status | Notes |
+| :--- | :--- | :--- | :--- |
+| **Step 1** | Utilities (`poscmd_2_odom`, `waypoint_generator`, etc.) | ✅ **Success** | Built Dec 16, 2025. Fixed `waypoint_generator` compilation & `odom_visualization` deps. |
+| **Step 2** | Core Planning (`bspline`, `poly_traj`, `plan_env`, etc.) | ⏳ **Pending** | Next up. |
+| **Step 3** | Planning Management (`plan_manage`, `exploration_manager`) | ⏳ **Pending** | |
+| **Step 4** | Simulator & Rendering (`so3_control`, `local_sensing`) | ⏳ **Pending** | |
+| **Step 5** | Full Workspace Integration | ⏳ **Pending** | |
+
+## 3. Detailed Status
 
 ### ✅ Fully Migrated Packages (Build & Source)
 
@@ -163,5 +175,7 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
     - [x] `euroc.cpp` (benchmark node rebuilt on ROS 2 with CUDA depth render path)
 
 ### Step 5: Finalization
-- [ ] **5.1 Launch Files:** Convert all XML launch files to Python.
-- [ ] **5.2 Integration Test:** Build all and run full simulation.
+- [x] **5.1 Launch Files:** Convert all ROS 1 XML launches to ROS 2 Python and collect them in the new `plan_bringup` ament_python package so any bringup script can be invoked from the single package namespace.
+- [ ] **5.2 Integration Test:** Build the full workspace and run the simulation stack end-to-end.
+  - Step 1 (Utilities) builds successfully as of Dec 16, 2025.
+  - Proceeding to verify Step 2 (Core Planning Libraries) build integrity.

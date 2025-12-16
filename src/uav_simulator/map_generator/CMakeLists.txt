@@ -17,6 +17,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL REQUIRED)
@@ -31,6 +32,7 @@ add_executable(random_forest src/random_forest_sensing.cpp)
 ament_target_dependencies(random_forest
   rclcpp
   std_msgs
+  nav_msgs
   geometry_msgs
   pcl_conversions
 )
@@ -40,6 +42,7 @@ add_executable(map_recorder src/map_recorder.cpp)
 ament_target_dependencies(map_recorder
   rclcpp
   std_msgs
+  nav_msgs
   geometry_msgs
   pcl_conversions
 )
@@ -49,6 +52,7 @@ add_executable(map_pub src/map_publisher.cpp)
 ament_target_dependencies(map_pub
   rclcpp
   std_msgs
+  nav_msgs
   geometry_msgs
   pcl_conversions
 )
@@ -58,6 +62,7 @@ add_executable(click_map src/click_map.cpp)
 ament_target_dependencies(click_map
   rclcpp
   std_msgs
+  nav_msgs
   geometry_msgs
   pcl_conversions
 )

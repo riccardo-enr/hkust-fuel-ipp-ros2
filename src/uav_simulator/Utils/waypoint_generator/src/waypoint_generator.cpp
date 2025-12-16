@@ -69,16 +69,27 @@ private:
     yaw = this->get_parameter(seg_str + "yaw").as_double();
     time_from_start = this->get_parameter(seg_str + "time_from_start").as_double();
     
-    RCLCPP_ASSERT_MSG(this->get_logger(), (yaw > -3.1499999) && (yaw < 3.14999999), "yaw=%.3f", yaw);
-    RCLCPP_ASSERT_MSG(this->get_logger(), time_from_start >= 0.0, "time_from_start must be >= 0");
+    if (!((yaw > -3.1499999) && (yaw < 3.14999999))) {
+      RCLCPP_ERROR(this->get_logger(), "yaw=%.3f", yaw);
+      return;
+    }
+    if (!(time_from_start >= 0.0)) {
+      RCLCPP_ERROR(this->get_logger(), "time_from_start must be >= 0");
+      return;
+    }
 
     std::vector<double> ptx = this->get_parameter(seg_str + "x").as_double_array();
     std::vector<double> pty = this->get_parameter(seg_str + "y").as_double_array();
     std::vector<double> ptz = this->get_parameter(seg_str + "z").as_double_array();
 
-    RCLCPP_ASSERT_MSG(this->get_logger(), ptx.size() > 0, "x vector must not be empty");
-    RCLCPP_ASSERT_MSG(this->get_logger(), ptx.size() == pty.size() && ptx.size() == ptz.size(), 
-                      "x, y, z vectors must have same size");
+    if (!(ptx.size() > 0)) {
+      RCLCPP_ERROR(this->get_logger(), "x vector must not be empty");
+      return;
+    }
+    if (!(ptx.size() == pty.size() && ptx.size() == ptz.size())) {
+      RCLCPP_ERROR(this->get_logger(), "x, y, z vectors must have same size");
+      return;
+    }
 
     nav_msgs::msg::Path path_msg;
     path_msg.header.stamp = time_base + rclcpp::Duration::from_seconds(time_from_start);
@@ -114,9 +125,10 @@ private:
     for (int i = 0; i < seg_cnt; ++i) {
       load_seg(i, time_base);
       if (i > 0) {
-        RCLCPP_ASSERT_MSG(this->get_logger(), 
-                          waypointSegments_[i - 1].header.stamp < waypointSegments_[i].header.stamp,
-                          "Segments must be in chronological order");
+        if (!(rclcpp::Time(waypointSegments_[i - 1].header.stamp) < rclcpp::Time(waypointSegments_[i].header.stamp))) {
+          RCLCPP_ERROR(this->get_logger(), "Segments must be in chronological order");
+          return;
+        }
       }
     }
     RCLCPP_INFO(this->get_logger(), "Overall load %zu segments", waypointSegments_.size());
@@ -247,7 +259,10 @@ private:
 
     RCLCPP_WARN(this->get_logger(), "[waypoint_generator] Trigger!");
     trigged_time_ = rclcpp::Time(odom_.header.stamp);
-    RCLCPP_ASSERT_MSG(this->get_logger(), trigged_time_ > rclcpp::Time(0), "Trigged time must be > 0");
+    if (!(trigged_time_ > rclcpp::Time(0))) {
+      RCLCPP_ERROR(this->get_logger(), "Trigged time must be > 0");
+      return;
+    }
 
     // Update waypoint_type parameter
     this->declare_parameter<std::string>("waypoint_type", "manual");
