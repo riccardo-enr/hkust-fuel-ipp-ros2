@@ -1,15 +1,16 @@
 #include <iostream>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <pcl/io/obj_io.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 using namespace std;
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "load_obj");
-  ros::NodeHandle node("~");
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<rclcpp::Node>("load_obj");
 
-  ros::Publisher cloud_pub = node.advertise<sensor_msgs::PointCloud2>("/load_obj/cloud", 10);
+  auto cloud_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>("/load_obj/cloud", rclcpp::QoS(10));
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
 
@@ -31,15 +32,19 @@ int main(int argc, char** argv) {
     cloud.points[i] = pr;
   }
 
-  sensor_msgs::PointCloud2 cloud2;
+  sensor_msgs::msg::PointCloud2 cloud2;
   pcl::toROSMsg(cloud, cloud2);
+  cloud2.header.frame_id = "world";
 
-  while (ros::ok()) {
-    cloud_pub.publish(cloud2);
-    ros::Duration(0.2).sleep();
+  rclcpp::WallRate rate(5.0);
+  while (rclcpp::ok()) {
+    cloud2.header.stamp = node->get_clock()->now();
+    cloud_pub->publish(cloud2);
+    rate.sleep();
   }
 
   std::cout << "Cloud published!" << std::endl;
 
-  return 1;
+  rclcpp::shutdown();
+  return 0;
 }

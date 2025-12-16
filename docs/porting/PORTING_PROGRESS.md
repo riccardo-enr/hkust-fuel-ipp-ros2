@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Tuesday, December 16, 2025 11:15 AM
+**Last Updated:** Tuesday, December 16, 2025 2:45 PM
 
 ## 1. Executive Summary
 
@@ -11,7 +11,7 @@
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All packages now use package format 3; the duplicate ROS 1 `multi_map_server/quadrotor_msgs` copy has been removed. |
 | **Build System** | 24/25       | Only `rviz_plugins` remains Catkin; `multi_map_server` builds natively with ament after the visualization node rewrite. |
-| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools and `local_sensing/pcl_render_node`; runtime nodes/launches for `plan_manage` now run on ROS 2 (Dec 16, 2025). |
+| **Source Code**  | Complete    | All runtime nodes, benchmarks, and developer utilities now use `rclcpp`/`message_filters` as of Dec 16, 2025; remaining work is launch/test coverage plus the `rviz_plugins` build migration. |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -37,25 +37,20 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 11. `plan_env`
 12. `path_searching`
 13. `poly_traj` *(traj_generator node + ROS 2 launch/test harness)*
-14. `plan_manage` *(FSM entry point + traj_server ROS 2 nodes; benchmark/test helpers still ROS 1, see “Pending Source”)*
+14. `plan_manage` *(FSM entry point + traj_server ROS 2 nodes; benchmarking/test helpers now ROS 2 as of Dec 16, 2025)*
 15. `active_perception`
 16. `exploration_manager`
 17. `so3_quadrotor_simulator`
 18. `local_sensing`
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
+    - [x] `pcl_render_node.cpp` *(CUDA path, optional via `ENABLE_CUDA` build)*
+    - [x] `euroc.cpp` *(benchmark tool rebuilt on `rclcpp` + `message_filters` with CUDA depth rendering)*
 18. `multi_map_server` *(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)*
 
 ### 🔄 Build System Ready (Source Pending)
 
-These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or headers that must be ported:
-
-- `plan_manage`
-  - Legacy benchmarking/test utilities under `test/` (`process_msg*.cpp`, `rotation.cpp`, etc.) still use `ros::` APIs and must be rewritten or replaced.
-- `local_sensing`
-  - `pcl_render_node.cpp` (CUDA-based) is still a ROS 1 node.
-
-> Legacy note: The duplicate Catkin `src/uav_simulator/Utils/multi_map_server/quadrotor_msgs` package has been deleted; depend on the ROS 2 `quadrotor_msgs` instead.
+No additional packages require ROS 1 source rewrites; only the `rviz_plugins` build migration remains on the Catkin → ament list.
 
 ### ⏳ Pending Build System
 
@@ -133,7 +128,7 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
 ### Step 3: Planning Management (Priority 3)
 *Goal: Migrate the high-level Logic and FSMs.*
 
-- [ ] **3.1 plan_manage**
+- [x] **3.1 plan_manage**
     - [x] `fast_planner_node.cpp` (Entry point)
     - [x] `kino_replan_fsm.cpp`
     - [x] `topo_replan_fsm.cpp`
@@ -158,10 +153,11 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
     - [x] `SO3Control.cpp`
 - [x] **4.2 so3_quadrotor_simulator**
     - [x] `quadrotor_simulator_so3.cpp`
-- [ ] **4.3 local_sensing**
+- [x] **4.3 local_sensing**
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
     - [x] `pcl_render_node.cpp` (CUDA path, ROS 2 w/ optional ENABLE_CUDA build)
+    - [x] `euroc.cpp` (benchmark node rebuilt on ROS 2 with CUDA depth render path)
 
 ### Step 5: Finalization
 - [ ] **5.1 Launch Files:** Convert all XML launch files to Python.

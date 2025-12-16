@@ -1,12 +1,12 @@
-#include <iostream>
 #include <fstream>
-#include <ros/ros.h>
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
 
 using namespace std;
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "write_tsp");
-  ros::NodeHandle node("~");
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<rclcpp::Node>("write_tsp");
 
   ofstream tsp_file("/home/boboyu/workspaces/plan_ws/src/fast_planner/exploration_manager/resource/"
                     "test.tsp");
@@ -74,5 +74,6 @@ int main(int argc, char** argv) {
     std::cout << id << std::endl;
   }
 
-  return 1;
+  rclcpp::shutdown();
+  return 0;
 }

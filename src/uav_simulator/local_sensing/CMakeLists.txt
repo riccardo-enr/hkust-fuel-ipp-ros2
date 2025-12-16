@@ -29,6 +29,7 @@ find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(image_transport REQUIRED)
+find_package(message_filters REQUIRED)
 if(ENABLE_CUDA)
   enable_language(CUDA)
   find_package(CUDA REQUIRED)
@@ -41,6 +42,8 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
 )
 
+set(LOCAL_SENSING_TARGETS)
+
 if(ENABLE_CUDA)
   cuda_add_library(depth_render_cuda
     src/depth_render.cu
@@ -50,7 +53,7 @@ if(ENABLE_CUDA)
     ${CUDA_INCLUDE_DIRS}
   )
 
-  target_link_libraries(depth_render_cuda PRIVATE
+  target_link_libraries(depth_render_cuda
     ${CUDA_LIBRARIES}
   )
 
@@ -74,6 +77,26 @@ if(ENABLE_CUDA)
     ${PCL_LIBRARIES}
     ${CUDA_LIBRARIES}
   )
+
+  add_executable(euroc_benchmark
+    src/euroc.cpp
+  )
+
+  ament_target_dependencies(euroc_benchmark
+    rclcpp
+    cv_bridge
+    sensor_msgs
+    geometry_msgs
+    message_filters
+  )
+
+  target_link_libraries(euroc_benchmark
+    depth_render_cuda
+    ${OpenCV_LIBS}
+    ${CUDA_LIBRARIES}
+  )
+
+  list(APPEND LOCAL_SENSING_TARGETS pcl_render_node euroc_benchmark)
 else()
   add_executable(pcl_render_node
     src/pointcloud_render_node.cpp
@@ -94,6 +117,8 @@ else()
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
   )
+
+  list(APPEND LOCAL_SENSING_TARGETS pcl_render_node)
 endif()
 
 # Build depth_render_node (CPU depth renderer)
@@ -117,8 +142,11 @@ target_link_libraries(depth_render_node
   ${OpenCV_LIBS}
 )
 
+# track targets for install
+list(APPEND LOCAL_SENSING_TARGETS depth_render_node)
+
 # Install
-install(TARGETS pcl_render_node depth_render_node
+install(TARGETS ${LOCAL_SENSING_TARGETS}
   DESTINATION lib/${PROJECT_NAME}
 )
 
