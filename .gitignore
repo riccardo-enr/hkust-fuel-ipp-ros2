@@ -11,6 +11,7 @@ fuel_planner/utils/lkh_tsp_solver/resource/*.txt
 GEMINI.md
 AGENTS.md
 docs/codex
+docs/plan
 
 build/
 install/
