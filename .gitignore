@@ -1,6 +1,5 @@
 fuel_planner/.vscode
 
-*.vscode/
 *.clang-format
 .cache
 
