@@ -20,8 +20,8 @@ Reflecting the build tasks defined in `.vscode/tasks.json`.
 
 | Task | Description | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Step 1** | Utilities (`poscmd_2_odom`, `waypoint_generator`, etc.) | ✅ **Success** | Built Dec 16, 2025. Fixed `waypoint_generator` compilation & `odom_visualization` deps. |
-| **Step 2** | Core Planning (`bspline`, `poly_traj`, `plan_env`, etc.) | ⏳ **Pending** | Next up. |
+| **Step 1** | Utilities (`poscmd_2_odom`, `waypoint_generator`, etc.) | ✅ **Success** | Built Dec 16, 2025. Fixed `waypoint_generator` compilation & `odom_visualization` deps, and added `swarmtal_msgs`. |
+| **Step 2** | Core Planning (`bspline`, `poly_traj`, `plan_env`, etc.) | ✅ **Success** | Built Dec 16, 2025. Resolved `bspline_opt` dependency on `active_perception`. |
 | **Step 3** | Planning Management (`plan_manage`, `exploration_manager`) | ⏳ **Pending** | |
 | **Step 4** | Simulator & Rendering (`so3_control`, `local_sensing`) | ⏳ **Pending** | |
 | **Step 5** | Full Workspace Integration | ⏳ **Pending** | |
@@ -40,6 +40,7 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 5.  `uav_utils`
 6.  `cmake_utils`
 7.  `odom_visualization`
+8.  `swarmtal_msgs`
 
 **Simulation & Control:**
 
@@ -113,6 +114,7 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
     - [x] `random_forest_sensing.cpp`
 - [x] **1.5 so3_disturbance_generator**
     - [x] `so3_disturbance_generator.cpp`
+- [x] **1.6 swarmtal_msgs**
 
 ### Step 2: Core Planning Libraries (Priority 2)
 *Goal: Migrate computational cores. Minimal ROS dependency.*
@@ -137,6 +139,9 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
 - [x] **2.6 traj_utils**
     - [x] `planning_visualization.cpp`
     - [x] `process_msg.cpp`
+- [x] **2.7 active_perception**
+    - [x] `frontier_finder.cpp`
+    - [x] `perception_utils.cpp`
 
 ### Step 3: Planning Management (Priority 3)
 *Goal: Migrate the high-level Logic and FSMs.*
@@ -149,10 +154,7 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
     - [x] `traj_server.cpp` & `traj_server_backup.cpp` (ROS 2 nodes + launch/config)
     - [x] ROS 2 runtime artifacts landed (`config/traj_server.yaml`, `config/fast_planner.yaml`, `launch/traj_server.launch.py`, `launch/fast_planner.launch.py`), plus dependency fixes so `colcon build --packages-select plan_manage` succeeds as of Dec 16, 2025.
     - [x] Legacy benchmarking/test tools under `test/` (`process_msg*`, `rotation`, etc.) migrated to standalone ROS 2 nodes (Dec 16, 2025). *Note:* `compare_topo`, `opti_node`, and `test_collision_cost` now run in self-contained benchmarking modes that no longer rely on the old ROS 1 Fast Planner harness.
-- [x] **3.2 active_perception**
-    - [x] `frontier_finder.cpp`
-    - [x] `perception_utils.cpp`
-- [x] **3.3 exploration_manager**
+- [x] **3.2 exploration_manager**
     - [x] `exploration_node.cpp` (Entry point)
     - [x] `fast_exploration_fsm.cpp`
     - [x] `fast_exploration_manager.cpp`
