@@ -1,4 +1,3 @@
-
 services:
   fuel-dev:
     build:
