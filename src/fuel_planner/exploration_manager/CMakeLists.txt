@@ -36,6 +36,7 @@ include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
+  ${bspline_INCLUDE_DIRS}
 )
 
 add_executable(exploration_node
@@ -62,6 +63,15 @@ ament_target_dependencies(exploration_node
   cv_bridge
 )
 
+target_link_libraries(exploration_node
+  ${bspline_LIBRARIES}
+  ${bspline_opt_LIBRARIES}
+  ${traj_utils_LIBRARIES}
+  ${active_perception_LIBRARIES}
+  ${plan_manage_LIBRARIES}
+  ${lkh_tsp_solver_LIBRARIES}
+)
+
 add_executable(write_tsp test/write_tsp.cpp)
 
 ament_target_dependencies(write_tsp
@@ -74,6 +84,8 @@ add_executable(load_obj test/load_obj.cpp)
 ament_target_dependencies(load_obj
   rclcpp
   std_msgs
+  sensor_msgs
+  pcl_conversions
 )
 
 target_link_libraries(load_obj

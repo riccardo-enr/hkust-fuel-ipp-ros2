@@ -31,12 +31,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES std_msgs geometry_msgs
 )
 
-include_directories( 
-  include 
-  ${EIGEN3_INCLUDE_DIRS} 
-  ${PCL_INCLUDE_DIRS}
-)
-
 add_library(${PROJECT_NAME}_lib 
   src/non_uniform_bspline.cpp 
 )
@@ -47,6 +41,13 @@ ament_target_dependencies(${PROJECT_NAME}_lib
   visualization_msgs
   plan_env
   cv_bridge
+)
+
+target_include_directories(${PROJECT_NAME}_lib PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${EIGEN3_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 # Install
