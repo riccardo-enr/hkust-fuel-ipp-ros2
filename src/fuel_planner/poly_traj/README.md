@@ -15,15 +15,17 @@
 You can override any of the above via a parameter file; see `config/traj_generator_sim.yaml` for an example.
 
 ## Launching
+
+The ROS 2 Python launch files now live in the `plan_bringup` bringup package. Start the trajectory generator with:
 ```
-ros2 launch poly_traj traj_generator.launch.py \
+ros2 launch plan_bringup traj_generator.launch.py \
   odom_topic:=/sim/odom \
   command_topic:=/drone_commander/onboard_command \
   frame_id:=map
 ```
 This launch file declares arguments for every exposed parameter plus `use_sim_time`. Combine it with `config/traj_generator_sim.yaml` if you want to keep overrides in YAML:
 ```
-ros2 launch poly_traj traj_generator.launch.py params_file:=/path/to/traj_generator_sim.yaml
+ros2 launch plan_bringup traj_generator.launch.py params_file:=/path/to/traj_generator_sim.yaml
 ```
 
 ## Testing
