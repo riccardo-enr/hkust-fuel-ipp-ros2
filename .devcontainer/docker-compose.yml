@@ -12,6 +12,7 @@ services:
         USER_GID: 1000
         GITHUB_USER_NAME: ${GITHUB_USER_NAME}
         GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL}
+        CUDA_CAPABILITY: ${CUDA_CAPABILITY:-ON}
     volumes:
       - ../:/workspace:cached
       - ~/.config/nvim:/home/ubuntu/.config/nvim:cached
@@ -34,15 +35,6 @@ services:
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     command: /bin/sh -c "while sleep 1000; do :; done"
 
   fuel-runtime:
@@ -53,19 +45,11 @@ services:
       args:
         GITHUB_USER_NAME: ${GITHUB_USER_NAME}
         GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL}
+        CUDA_CAPABILITY: ${CUDA_CAPABILITY:-ON}
     user: ubuntu
     volumes:
       - ../:/workspace:ro
     network_mode: host
     environment:
       - DISPLAY=${DISPLAY}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     command: /bin/sh -c "while sleep 1000; do :; done"

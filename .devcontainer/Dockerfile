@@ -2,6 +2,7 @@
 # Contains core ROS 2 environment, basic build tools, and common libraries.
 FROM osrf/ros:jazzy-desktop-full AS base
 
+ARG CUDA_CAPABILITY
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install common build tools, libraries, and ROS 2 packages
@@ -10,7 +11,6 @@ RUN apt-get update && apt-get install -y \
   cmake \
   git \
   wget \
-  nvidia-cuda-toolkit \
   # Required libraries for FUEL
   libarmadillo-dev \
   libpcl-dev \
@@ -35,6 +35,10 @@ RUN apt-get update && apt-get install -y \
   sudo \
   curl \
   && rm -rf /var/lib/apt/lists/*
+
+RUN if [ "${CUDA_CAPABILITY}" != "OFF" ]; then \
+    apt-get update && apt-get install -y nvidia-cuda-toolkit && rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # Install NLopt v2.7.1
 WORKDIR /tmp
