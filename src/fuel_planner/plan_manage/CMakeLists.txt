@@ -166,11 +166,75 @@ ament_target_dependencies(traj_server_backup
 set(plan_manage_third_party
   ${bspline_LIBRARIES}
   ${NLOPT_LIBRARY}
+  ${PCL_LIBRARIES}
 )
 
 foreach(target_name IN ITEMS plan_manage fast_planner_node traj_server traj_server_backup)
   target_link_libraries(${target_name} ${plan_manage_third_party})
 endforeach()
+
+add_executable(process_msg test/process_msg.cpp)
+ament_target_dependencies(process_msg
+  rclcpp
+  geometry_msgs
+  quadrotor_msgs
+  sensor_msgs
+  visualization_msgs
+  pcl_conversions
+)
+target_link_libraries(process_msg ${plan_manage_third_party})
+
+add_executable(process_msg2 test/process_msg2.cpp)
+ament_target_dependencies(process_msg2
+  rclcpp
+  geometry_msgs
+  visualization_msgs
+)
+
+add_executable(pos_vel_acc test/pos_vel_acc.cpp)
+ament_target_dependencies(pos_vel_acc
+  rclcpp
+  visualization_msgs
+  bspline
+)
+target_link_libraries(pos_vel_acc ${plan_manage_third_party})
+
+add_executable(rotation test/rotation.cpp)
+ament_target_dependencies(rotation
+  rclcpp
+  nav_msgs
+  visualization_msgs
+)
+
+add_executable(compare_topo test/compare_topo.cpp)
+ament_target_dependencies(compare_topo
+  rclcpp
+  sensor_msgs
+  std_msgs
+  pcl_conversions
+)
+target_link_libraries(compare_topo ${PCL_LIBRARIES})
+
+add_executable(opti_node test/opti_node.cpp)
+ament_target_dependencies(opti_node
+  rclcpp
+  visualization_msgs
+  geometry_msgs
+  poly_traj
+)
+
+add_executable(test_collision_cost test/test_collision_cost.cpp)
+ament_target_dependencies(test_collision_cost
+  rclcpp
+  sensor_msgs
+  visualization_msgs
+  plan_env
+  bspline
+  bspline_opt
+  traj_utils
+  pcl_conversions
+)
+target_link_libraries(test_collision_cost ${plan_manage_third_party})
 
 # Install
 install(TARGETS 
@@ -178,8 +242,13 @@ install(TARGETS
   fast_planner_node 
   traj_server
   traj_server_backup
-  # proc_msg
-  # proc_msg2
+  process_msg
+  process_msg2
+  pos_vel_acc
+  rotation
+  compare_topo
+  opti_node
+  test_collision_cost
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

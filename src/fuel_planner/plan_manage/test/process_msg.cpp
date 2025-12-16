@@ -1,47 +1,54 @@
-/* ----------------------------------------------------------------------------
- * used for benchmark
- * -------------------------------------------------------------------------- */
-
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 #include <Eigen/Eigen>
+#include <chrono>
+#include <cmath>
+#include <functional>
 #include <iostream>
-#include <quadrotor_msgs/PositionCommand.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <memory>
+#include <vector>
+
+#include <geometry_msgs/msg/point.hpp>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl/filters/voxel_grid.h>
+#include <quadrotor_msgs/msg/position_command.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
-using namespace std;
+using namespace std::chrono_literals;
 
-ros::Publisher traj_pub, traj_pub2, yaw_pub, cloud_pub, ewok_pub;
+namespace {
+rclcpp::Node::SharedPtr g_node;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr traj_pub;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr traj_pub2;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr yaw_pub;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_pub;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr ewok_pub;
 
-ros::Time start_time, end_time, last_time;
-Eigen::Vector3d last_pos, last_acc;
-vector<Eigen::Vector3d> traj, vel, yaw1, yaw2;
-vector<double> yaw;
-vector<Eigen::Vector3d> cam1, cam2;
+std::vector<Eigen::Vector3d> traj;
+std::vector<Eigen::Vector3d> vel;
+std::vector<Eigen::Vector3d> yaw1;
+std::vector<Eigen::Vector3d> yaw2;
+std::vector<double> yaw;
+std::vector<Eigen::Vector3d> cam1;
+std::vector<Eigen::Vector3d> cam2;
 pcl::PointCloud<pcl::PointXYZ>::Ptr pts;
+double distance1 = 0.0;
+}  // namespace
 
-// calculate flight time and distance
-double distance1;
-
-void displayLineList(const vector<Eigen::Vector3d>& list1, const vector<Eigen::Vector3d>& list2,
+void displayLineList(const std::vector<Eigen::Vector3d>& list1, const std::vector<Eigen::Vector3d>& list2,
                      double line_width, const Eigen::Vector4d& color, int id) {
-  visualization_msgs::Marker mk;
+  visualization_msgs::msg::Marker mk;
   mk.header.frame_id = "world";
-  mk.header.stamp = ros::Time::now();
-  mk.type = visualization_msgs::Marker::LINE_LIST;
-  mk.action = visualization_msgs::Marker::DELETE;
+  mk.header.stamp = g_node->now();
+  mk.type = visualization_msgs::msg::Marker::LINE_LIST;
+  mk.action = visualization_msgs::msg::Marker::DELETE;
   mk.id = id;
-  yaw_pub.publish(mk);
+  yaw_pub->publish(mk);
 
-  mk.action = visualization_msgs::Marker::ADD;
-  mk.pose.orientation.x = 0.0;
-  mk.pose.orientation.y = 0.0;
-  mk.pose.orientation.z = 0.0;
+  mk.action = visualization_msgs::msg::Marker::ADD;
   mk.pose.orientation.w = 1.0;
 
   mk.color.r = color(0);
@@ -50,8 +57,8 @@ void displayLineList(const vector<Eigen::Vector3d>& list1, const vector<Eigen::V
   mk.color.a = color(3);
   mk.scale.x = line_width;
 
-  geometry_msgs::Point pt;
-  for (int i = 0; i < int(list1.size()); ++i) {
+  geometry_msgs::msg::Point pt;
+  for (size_t i = 0; i < list1.size(); ++i) {
     pt.x = list1[i](0);
     pt.y = list1[i](1);
     pt.z = list1[i](2);
@@ -62,26 +69,21 @@ void displayLineList(const vector<Eigen::Vector3d>& list1, const vector<Eigen::V
     pt.z = list2[i](2);
     mk.points.push_back(pt);
   }
-  yaw_pub.publish(mk);
-
-  ros::Duration(0.001).sleep();
+  yaw_pub->publish(mk);
+  rclcpp::sleep_for(1ms);
 }
 
-void displayTrajWithColor(vector<Eigen::Vector3d> path, double resolution, Eigen::Vector4d color,
+void displayTrajWithColor(const std::vector<Eigen::Vector3d>& path, double resolution, const Eigen::Vector4d& color,
                           int id) {
-  visualization_msgs::Marker mk;
+  visualization_msgs::msg::Marker mk;
   mk.header.frame_id = "world";
-  mk.header.stamp = ros::Time::now();
-  mk.type = visualization_msgs::Marker::SPHERE_LIST;
-  mk.action = visualization_msgs::Marker::DELETE;
+  mk.header.stamp = g_node->now();
+  mk.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+  mk.action = visualization_msgs::msg::Marker::DELETE;
   mk.id = id;
+  traj_pub->publish(mk);
 
-  traj_pub.publish(mk);
-
-  mk.action = visualization_msgs::Marker::ADD;
-  mk.pose.orientation.x = 0.0;
-  mk.pose.orientation.y = 0.0;
-  mk.pose.orientation.z = 0.0;
+  mk.action = visualization_msgs::msg::Marker::ADD;
   mk.pose.orientation.w = 1.0;
 
   mk.color.r = color(0);
@@ -93,31 +95,28 @@ void displayTrajWithColor(vector<Eigen::Vector3d> path, double resolution, Eigen
   mk.scale.y = resolution;
   mk.scale.z = resolution;
 
-  geometry_msgs::Point pt;
-  for (int i = 0; i < int(path.size()); i++) {
-    pt.x = path[i](0);
-    pt.y = path[i](1);
-    pt.z = path[i](2);
+  geometry_msgs::msg::Point pt;
+  for (const auto& p : path) {
+    pt.x = p(0);
+    pt.y = p(1);
+    pt.z = p(2);
     mk.points.push_back(pt);
   }
-  traj_pub.publish(mk);
-  ros::Duration(0.001).sleep();
+  traj_pub->publish(mk);
+  rclcpp::sleep_for(1ms);
 }
 
-void cmdCallback(const quadrotor_msgs::PositionCommandConstPtr& msg) {
-  ROS_INFO_ONCE("start");
-  Eigen::Vector3d pt, v;
-  pt(0) = msg->position.x;
-  pt(1) = msg->position.y;
-  pt(2) = msg->position.z;
-  v(0) = msg->velocity.x;
-  v(1) = msg->velocity.y;
-  v(2) = msg->velocity.z;
-  auto cur_time = ros::Time::now();
+void cmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg) {
+  static bool started = false;
+  if (!started) {
+    RCLCPP_INFO(g_node->get_logger(), "start");
+    started = true;
+  }
 
-  // if (pt(0) > 5 && pt(1) < 3) return;
+  Eigen::Vector3d pt(msg->position.x, msg->position.y, msg->position.z);
+  Eigen::Vector3d v(msg->velocity.x, msg->velocity.y, msg->velocity.z);
 
-  if (traj.size() > 0) {
+  if (!traj.empty()) {
     distance1 += (pt - traj.back()).norm();
   }
 
@@ -125,138 +124,121 @@ void cmdCallback(const quadrotor_msgs::PositionCommandConstPtr& msg) {
   vel.push_back(v);
   displayTrajWithColor(traj, 0.1, Eigen::Vector4d(1, 0, 0, 1), 0);
 
-  double phi = msg->yaw;
-  yaw.push_back(phi);
+  yaw.push_back(msg->yaw);
   yaw1.clear();
   yaw2.clear();
   for (int k = 0; k < 4; ++k) {
-    int idx = yaw.size() - 1 - 30 * k;
+    int idx = static_cast<int>(yaw.size()) - 1 - 30 * k;
     if (idx < 0) continue;
     double phi_k = yaw[idx];
     Eigen::Vector3d pt_k = traj[idx];
     Eigen::Matrix3d Rwb;
     Rwb << cos(phi_k), -sin(phi_k), 0, sin(phi_k), cos(phi_k), 0, 0, 0, 1;
-    for (int i = 0; i < cam1.size(); ++i) {
+    for (size_t i = 0; i < cam1.size(); ++i) {
       auto p1 = Rwb * cam1[i] + pt_k;
       auto p2 = Rwb * cam2[i] + pt_k;
       yaw1.push_back(p1);
       yaw2.push_back(p2);
     }
   }
-  // displayLineList(yaw1, yaw2, 0.02, Eigen::Vector4d(0, 0, 0, 1), 0);
 
-  // std::cout << v(0) << "," << v(1) << "," << v(2) << ",";
   if (v.norm() < 1e-3) {
-    ROS_INFO("end, distance: %lf", distance1);
+    RCLCPP_INFO(g_node->get_logger(), "end, distance: %lf", distance1);
   }
 }
 
-bool endtraj = false;
-void trajCallback(const visualization_msgs::MarkerConstPtr& msg) {
-  // if (msg->id == 500) return;
-  // std::cout << msg->id << std::endl;
-  if (msg->id != 399) return;
-
-  visualization_msgs::Marker mk;
-  mk = *msg;
-  mk.color.a = 0.3;
-  mk.scale.x = 0.1;
-  mk.scale.y = 0.1;
-  mk.scale.z = 0.1;
-  mk.id = 1;
-
-  // if(mk.points.size()>0 && mk.points[0].y < 3 && mk.points[0].x >5) return;
-
-  // int end = -1;
-  // for (int i = 0; i < mk.points.size(); ++i) {
-  //   auto pt = mk.points[i];
-  //   if (pt.x > 5 && pt.y < 3) {
-  //     end = i;
-  //     break;
-
-  //   }
-  // }
-  // if (end > 0) mk.points.erase(mk.points.begin() + end, mk.points.end());
-
-  traj_pub2.publish(mk);
-}
-
-void cloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
-  static int msg_num = 0;
-  if (++msg_num % 10 != 0) return;
-
-  pcl::PointCloud<pcl::PointXYZ> pts2, pts3;
+void cloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+  pcl::PointCloud<pcl::PointXYZ> pts2;
   pcl::fromROSMsg(*msg, pts2);
 
-  // Filter unwanted points
-  for (int i = 0; i < pts2.points.size(); ++i) {
-    // if (pts2[i].z > 0.0 && pts2[i].z < 0.1 || pts2[i].z > 3.5 || pts2[i].y < -3.5)
-    // continue;
-    // if (pts2[i].z < 0.0) continue;
-    // if (pts2[i].z > 1.5 && pts2[i].x < 5.0) continue;
-    // if (pts2[i].y < 0 && pts2[i].y > -1 && pts2[i].z > 0.1 && pts2[i].x > 7.8)
-    // continue;
-    // if (pts2[i].y > 2.8) continue;
-    pts->push_back(pts2[i]);
-  }
+  pcl::PointCloud<pcl::PointXYZ> filtered;
+  auto new_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
+  *new_cloud = pts2;
   pcl::VoxelGrid<pcl::PointXYZ> sor;
-  sor.setInputCloud(pts);
+  sor.setInputCloud(new_cloud);
   sor.setLeafSize(0.1f, 0.1f, 0.1f);
-  sor.filter(pts3);
+  sor.filter(filtered);
 
-  pts->points = pts3.points;
+  pts = new_cloud;
+  pts->points = filtered.points;
   pts->width = pts->points.size();
   pts->height = 1;
   pts->is_dense = true;
   pts->header.frame_id = "world";
 
-  sensor_msgs::PointCloud2 cloud;
+  sensor_msgs::msg::PointCloud2 cloud;
   pcl::toROSMsg(*pts, cloud);
-  cloud_pub.publish(cloud);
+  cloud.header.stamp = g_node->now();
+  cloud_pub->publish(cloud);
 }
 
-void ewokCallback(const visualization_msgs::MarkerArrayConstPtr& msg) {
+void ewokCallback(const visualization_msgs::msg::MarkerArray::SharedPtr msg) {
+  if (msg->markers.empty()) return;
   auto marker = msg->markers[0];
   marker.scale.x = 0.1;
   marker.scale.y = 0.1;
   marker.scale.z = 0.1;
-
-  ewok_pub.publish(marker);
+  marker.header.stamp = g_node->now();
+  ewok_pub->publish(marker);
 }
 
-void travelCallback(const visualization_msgs::MarkerPtr& msg) {
-  if (msg->id == 5) {
-    msg->color.g = 0.8;
+void travelCallback(const visualization_msgs::msg::Marker::SharedPtr msg) {
+  auto mk = *msg;
+  if (mk.id == 5) {
+    mk.color.g = 0.8;
   }
-  traj_pub2.publish(*msg);
+  mk.header.stamp = g_node->now();
+  traj_pub2->publish(mk);
+}
+
+void trajCallback(const visualization_msgs::msg::Marker::SharedPtr msg) {
+  if (msg->id != 399) return;
+
+  visualization_msgs::msg::Marker mk;
+  mk.header = msg->header;
+  mk.ns = "traj_copy";
+  mk.id = msg->id;
+  mk.type = msg->type;
+  mk.scale = msg->scale;
+  mk.pose = msg->pose;
+  mk.points = msg->points;
+  mk.colors = msg->colors;
+  mk.color = msg->color;
+  mk.header.stamp = g_node->now();
+  traj_pub2->publish(mk);
 }
 
 int main(int argc, char** argv) {
-  // Initializes ROS, and sets up a node
-  ros::init(argc, argv, "faster");
-  ros::NodeHandle nh("~");
+  rclcpp::init(argc, argv);
+  g_node = std::make_shared<rclcpp::Node>("faster");
 
-  ros::Subscriber cmd_sub = nh.subscribe("/position_cmd", 10, cmdCallback);
-  // ros::Subscriber cloud_sub = nh.subscribe("/sdf_map/occupancy", 10, cloudCallback);
-  ros::Subscriber cloud_sub = nh.subscribe("/sdf_map/occupancy_local", 10, cloudCallback);
-  ros::Subscriber traj_sub = nh.subscribe("/planning_vis/trajectory", 10, trajCallback);
-  ros::Subscriber ewok_sub = nh.subscribe("/firefly/optimal_trajectory", 10, ewokCallback);
-  // ros::Subscriber travel_traj_sub = nh.subscribe("/planning/travel_traj", 10,
-  // travelCallback);
+  auto qos = rclcpp::QoS(10);
+  traj_pub = g_node->create_publisher<visualization_msgs::msg::Marker>("/process_msg/execute_traj", qos);
+  yaw_pub = g_node->create_publisher<visualization_msgs::msg::Marker>("/process_msg/execute_yaw", qos);
+  cloud_pub = g_node->create_publisher<sensor_msgs::msg::PointCloud2>("/process_msg/global_cloud", qos);
+  ewok_pub = g_node->create_publisher<visualization_msgs::msg::Marker>("/process_msg/ewok", qos);
+  traj_pub2 = g_node->create_publisher<visualization_msgs::msg::Marker>("/planning/travel_traj", qos);
 
-  traj_pub = nh.advertise<visualization_msgs::Marker>("/process_msg/execute_traj", 10);
-  yaw_pub = nh.advertise<visualization_msgs::Marker>("/process_msg/execute_yaw", 10);
-  cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/process_msg/global_cloud", 10);
-  ewok_pub = nh.advertise<visualization_msgs::Marker>("/process_msg/ewok", 10);
-  // traj_pub2 = nh.advertise<visualization_msgs::Marker>("/process_msg/plan_traj", 10);
-  traj_pub2 = nh.advertise<visualization_msgs::Marker>("/planning/travel_traj", 10);
+  auto cmd_qos = rclcpp::SensorDataQoS();
+  auto cmd_sub = g_node->create_subscription<quadrotor_msgs::msg::PositionCommand>(
+      "/position_cmd", cmd_qos, std::bind(&cmdCallback, std::placeholders::_1));
+  (void)cmd_sub;
+  auto cloud_sub = g_node->create_subscription<sensor_msgs::msg::PointCloud2>(
+      "/sdf_map/occupancy_local", qos, std::bind(&cloudCallback, std::placeholders::_1));
+  (void)cloud_sub;
+  auto traj_sub = g_node->create_subscription<visualization_msgs::msg::Marker>(
+      "/planning_vis/trajectory", qos, std::bind(&trajCallback, std::placeholders::_1));
+  (void)traj_sub;
+  auto ewok_sub = g_node->create_subscription<visualization_msgs::msg::MarkerArray>(
+      "/firefly/optimal_trajectory", qos, std::bind(&ewokCallback, std::placeholders::_1));
+  (void)ewok_sub;
+  auto travel_sub = g_node->create_subscription<visualization_msgs::msg::Marker>(
+      "/planning/travel_traj", qos, std::bind(&travelCallback, std::placeholders::_1));
+  (void)travel_sub;
 
-  last_pos.setZero();
   pts.reset(new pcl::PointCloud<pcl::PointXYZ>());
 
-  // draw camera FOV in body frame
-  /* camera FOV vertice */
   const double vert_ang = 0.56125;
   const double hor_ang = 0.68901;
   const double cam_scale = 0.5;
@@ -268,28 +250,10 @@ int main(int argc, char** argv) {
   Eigen::Vector3d right_up(cam_scale, -hor, vert);
   Eigen::Vector3d right_down(cam_scale, -hor, -vert);
 
-  /* draw line between vertice */
-  cam1.push_back(origin);
-  cam2.push_back(left_up);
-  cam1.push_back(origin);
-  cam2.push_back(left_down);
-  cam1.push_back(origin);
-  cam2.push_back(right_up);
-  cam1.push_back(origin);
-  cam2.push_back(right_down);
+  cam1 = { origin, origin, origin, origin, left_up, right_up, right_down, left_down };
+  cam2 = { left_up, left_down, right_up, right_down, right_up, right_down, left_down, left_up };
 
-  cam1.push_back(left_up);
-  cam2.push_back(right_up);
-  cam1.push_back(right_up);
-  cam2.push_back(right_down);
-  cam1.push_back(right_down);
-  cam2.push_back(left_down);
-  cam1.push_back(left_down);
-  cam2.push_back(left_up);
-
-  distance1 = 0;
-
-  ros::spin();  // spin the normal queue
-
+  rclcpp::spin(g_node);
+  rclcpp::shutdown();
   return 0;
 }

@@ -11,7 +11,7 @@
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All packages now use package format 3; the duplicate ROS 1 `multi_map_server/quadrotor_msgs` copy has been removed. |
 | **Build System** | 24/25       | Only `rviz_plugins` remains Catkin; `multi_map_server` builds natively with ament after the visualization node rewrite. |
-| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, `plan_manage` legacy bench/tests (`process_msg*`, `rotation`, etc.); runtime nodes/launches for `plan_manage` now run on ROS 2 (Dec 16, 2025). |
+| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools and `local_sensing/pcl_render_node`; runtime nodes/launches for `plan_manage` now run on ROS 2 (Dec 16, 2025). |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -140,7 +140,7 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
     - [x] `planner_manager.cpp`
     - [x] `traj_server.cpp` & `traj_server_backup.cpp` (ROS 2 nodes + launch/config)
     - [x] ROS 2 runtime artifacts landed (`config/traj_server.yaml`, `config/fast_planner.yaml`, `launch/traj_server.launch.py`, `launch/fast_planner.launch.py`), plus dependency fixes so `colcon build --packages-select plan_manage` succeeds as of Dec 16, 2025.
-    - [ ] Legacy benchmarking/test tools under `test/` (`process_msg*`, `rotation`, etc.)
+    - [x] Legacy benchmarking/test tools under `test/` (`process_msg*`, `rotation`, etc.) migrated to standalone ROS 2 nodes (Dec 16, 2025). *Note:* `compare_topo`, `opti_node`, and `test_collision_cost` now run in self-contained benchmarking modes that no longer rely on the old ROS 1 Fast Planner harness.
 - [x] **3.2 active_perception**
     - [x] `frontier_finder.cpp`
     - [x] `perception_utils.cpp`

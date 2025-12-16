@@ -1,134 +1,120 @@
-#include "std_msgs/Empty.h"
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Path.h>
+#include <Eigen/Eigen>
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <vector>
 
-#include <fstream>
-#include <stdlib.h>
+#include <geometry_msgs/msg/point.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
-#include "sensor_msgs/PointCloud.h"
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
+#include <poly_traj/polynomial_traj.h>
 
-#include "grad_traj_optimization/display.h"
-#include "grad_traj_optimization/grad_traj_optimizer.h"
-#include <grad_traj_optimization/polynomial_traj.hpp>
+using namespace std::chrono_literals;
+using namespace fast_planner;
 
-using namespace std;
+namespace {
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr poly_traj_pub;
+rclcpp::Node::SharedPtr g_node;
+}
 
-ros::Publisher poly_traj_pub;
-
-void displayPathWithColor(vector<Eigen::Vector3d> path, double resolution, Eigen::Vector4d color,
-                          int id) {
-  visualization_msgs::Marker mk;
+void displayPathWithColor(const std::vector<Eigen::Vector3d>& path, double resolution,
+                          const Eigen::Vector4d& color, int id) {
+  visualization_msgs::msg::Marker mk;
   mk.header.frame_id = "world";
-  mk.header.stamp = ros::Time::now();
-  mk.type = visualization_msgs::Marker::SPHERE_LIST;
-  mk.action = visualization_msgs::Marker::DELETE;
+  mk.header.stamp = g_node->now();
+  mk.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+  mk.action = visualization_msgs::msg::Marker::DELETE;
   mk.id = id;
-  poly_traj_pub.publish(mk);
+  poly_traj_pub->publish(mk);
 
-  mk.action = visualization_msgs::Marker::ADD;
-  mk.pose.orientation.x = 0.0, mk.pose.orientation.y = 0.0, mk.pose.orientation.z = 0.0,
+  mk.action = visualization_msgs::msg::Marker::ADD;
   mk.pose.orientation.w = 1.0;
-  mk.scale.x = resolution, mk.scale.y = resolution, mk.scale.z = resolution;
+  mk.scale.x = resolution;
+  mk.scale.y = resolution;
+  mk.scale.z = resolution;
+  mk.color.r = color(0);
+  mk.color.g = color(1);
+  mk.color.b = color(2);
+  mk.color.a = color(3);
 
-  mk.color.r = color(0), mk.color.g = color(1), mk.color.b = color(2), mk.color.a = color(3);
-
-  geometry_msgs::Point pt;
-  for (int i = 0; i < int(path.size()); i++) {
-    pt.x = path[i](0), pt.y = path[i](1), pt.z = path[i](2);
+  geometry_msgs::msg::Point pt;
+  for (const auto& p : path) {
+    pt.x = p(0);
+    pt.y = p(1);
+    pt.z = p(2);
     mk.points.push_back(pt);
   }
-  poly_traj_pub.publish(mk);
-  ros::Duration(0.01).sleep();
+  poly_traj_pub->publish(mk);
+  rclcpp::sleep_for(10ms);
+}
+
+std::vector<Eigen::Vector3d> samplePolynomial(PolynomialTraj traj, double dt) {
+  std::vector<Eigen::Vector3d> result;
+  double total_time = traj.getTotalTime();
+  for (double t = 0.0; t <= total_time; t += dt) {
+    result.push_back(traj.evaluate(t, 0));
+  }
+  return result;
+}
+
+PolynomialTraj generateTrajectory(const std::vector<Eigen::Vector3d>& path) {
+  if (path.size() < 2) {
+    return PolynomialTraj();
+  }
+
+  Eigen::MatrixXd positions(path.size(), 3);
+  for (size_t i = 0; i < path.size(); ++i) {
+    positions.row(i) = path[i];
+  }
+
+  Eigen::Vector3d start_vel = Eigen::Vector3d::Zero();
+  Eigen::Vector3d end_vel = Eigen::Vector3d::Zero();
+  Eigen::Vector3d start_acc = Eigen::Vector3d::Zero();
+  Eigen::Vector3d end_acc = Eigen::Vector3d::Zero();
+
+  Eigen::VectorXd times(path.size() - 1);
+  for (size_t i = 0; i < path.size() - 1; ++i) {
+    double seg_len = (path[i + 1] - path[i]).norm();
+    times(i) = std::max(0.5, seg_len / 2.0);
+  }
+
+  PolynomialTraj poly_traj;
+  PolynomialTraj::waypointsTraj(positions, start_vel, end_vel, start_acc, end_acc, times, poly_traj);
+  return poly_traj;
 }
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "random");
-  ros::NodeHandle node;
+  rclcpp::init(argc, argv);
+  g_node = std::make_shared<rclcpp::Node>("opti_node");
+  poly_traj_pub = g_node->create_publisher<visualization_msgs::msg::Marker>("/gradient_based/traj", 10);
 
-  // -------------------ros initialization---------------------
-  poly_traj_pub = node.advertise<visualization_msgs::Marker>("/gradient_based/traj", 10, true);
+  rclcpp::sleep_for(500ms);
 
-  srand(ros::Time::now().toSec());
-  ros::Duration(0.5).sleep();
-
-  /* ---------- grad traj optimization ---------- */
-  GradTrajOptimizer grad_traj_opt;
-  //  40 x 40 x 5 map, origin = (-20, -20, 0), resolution = 0.2
-  grad_traj_opt.initSDFMap(Eigen::Vector3d(40, 40, 5), Eigen::Vector3d(-40 / 2, -40 / 2, 0.0), 0.2);
-
-  // add obstable
-  vector<Eigen::Vector3d> obss;
-
+  std::vector<Eigen::Vector3d> obstacles;
   for (double x = 0.05; x <= 3.0; x += 0.2)
     for (double y = 2.05; y <= 2.7; y += 0.2)
       for (double z = 0.05; z <= 5.0; z += 0.2) {
-        obss.push_back(Eigen::Vector3d(x, y, z));
+        obstacles.emplace_back(x, y, z);
       }
-
   for (double x = 0.05; x >= -3.0; x -= 0.2)
     for (double y = -2.05; y >= -2.7; y -= 0.2)
       for (double z = 0.05; z <= 5.0; z += 0.2) {
-        obss.push_back(Eigen::Vector3d(x, y, z));
+        obstacles.emplace_back(x, y, z);
       }
 
-  grad_traj_opt.updateSDFMap(obss);
+  std::vector<Eigen::Vector3d> init_path = {
+      {0, -5, 2},  {1, -4, 2},  {1, -3, 2},  {1, -2, 2},  {1, -1, 2},
+      {0, 0, 2},   {-1, 1, 2}, {-1, 2, 2}, {-1, 3, 2}, {-1, 4, 2}, {0, 5, 2} };
 
-  // set initial path.
-  vector<Eigen::Vector3d> init_path;
+  PolynomialTraj poly_traj = generateTrajectory(init_path);
+  auto traj_vis = samplePolynomial(poly_traj, 0.05);
 
-  init_path.push_back(Eigen::Vector3d(0, -5, 2));
-  init_path.push_back(Eigen::Vector3d(1, -4, 2));
-  init_path.push_back(Eigen::Vector3d(1, -3, 2));
-  init_path.push_back(Eigen::Vector3d(1, -2, 2));
-  init_path.push_back(Eigen::Vector3d(1, -1, 2));
-
-  init_path.push_back(Eigen::Vector3d(0, 0, 2));
-
-  init_path.push_back(Eigen::Vector3d(-1, 1, 2));
-  init_path.push_back(Eigen::Vector3d(-1, 2, 2));
-  init_path.push_back(Eigen::Vector3d(-1, 3, 2));
-  init_path.push_back(Eigen::Vector3d(-1, 4, 2));
-  init_path.push_back(Eigen::Vector3d(0, 5, 2));
-
-  grad_traj_opt.setPath(init_path);
-
-  Eigen::MatrixXd coeff;
-  Eigen::VectorXd time_sgm;
-
-  grad_traj_opt.optimizeTrajectory(OPT_SECOND_STEP);
-  grad_traj_opt.getCoefficient(coeff);
-  grad_traj_opt.getSegmentTime(time_sgm);
-
-  /* ---------- convert coefficient to polynomial ---------- */
-  PolynomialTraj poly_traj;
-  for (int i = 0; i < coeff.rows(); ++i) {
-    vector<double> cx(6), cy(6), cz(6);
-    for (int j = 0; j < 6; ++j) {
-      cx[j] = coeff(i, j), cy[j] = coeff(i, j + 6), cz[j] = coeff(i, j + 12);
-    }
-    reverse(cx.begin(), cx.end());
-    reverse(cy.begin(), cy.end());
-    reverse(cz.begin(), cz.end());
-    double ts = time_sgm(i);
-    poly_traj.addSegment(cx, cy, cz, ts);
-  }
-  poly_traj.init();
-
-  vector<Eigen::Vector3d> traj_vis = poly_traj.getTraj();
-
-  // obstables
-  displayPathWithColor(obss, 0.5, Eigen::Vector4d(1, 1, 0, 1), 0);
-
-  // init path
+  displayPathWithColor(obstacles, 0.5, Eigen::Vector4d(1, 1, 0, 1), 0);
   displayPathWithColor(init_path, 0.3, Eigen::Vector4d(1, 0, 0, 1), 1);
-
-  // optimizer traj
   displayPathWithColor(traj_vis, 0.15, Eigen::Vector4d(0, 0, 1, 1), 2);
 
-  ros::spin();
-
+  rclcpp::spin(g_node);
+  rclcpp::shutdown();
   return 0;
 }
