@@ -14,6 +14,7 @@ AGENTS.md
 build/
 install/
 log/
+.ros/
 
 .devcontainer/.env
 
