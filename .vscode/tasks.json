@@ -1,0 +1,85 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Colcon: Step 1 Utilities",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select cmake_utils pose_utils quadrotor_msgs uav_utils poscmd_2_odom waypoint_generator odom_visualization map_generator so3_disturbance_generator swarmtal_msgs --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Colcon: Step 2 Core Planning",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Colcon: Step 1 Utilities"
+      ],
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select bspline poly_traj path_searching bspline_opt plan_env traj_utils active_perception --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Colcon: Step 3 Planning Management",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Colcon: Step 2 Core Planning"
+      ],
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select plan_manage exploration_manager --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Colcon: Step 4 Simulator & Rendering",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Colcon: Step 3 Planning Management"
+      ],
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select so3_control so3_quadrotor_simulator local_sensing multi_map_server --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Colcon: Step 5 Full Workspace",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Colcon: Step 4 Simulator & Rendering"
+      ],
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && colcon build --packages-up-to plan_bringup --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    }
+  ]
+}
