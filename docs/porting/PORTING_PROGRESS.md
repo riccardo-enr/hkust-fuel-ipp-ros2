@@ -116,6 +116,7 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
     - [x] `topo_prm.cpp`
 - [x] **2.4 bspline_opt**
     - [x] `bspline_optimizer.cpp`
+    - [x] NLopt `find_package` + link/export chain fixed so downstream planners pull in `libnlopt` automatically (Dec 16, 2025).
 - [x] **2.5 plan_env**
     - [x] `sdf_map.cpp`
     - [x] `obj_predictor.cpp`
@@ -144,6 +145,8 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
     - [x] `fast_exploration_fsm.cpp`
     - [x] `fast_exploration_manager.cpp`
     - [x] `expl_data.cpp`
+    - [x] LKH solver globals isolated + exported to stop duplicate symbol errors when linking `exploration_node` (Dec 16, 2025).
+    - [x] Full dependency chain rebuilt after exporting NLopt through `bspline_opt`, so `colcon build --packages-select exploration_manager` now succeeds end-to-end (Dec 16, 2025).
 
 ### Step 4: Simulator Components (Priority 4)
 *Goal: Physics and Rendering.*

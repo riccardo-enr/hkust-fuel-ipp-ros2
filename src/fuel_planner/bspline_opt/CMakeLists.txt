@@ -26,16 +26,13 @@ find_package(cv_bridge REQUIRED)
 find_package(bspline REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
-
-# NLopt library
-set(NLOPT_INCLUDE_DIR "/usr/local/include")  
-set(NLOPT_LIBRARY "/usr/local/lib/libnlopt.so")
+find_package(NLopt REQUIRED)
 
 include_directories( 
   include 
   ${EIGEN3_INCLUDE_DIRS} 
   ${PCL_INCLUDE_DIRS}
-  ${NLOPT_INCLUDE_DIR}  
+  ${NLOPT_INCLUDE_DIRS}
   ${bspline_INCLUDE_DIRS}
 )
 
@@ -57,7 +54,11 @@ ament_target_dependencies(bspline_opt
 )
 
 target_link_libraries(bspline_opt
-  ${NLOPT_LIBRARY}   
+  ${NLOPT_LIBRARIES}
+)
+
+set_property(TARGET bspline_opt APPEND PROPERTY
+  INTERFACE_LINK_LIBRARIES ${NLOPT_LIBRARIES}
 )
 
 target_include_directories(bspline_opt PUBLIC
@@ -67,9 +68,15 @@ target_include_directories(bspline_opt PUBLIC
 
 # Install
 install(TARGETS bspline_opt
+  EXPORT export_bspline_opt
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+install(EXPORT export_bspline_opt
+  DESTINATION share/${PROJECT_NAME}/cmake
+  FILE ${PROJECT_NAME}Targets.cmake
 )
 
 install(DIRECTORY include/
@@ -83,8 +90,20 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_targets(export_bspline_opt HAS_LIBRARY_TARGET)
 ament_export_libraries(bspline_opt)
-ament_export_dependencies(rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs visualization_msgs plan_env active_perception cv_bridge bspline)
+ament_export_dependencies(
+  rclcpp
+  std_msgs
+  geometry_msgs
+  nav_msgs
+  sensor_msgs
+  visualization_msgs
+  plan_env
+  active_perception
+  cv_bridge
+  bspline
+  NLopt
+)
 
 ament_package()
-
