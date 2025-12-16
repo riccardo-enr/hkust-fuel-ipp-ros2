@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Monday, December 15, 2025 04:45 PM
+**Last Updated:** Tuesday, December 16, 2025 11:15 AM
 
 ## 1. Executive Summary
 
@@ -11,7 +11,7 @@
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All packages now use package format 3; the duplicate ROS 1 `multi_map_server/quadrotor_msgs` copy has been removed. |
 | **Build System** | 24/25       | Only `rviz_plugins` remains Catkin; `multi_map_server` builds natively with ament after the visualization node rewrite. |
-| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, legacy `plan_manage` tools (`traj_server`, tests). |
+| **Source Code**  | In Progress | Outstanding ROS 1 nodes: `multi_map_server` visualization tools, `local_sensing/pcl_render_node`, `plan_manage` legacy bench/tests (`process_msg*`, `rotation`, etc.); runtime nodes/launches for `plan_manage` now run on ROS 2 (Dec 16, 2025). |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
 ## 2. Detailed Status
@@ -37,7 +37,7 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 11. `plan_env`
 12. `path_searching`
 13. `poly_traj` *(traj_generator node + ROS 2 launch/test harness)*
-14. `plan_manage` *(ROS 2 entry point only; legacy ROS 1 tools remain, see “Pending Source”)*
+14. `plan_manage` *(FSM entry point + traj_server ROS 2 nodes; benchmark/test helpers still ROS 1, see “Pending Source”)*
 15. `active_perception`
 16. `exploration_manager`
 17. `so3_quadrotor_simulator`
@@ -51,7 +51,7 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or headers that must be ported:
 
 - `plan_manage`
-  - `traj_server.cpp`, `traj_server_backup.cpp`, and legacy tests under `test/` still use `ros::` APIs.
+  - Legacy benchmarking/test utilities under `test/` (`process_msg*.cpp`, `rotation.cpp`, etc.) still use `ros::` APIs and must be rewritten or replaced.
 - `local_sensing`
   - `pcl_render_node.cpp` (CUDA-based) is still a ROS 1 node.
 
@@ -138,7 +138,9 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
     - [x] `kino_replan_fsm.cpp`
     - [x] `topo_replan_fsm.cpp`
     - [x] `planner_manager.cpp`
-    - [ ] `traj_server.cpp` & tools/tests (ROS 1)
+    - [x] `traj_server.cpp` & `traj_server_backup.cpp` (ROS 2 nodes + launch/config)
+    - [x] ROS 2 runtime artifacts landed (`config/traj_server.yaml`, `config/fast_planner.yaml`, `launch/traj_server.launch.py`, `launch/fast_planner.launch.py`), plus dependency fixes so `colcon build --packages-select plan_manage` succeeds as of Dec 16, 2025.
+    - [ ] Legacy benchmarking/test tools under `test/` (`process_msg*`, `rotation`, etc.)
 - [x] **3.2 active_perception**
     - [x] `frontier_finder.cpp`
     - [x] `perception_utils.cpp`
