@@ -12,3 +12,4 @@ Document the required commands, order, and environment variables to keep overlay
 - Always source `install/setup.bash` after building.
 - Keep `CMAKE_EXPORT_COMPILE_COMMANDS` enabled for tooling.
 - Mention any required `AMENT_PREFIX_PATH` or `RMW_IMPLEMENTATION` overrides.
+- Set `ENABLE_CUDA=ON` via `colcon build --cmake-args -DENABLE_CUDA=ON` when you need the CUDA-based `pcl_render_node`; otherwise the CPU fallback builds and installs.

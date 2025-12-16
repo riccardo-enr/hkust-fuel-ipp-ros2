@@ -161,7 +161,7 @@ These packages have ROS 2 manifests/CMake but still contain ROS 1 executables or
 - [ ] **4.3 local_sensing**
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
-    - [ ] `pcl_render_node.cpp` (CUDA ROS 1 path)
+    - [x] `pcl_render_node.cpp` (CUDA path, ROS 2 w/ optional ENABLE_CUDA build)
 
 ### Step 5: Finalization
 - [ ] **5.1 Launch Files:** Convert all XML launch files to Python.

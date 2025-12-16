@@ -13,7 +13,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # CUDA support disabled by default (can be enabled if needed)
-set(ENABLE_CUDA false)
+option(ENABLE_CUDA "Build CUDA-based depth renderer" OFF)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -29,6 +29,10 @@ find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(image_transport REQUIRED)
+if(ENABLE_CUDA)
+  enable_language(CUDA)
+  find_package(CUDA REQUIRED)
+endif()
 
 include_directories(
   include 
@@ -38,14 +42,43 @@ include_directories(
 )
 
 if(ENABLE_CUDA)
-  # CUDA support - would require additional setup
-  message(WARNING "CUDA support not yet fully implemented for ROS 2")
+  cuda_add_library(depth_render_cuda
+    src/depth_render.cu
+  )
+
+  target_include_directories(depth_render_cuda PRIVATE
+    ${CUDA_INCLUDE_DIRS}
+  )
+
+  target_link_libraries(depth_render_cuda PRIVATE
+    ${CUDA_LIBRARIES}
+  )
+
+  add_executable(pcl_render_node
+    src/pcl_render_node.cpp
+  )
+
+  ament_target_dependencies(pcl_render_node
+    rclcpp
+    cv_bridge
+    sensor_msgs
+    geometry_msgs
+    nav_msgs
+    pcl_conversions
+    image_transport
+  )
+
+  target_link_libraries(pcl_render_node
+    depth_render_cuda
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+    ${CUDA_LIBRARIES}
+  )
 else()
-  # Build pcl_render_node (pointcloud filter)
   add_executable(pcl_render_node
     src/pointcloud_render_node.cpp
   )
-  
+
   ament_target_dependencies(pcl_render_node
     rclcpp
     cv_bridge
@@ -53,39 +86,36 @@ else()
     sensor_msgs
     geometry_msgs
     nav_msgs
-    quadrotor_msgs
     pcl_conversions
-    cmake_utils
+    image_transport
   )
-  
+
   target_link_libraries(pcl_render_node
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
   )
-
-  # Build depth_render_node (CPU depth renderer)
-  add_executable(depth_render_node
-    src/depth_render_node.cpp
-  )
-  
-  ament_target_dependencies(depth_render_node
-    rclcpp
-    cv_bridge
-    pcl_ros
-    sensor_msgs
-    geometry_msgs
-    nav_msgs
-    quadrotor_msgs
-    pcl_conversions
-    image_transport
-    cmake_utils
-  )
-  
-  target_link_libraries(depth_render_node
-    ${PCL_LIBRARIES}
-    ${OpenCV_LIBS}
-  )
 endif()
+
+# Build depth_render_node (CPU depth renderer)
+add_executable(depth_render_node
+  src/depth_render_node.cpp
+)
+
+ament_target_dependencies(depth_render_node
+  rclcpp
+  cv_bridge
+  pcl_ros
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  pcl_conversions
+  image_transport
+)
+
+target_link_libraries(depth_render_node
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 
 # Install
 install(TARGETS pcl_render_node depth_render_node
