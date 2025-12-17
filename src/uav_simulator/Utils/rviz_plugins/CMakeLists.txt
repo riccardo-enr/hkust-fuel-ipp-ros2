@@ -1,97 +1,69 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(rviz_plugins)
 
-add_compile_options(-std=c++11)
-
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rviz
-  multi_map_server
-)
-
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES irobot_msgs
-  CATKIN_DEPENDS multi_map_server
-  DEPENDS system_lib
-          message_runtime
-)
-
-###########
-## Build ##
-###########
-
-if(rviz_QT_VERSION VERSION_LESS "5")
-  message(STATUS "Using Qt4 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt4 ${rviz_QT_VERSION} EXACT REQUIRED QtCore QtGui)
-  ## pull in all required include dirs, define QT_LIBRARIES, etc.
-  include(${QT_USE_FILE})
-  qt4_wrap_cpp(MOC_FILES
-    src/goal_tool.h
-    src/probmap_display.h
-    src/aerialmap_display.h
-    src/multi_probmap_display.h
-  )
-
-else()
-  message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
-  ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-  set(QT_LIBRARIES Qt5::Widgets)
-  qt5_wrap_cpp(MOC_FILES
-    src/goal_tool.h
-    src/probmap_display.h
-    src/aerialmap_display.h
-    src/multi_probmap_display.h
-  )
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-## I prefer the Qt signals and slots to avoid defining "emit", "slots",
-## etc because they can conflict with boost signals, so define QT_NO_KEYWORDS here.
-add_definitions(-DQT_NO_KEYWORDS)
+# Find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rviz_common REQUIRED)
+find_package(rviz_default_plugins REQUIRED)
+find_package(rviz_rendering REQUIRED)
+find_package(rviz_ogre_vendor REQUIRED)
+find_package(multi_map_server REQUIRED)
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Eigen3 REQUIRED)
 
-## Here we specify which header files need to be run through "moc",
-## Qt's meta-object compiler.
+# Enable Qt MOC
+set(CMAKE_AUTOMOC ON)
 
-## Here we specify the list of source files, including the output of
-## the previous command which is stored in ``${MOC_FILES}``.
+# Include directories
+include_directories(
+  src
+  ${Eigen3_INCLUDE_DIRS}
+)
+
+# Source files
 set(SOURCE_FILES
   src/pose_tool.cpp
   src/goal_tool.cpp
   src/probmap_display.cpp
-  src/aerialmap_display.cpp   
+  src/aerialmap_display.cpp
   src/multi_probmap_display.cpp
-  ${MOC_FILES}
 )
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
-
+# Library
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
-add_dependencies(${PROJECT_NAME} multi_map_server_generate_messages_cpp)
-
-target_link_libraries(${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    ${QT_LIBRARIES}
-    )
-install(TARGETS
-  ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# Dependencies
+ament_target_dependencies(${PROJECT_NAME}
+  rclcpp
+  rviz_common
+  rviz_default_plugins
+  rviz_rendering
+  rviz_ogre_vendor
+  multi_map_server
 )
 
-install(FILES
-  plugin_description.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+target_link_libraries(${PROJECT_NAME}
+  Qt5::Widgets
+  ${Eigen3_LIBRARIES}
+)
 
-install(DIRECTORY media/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/media)
+# Export plugin description
+pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
 
-install(DIRECTORY icons/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons)
+# Install
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(FILES plugin_description.xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_package()
