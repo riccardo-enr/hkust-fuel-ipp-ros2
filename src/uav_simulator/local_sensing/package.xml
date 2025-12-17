@@ -15,6 +15,8 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>rclcpp</build_depend>
+  <build_depend>quadrotor_msgs</build_depend>
+  <build_depend>cmake_utils</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>pcl_ros</build_depend>
@@ -26,6 +28,8 @@
 
   <!-- Dependencies needed after this package is compiled. -->
   <exec_depend>rclcpp</exec_depend>
+  <exec_depend>quadrotor_msgs</exec_depend>
+  <exec_depend>cmake_utils</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>image_transport</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
