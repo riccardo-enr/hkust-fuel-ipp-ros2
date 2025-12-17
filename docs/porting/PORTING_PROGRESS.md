@@ -178,6 +178,9 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
 
 ### Step 5: Finalization
 - [x] **5.1 Launch Files:** Convert all ROS 1 XML launches to ROS 2 Python and collect them in the new `plan_bringup` ament_python package so any bringup script can be invoked from the single package namespace.
+    - `fast_planner.launch.py` (Planner)
+    - `simulator.launch.py` (Simulation Stack: Simulator, Control, Sensing, Map Gen) - **NEW**
 - [x] **5.2 Integration Test:** Build the full workspace and run the simulation stack end-to-end.
   - Step 1 (Utilities) builds successfully as of Dec 16, 2025.
   - Full workspace builds successfully as of Dec 17, 2025.
+  - Simulation stack (`simulator.launch.py`) launches and runs successfully (verified Dec 17, 2025).
