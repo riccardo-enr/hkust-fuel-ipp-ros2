@@ -37,8 +37,8 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 RUN if [ "${CUDA_CAPABILITY}" != "OFF" ]; then \
-    apt-get update && apt-get install -y nvidia-cuda-toolkit && rm -rf /var/lib/apt/lists/*; \
-    fi
+  apt-get update && apt-get install -y nvidia-cuda-toolkit && rm -rf /var/lib/apt/lists/*; \
+  fi
 
 # Install NLopt v2.7.1
 WORKDIR /tmp
