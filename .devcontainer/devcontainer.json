@@ -16,7 +16,7 @@
         "redhat.vscode-yaml"
       ],
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.defaultProfile.linux": "zsh",
         "cmake.configureOnOpen": false,
         "python.autoComplete.extraPaths": [
           "/opt/ros/jazzy/lib/python3.12/site-packages",

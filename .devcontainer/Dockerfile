@@ -89,6 +89,7 @@ RUN rosdep init || true && rosdep update
 # Extends 'base' with development tools like Neovim, debuggers, LSP, etc.
 FROM base AS dev
 
+ARG USERNAME=ubuntu
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install developer-specific tools
@@ -101,7 +102,17 @@ RUN apt-get update && apt-get install -y \
   ripgrep \
   xclip \
   clangd \
+  zsh \
   && rm -rf /var/lib/apt/lists/*
+
+# Install Oh My Zsh for the user
+USER $USERNAME
+RUN sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
+USER root
+
+# Set zsh as the default shell for the ubuntu user
+RUN chsh -s $(which zsh) $USERNAME
+ENV SHELL=/usr/bin/zsh
 
 # Install Node.js (for Codex CLI) and the Gemin/Codex tooling
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
@@ -145,7 +156,7 @@ ENV DEBIAN_FRONTEND=dialog
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-CMD ["/bin/bash"]
+CMD ["/usr/bin/zsh"]
 
 # ==============================================================================
 

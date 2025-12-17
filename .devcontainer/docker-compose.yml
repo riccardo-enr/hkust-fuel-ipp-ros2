@@ -13,6 +13,9 @@ services:
         CUDA_CAPABILITY: ${CUDA_CAPABILITY:-ON}
     volumes:
       - ../:/workspace:cached
+      - ~/.zshrc:/home/ubuntu/.zshrc:cached
+      - ~/.p10k.zsh:/home/ubuntu/.p10k.zsh:cached
+      - ~/.oh-my-zsh/custom/themes/powerlevel10k:/home/ubuntu/.oh-my-zsh/custom/themes/powerlevel10k:cached
       - ~/.config/nvim:/home/ubuntu/.config/nvim:cached
       - ~/.local/share/nvim:/home/ubuntu/.local/share/nvim:cached
       - ~/.ssh:/home/ubuntu/.ssh:cached
@@ -30,10 +33,11 @@ services:
       - seccomp:unconfined
       - apparmor:unconfined
     user: ubuntu
+    tty: true
+    stdin_open: true
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
-    command: /bin/sh -c "while sleep 1000; do :; done"
 
   fuel-runtime:
     build:
@@ -50,4 +54,3 @@ services:
     network_mode: host
     environment:
       - DISPLAY=${DISPLAY}
-    command: /bin/sh -c "while sleep 1000; do :; done"
