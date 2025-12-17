@@ -10,7 +10,7 @@
 | Metric           | Status      | Details                                                                       |
 | :--------------- | :---------- | :---------------------------------------------------------------------------- |
 | **Packages**     | 25/25       | All packages now use package format 3; the duplicate ROS 1 `multi_map_server/quadrotor_msgs` copy has been removed. |
-| **Build System** | 24/25       | Only `rviz_plugins` remains Catkin; `multi_map_server` builds natively with ament after the visualization node rewrite. |
+| **Build System** | 25/25       | All packages including `rviz_plugins` now use ament_cmake. |
 | **Source Code**  | Complete    | All runtime nodes, benchmarks, and developer utilities now use `rclcpp`/`message_filters` as of Dec 16, 2025; remaining work is launch/test coverage plus the `rviz_plugins` build migration. |
 | **Launch Files** | Pending     | To be addressed after source code migration.                                  |
 
@@ -60,14 +60,13 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
     - [x] `pcl_render_node.cpp` *(CUDA path, optional via `ENABLE_CUDA` build)*
     - [x] `euroc.cpp` *(benchmark tool rebuilt on `rclcpp` + `message_filters` with CUDA depth rendering)*
 18. `multi_map_server` *(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)*
+19. `rviz_plugins`
 
 ### 🔄 Build System Ready (Source Pending)
 
 No additional packages require ROS 1 source rewrites; only the `rviz_plugins` build migration remains on the Catkin → ament list.
 
-### ⏳ Pending Build System
 
-- `rviz_plugins` (Requires Qt5/RViz2 specific updates and full ament port).
 
 ---
 
