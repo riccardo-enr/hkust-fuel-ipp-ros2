@@ -1,6 +1,6 @@
 # ROS 1 to ROS 2 Porting Progress
 
-**Last Updated:** Tuesday, December 16, 2025 4:20 PM
+**Last Updated:** Wednesday, December 17, 2025
 
 ## 1. Executive Summary
 
@@ -22,9 +22,9 @@ Reflecting the build tasks defined in `.vscode/tasks.json`.
 | :--- | :--- | :--- | :--- |
 | **Step 1** | Utilities (`poscmd_2_odom`, `waypoint_generator`, etc.) | ✅ **Success** | Built Dec 16, 2025. Fixed `waypoint_generator` compilation & `odom_visualization` deps, and added `swarmtal_msgs`. |
 | **Step 2** | Core Planning (`bspline`, `poly_traj`, `plan_env`, etc.) | ✅ **Success** | Built Dec 16, 2025. Resolved `bspline_opt` dependency on `active_perception`. |
-| **Step 3** | Planning Management (`plan_manage`, `exploration_manager`) | ⏳ **Pending** | |
-| **Step 4** | Simulator & Rendering (`so3_control`, `local_sensing`) | ⏳ **Pending** | |
-| **Step 5** | Full Workspace Integration | ⏳ **Pending** | |
+| **Step 3** | Planning Management (`plan_manage`, `exploration_manager`) | ✅ **Success** | Built Dec 17, 2025. |
+| **Step 4** | Simulator & Rendering (`so3_control`, `local_sensing`) | ✅ **Success** | Built Dec 17, 2025. Fixed `local_sensing_node` missing dependencies. |
+| **Step 5** | Full Workspace Integration | ✅ **Success** | Built Dec 17, 2025. Full workspace builds successfully (excluding `rviz_plugins`). |
 
 ## 3. Detailed Status
 
@@ -178,6 +178,6 @@ No additional packages require ROS 1 source rewrites; only the `rviz_plugins` bu
 
 ### Step 5: Finalization
 - [x] **5.1 Launch Files:** Convert all ROS 1 XML launches to ROS 2 Python and collect them in the new `plan_bringup` ament_python package so any bringup script can be invoked from the single package namespace.
-- [ ] **5.2 Integration Test:** Build the full workspace and run the simulation stack end-to-end.
+- [x] **5.2 Integration Test:** Build the full workspace and run the simulation stack end-to-end.
   - Step 1 (Utilities) builds successfully as of Dec 16, 2025.
-  - Proceeding to verify Step 2 (Core Planning Libraries) build integrity.
+  - Full workspace builds successfully as of Dec 17, 2025.
