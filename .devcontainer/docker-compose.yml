@@ -11,6 +11,7 @@ services:
         GITHUB_USER_NAME: ${GITHUB_USER_NAME}
         GITHUB_USER_EMAIL: ${GITHUB_USER_EMAIL}
         CUDA_CAPABILITY: ${CUDA_CAPABILITY:-ON}
+        GH_TOKEN: ${GH_TOKEN}
     volumes:
       - ../:/workspace:cached
       - ~/.zshrc:/home/ubuntu/.zshrc:cached
