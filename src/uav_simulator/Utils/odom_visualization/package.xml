@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <version>0.0.0</version>
+  <name>odom_visualization</name>
+  <description>
+
+     odom_visualization
+
+  </description>
+  <maintainer email="eeshaojie@todo.todo">Shaojie Shen</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/odom_visualization</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>pose_utils</build_depend>
+  <build_depend>quadrotor_msgs</build_depend>
+
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>pose_utils</exec_depend>
+  <exec_depend>quadrotor_msgs</exec_depend>
+
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+
+

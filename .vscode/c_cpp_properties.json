@@ -1,0 +1,43 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/install/so3_quadrotor_simulator/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/install/uav_utils/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/install/so3_control/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/install/quadrotor_msgs/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/install/pose_utils/include/**",
+        "/opt/ros/jazzy/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/active_perception/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/bspline/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/bspline_opt/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/exploration_manager/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/path_searching/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/plan_env/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/plan_manage/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/poly_traj/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/traj_utils/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/fuel_planner/utils/lkh_tsp_solver/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/Utils/multi_map_server/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/Utils/pose_utils/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/Utils/quadrotor_msgs/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/Utils/uav_utils/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/local_sensing/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/so3_control/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/so3_disturbance_generator/include/**",
+        "/home/vscode/ws/src/hkust-fuel-ipp-ros2/src/uav_simulator/so3_quadrotor_simulator/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ros2",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}

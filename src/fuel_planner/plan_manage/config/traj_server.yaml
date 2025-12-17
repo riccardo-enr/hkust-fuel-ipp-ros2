@@ -1,0 +1,24 @@
+traj_server:
+  ros__parameters:
+    "traj_server.pub_traj_id": 0
+    "traj_server.frame_id": "world"
+    "traj_server.command_rate_hz": 100.0
+    "traj_server.bspline_topic": "planning/bspline"
+    "traj_server.replan_topic": "planning/replan"
+    "traj_server.new_topic": "planning/new"
+    "traj_server.pause_topic": "planning/pause"
+    "traj_server.odom_topic": "/odom_world"
+    "traj_server.command_topic": "/position_cmd"
+    "traj_server.cmd_vis_topic": "planning/position_cmd_vis"
+    "traj_server.traj_marker_topic": "planning/travel_traj"
+    "traj_server.loop_pose_topic": "/loop_fusion/pg_T_vio"
+    "traj_server.init_x": 0.0
+    "traj_server.init_y": 0.0
+    "traj_server.init_z": 0.0
+    "fsm.replan_time": 0.1
+    "loop_correction.isLoopCorrection": false
+    "perception_utils/top_angle": 0.56125
+    "perception_utils/left_angle": 0.69222
+    "perception_utils/right_angle": 0.68901
+    "perception_utils/max_dist": 4.5
+    "perception_utils/vis_dist": 1.0
