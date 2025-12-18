@@ -1,0 +1,30 @@
+CompileFlags:
+  Add: 
+    - -fopenmp
+    - -I/opt/ros/jazzy/include
+    - -I/workspace/install/bspline/include
+    - -I/workspace/install/path_searching/include
+    - -I/workspace/install/plan_env/include
+    - -I/workspace/install/traj_utils/include
+    - -I/workspace/install/quadrotor_msgs/include
+  CompilationDatabase: .
+  QueryDriver: /usr/bin/c++,/usr/bin/g++,/usr/bin/gcc,/usr/bin/clang++
+
+Diagnostics:
+  ClangTidy:
+    Add: 
+      - performance-*
+      - bugprone-*
+      - readability-*
+      - modernize-*
+    Remove: 
+      - readability-braces-around-statements
+      - readability-magic-numbers
+      - readability-function-cognitive-complexity
+  UnusedIncludes: None
+
+InlayHints:
+  Designators: true
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
