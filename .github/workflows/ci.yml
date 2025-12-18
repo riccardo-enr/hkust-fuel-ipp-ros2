@@ -57,7 +57,7 @@ jobs:
       shell: bash
       run: |
         source /opt/ros/jazzy/setup.bash
-        colcon build --packages-select bspline poly_traj path_searching bspline_opt plan_env traj_utils active_perception --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        colcon build --packages-select bspline poly_traj path_searching bspline_opt plan_env traj_utils active_perception lkh_tsp_solver --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
     - name: "Step 3: Planning Management"
       shell: bash
