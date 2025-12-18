@@ -69,7 +69,7 @@ jobs:
       shell: bash
       run: |
         source /opt/ros/jazzy/setup.bash
-        colcon build --packages-select so3_control so3_quadrotor_simulator local_sensing multi_map_server --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        colcon build --packages-select so3_control so3_quadrotor_simulator local_sensing_node multi_map_server --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
     - name: "Step 5: Full Workspace"
       shell: bash

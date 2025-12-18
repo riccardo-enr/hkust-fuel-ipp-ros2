@@ -41,6 +41,10 @@ ament_target_dependencies(poly_traj
   swarmtal_msgs
 )
 
+target_link_libraries(poly_traj
+  Eigen3::Eigen
+)
+
 target_include_directories(poly_traj PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
