@@ -25,6 +25,8 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>message_filters</build_depend>
+  <build_depend>libeigen3-dev</build_depend>
+  <build_depend>libopencv-dev</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <exec_depend>rclcpp</exec_depend>
@@ -38,6 +40,8 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>message_filters</exec_depend>
+  <exec_depend>libeigen3-dev</exec_depend>
+  <exec_depend>libopencv-dev</exec_depend>
 
 
   <test_depend>ament_lint_auto</test_depend>

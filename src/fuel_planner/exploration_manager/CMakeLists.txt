@@ -29,6 +29,8 @@ find_package(active_perception REQUIRED)
 find_package(lkh_tsp_solver REQUIRED)
 find_package(plan_manage REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(pcl_conversions REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 
