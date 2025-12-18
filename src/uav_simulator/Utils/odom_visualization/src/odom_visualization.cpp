@@ -85,6 +85,10 @@ public:
         this->create_publisher<visualization_msgs::msg::Marker>("sensor", 100);
     meshPub_ =
         this->create_publisher<visualization_msgs::msg::Marker>("robot", 100);
+    cmdVisPub_ = 
+        this->create_publisher<visualization_msgs::msg::Marker>("cmd_vis", 100);
+    cmdPosePub_ =
+        this->create_publisher<geometry_msgs::msg::PoseStamped>("cmd_pose", 100);
     heightPub_ = this->create_publisher<sensor_msgs::msg::Range>("height", 100);
 
     // Create TF broadcaster
@@ -126,6 +130,8 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr trajPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr sensorPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr meshPub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmdVisPub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr cmdPosePub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr heightPub_;
 
   // Subscribers
@@ -522,8 +528,8 @@ private:
     // Mesh model
     meshROS_.header.frame_id = frame_id_;
     meshROS_.header.stamp = cmd->header.stamp;
-    meshROS_.ns = "mesh";
-    meshROS_.id = 0;
+    meshROS_.ns = "cmd_mesh";
+    meshROS_.id = 1;
     meshROS_.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
     meshROS_.action = visualization_msgs::msg::Marker::ADD;
     meshROS_.pose.position.x = cmd->position.x;
@@ -542,12 +548,24 @@ private:
     meshROS_.scale.x = 2.0;
     meshROS_.scale.y = 2.0;
     meshROS_.scale.z = 2.0;
-    meshROS_.color.a = color_a_;
+    meshROS_.color.a = color_a_ * 0.5; // Make it semi-transparent
     meshROS_.color.r = color_r_;
     meshROS_.color.g = color_g_;
     meshROS_.color.b = color_b_;
     meshROS_.mesh_resource = mesh_resource_;
-    meshPub_->publish(meshROS_);
+    cmdVisPub_->publish(meshROS_);
+
+    // Publish Command Pose
+    geometry_msgs::msg::PoseStamped cmdPose;
+    cmdPose.header = cmd->header;
+    cmdPose.pose.position.x = cmd->position.x;
+    cmdPose.pose.position.y = cmd->position.y;
+    cmdPose.pose.position.z = cmd->position.z;
+    cmdPose.pose.orientation.w = q(0);
+    cmdPose.pose.orientation.x = q(1);
+    cmdPose.pose.orientation.y = q(2);
+    cmdPose.pose.orientation.z = q(3);
+    cmdPosePub_->publish(cmdPose);
   }
 };
 
