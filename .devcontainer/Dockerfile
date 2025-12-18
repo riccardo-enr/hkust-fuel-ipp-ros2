@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
   build-essential \
   cmake \
   git \
-  wget \
   # Required libraries for FUEL
   libarmadillo-dev \
   libpcl-dev \
@@ -107,7 +106,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install Oh My Zsh for the user
 USER $USERNAME
-RUN sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
+# Install zoxide
+RUN curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 USER root
 
 # Set zsh as the default shell for the ubuntu user
@@ -137,7 +138,7 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
 
 # Install GitHub CLI
 RUN mkdir -p -m 755 /etc/apt/keyrings && \
-  wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
   chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
   apt-get update && \
