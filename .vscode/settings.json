@@ -5,5 +5,12 @@
         "RCLCPP",
         "rviz",
         "traj"
+    ],
+    "clangd.arguments": [
+        "--log=verbose",
+        "--background-index",
+        "--clang-tidy",
+        "--compile-commands-dir=build",
+        "--query-driver=/usr/bin/c++,/usr/bin/g++,/usr/bin/gcc,/usr/bin/clang++"
     ]
 }

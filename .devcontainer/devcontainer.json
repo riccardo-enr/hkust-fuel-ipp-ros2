@@ -1,6 +1,9 @@
 {
   "name": "FUEL ROS 2 Jazzy",
-  "dockerComposeFile": "docker-compose.yml",
+  "dockerComposeFile": [
+    "docker-compose.yml",
+    "docker-compose.gpu.yml"
+  ],
   "service": "fuel-dev",
   "workspaceFolder": "/workspace",
   "customizations": {

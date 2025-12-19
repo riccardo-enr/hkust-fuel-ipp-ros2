@@ -1,25 +1,22 @@
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <iostream>
 
+#include <Eigen/Eigen>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
-#include <math.h>
+#include <cmath>
 #include <nav_msgs/msg/odometry.hpp>
+#include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <Eigen/Eigen>
-#include <random>
 
 using namespace std;
 
-class RandomForestSensing : public rclcpp::Node
-{
+class RandomForestSensing : public rclcpp::Node {
 public:
-  RandomForestSensing() : Node("random_map_sensing")
-  {
+  RandomForestSensing() : Node("random_map_sensing") {
     // Publishers
     _local_map_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/map_generator/local_cloud", 1);
@@ -31,11 +28,13 @@ public:
     // Subscribers
     _odom_sub = this->create_subscription<nav_msgs::msg::Odometry>(
         "odometry", 50,
-        std::bind(&RandomForestSensing::rcvOdometryCallbck, this, std::placeholders::_1));
-    
+        std::bind(&RandomForestSensing::rcvOdometryCallbck, this,
+                  std::placeholders::_1));
+
     auto click_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
         "/goal", 10,
-        std::bind(&RandomForestSensing::clickCallback, this, std::placeholders::_1));
+        std::bind(&RandomForestSensing::clickCallback, this,
+                  std::placeholders::_1));
 
     // Parameters
     this->declare_parameter("init_state_x", 0.0);
@@ -78,7 +77,7 @@ public:
     theta_ = this->get_parameter("ObstacleShape/theta").as_double();
     _sensing_range = this->get_parameter("sensing/radius").as_double();
     _sense_rate = this->get_parameter("sensing/rate").as_double();
-    
+
     int seed = this->get_parameter("ObstacleShape/seed").as_int();
 
     _x_l = -_x_size / 2.0;
@@ -91,8 +90,7 @@ public:
     rclcpp::sleep_for(std::chrono::milliseconds(500));
 
     // init random device
-    if (seed < 0)
-    {
+    if (seed < 0) {
       seed = rd_() % INT32_MAX;
     }
     std::cout << "map seed: " << seed << std::endl;
@@ -110,8 +108,7 @@ public:
   }
 
 private:
-  void RandomMapGenerate()
-  {
+  void RandomMapGenerate() {
     pcl::PointXYZ pt_random;
 
     rand_x_ = uniform_real_distribution<double>(_x_l, _x_h);
@@ -125,15 +122,13 @@ private:
     rand_z_ = uniform_real_distribution<double>(z_l_, z_h_);
 
     // generate polar obs
-    for (int i = 0; i < _obs_num; i++)
-    {
+    for (int i = 0; i < _obs_num; i++) {
       double x, y, w, h;
       x = rand_x_(eng_);
       y = rand_y_(eng_);
       w = rand_w_(eng_);
 
-      if (sqrt(pow(x - _init_x, 2) + pow(y - _init_y, 2)) < 2.0)
-      {
+      if (sqrt(pow(x - _init_x, 2) + pow(y - _init_y, 2)) < 2.0) {
         i--;
         continue;
       }
@@ -144,12 +139,10 @@ private:
       int widNum = ceil(w / _resolution);
 
       for (int r = -widNum / 2.0; r < widNum / 2.0; r++)
-        for (int s = -widNum / 2.0; s < widNum / 2.0; s++)
-        {
+        for (int s = -widNum / 2.0; s < widNum / 2.0; s++) {
           h = rand_h_(eng_);
           int heiNum = ceil(h / _resolution);
-          for (int t = -30; t < heiNum; t++)
-          {
+          for (int t = -30; t < heiNum; t++) {
             pt_random.x = x + (r + 0.5) * _resolution + 1e-2;
             pt_random.y = y + (s + 0.5) * _resolution + 1e-2;
             pt_random.z = (t + 0.5) * _resolution + 1e-2;
@@ -159,8 +152,7 @@ private:
     }
 
     // generate circle obs
-    for (int i = 0; i < circle_num_; ++i)
-    {
+    for (int i = 0; i < circle_num_; ++i) {
       double x, y, z;
       x = rand_x_(eng_);
       y = rand_y_(eng_);
@@ -173,15 +165,15 @@ private:
 
       double theta = rand_theta_(eng_);
       Eigen::Matrix3d rotate;
-      rotate << cos(theta), -sin(theta), 0.0, sin(theta), cos(theta), 0.0, 0, 0, 1;
+      rotate << cos(theta), -sin(theta), 0.0, sin(theta), cos(theta), 0.0, 0, 0,
+          1;
 
       double radius1 = rand_radius_(eng_);
       double radius2 = rand_radius2_(eng_);
 
       // draw a circle centered at (x,y,z)
       Eigen::Vector3d cpt;
-      for (double angle = 0.0; angle < 6.282; angle += _resolution / 2)
-      {
+      for (double angle = 0.0; angle < 6.282; angle += _resolution / 2) {
         cpt(0) = 0.0;
         cpt(1) = radius1 * cos(angle);
         cpt(2) = radius2 * sin(angle);
@@ -190,9 +182,10 @@ private:
         Eigen::Vector3d cpt_if;
         for (int ifx = -0; ifx <= 0; ++ifx)
           for (int ify = -0; ify <= 0; ++ify)
-            for (int ifz = -0; ifz <= 0; ++ifz)
-            {
-              cpt_if = cpt + Eigen::Vector3d(ifx * _resolution, ify * _resolution, ifz * _resolution);
+            for (int ifz = -0; ifz <= 0; ++ifz) {
+              cpt_if =
+                  cpt + Eigen::Vector3d(ifx * _resolution, ify * _resolution,
+                                        ifz * _resolution);
               cpt_if = rotate * cpt_if + Eigen::Vector3d(x, y, z);
               pt_random.x = cpt_if(0);
               pt_random.y = cpt_if(1);
@@ -203,10 +196,8 @@ private:
     }
 
     // add ground
-    for (double x = _x_l; x < _x_h; x += _resolution)
-    {
-      for (double y = _y_l; y < _y_h; y += _resolution)
-      {
+    for (double x = _x_l; x < _x_h; x += _resolution) {
+      for (double y = _y_l; y < _y_h; y += _resolution) {
         pt_random.x = x;
         pt_random.y = y;
         pt_random.z = -0.1;
@@ -225,25 +216,23 @@ private:
     _map_ok = true;
   }
 
-  void rcvOdometryCallbck(const nav_msgs::msg::Odometry::SharedPtr odom)
-  {
+  void rcvOdometryCallbck(const nav_msgs::msg::Odometry::SharedPtr odom) {
     if (odom->child_frame_id == "X" || odom->child_frame_id == "O")
       return;
     _has_odom = true;
 
-    _state = { odom->pose.pose.position.x,
-               odom->pose.pose.position.y,
-               odom->pose.pose.position.z,
-               odom->twist.twist.linear.x,
-               odom->twist.twist.linear.y,
-               odom->twist.twist.linear.z,
-               0.0,
-               0.0,
-               0.0 };
+    _state = {odom->pose.pose.position.x,
+              odom->pose.pose.position.y,
+              odom->pose.pose.position.z,
+              odom->twist.twist.linear.x,
+              odom->twist.twist.linear.y,
+              odom->twist.twist.linear.z,
+              0.0,
+              0.0,
+              0.0};
   }
 
-  void pubSensedPoints()
-  {
+  void pubSensedPoints() {
     pcl::toROSMsg(cloudMap_, globalMap_pcd_);
     globalMap_pcd_.header.frame_id = "world";
     globalMap_pcd_.header.stamp = this->now();
@@ -251,8 +240,7 @@ private:
 
     // Throttled warning every 2 seconds
     auto now = this->now();
-    if ((now - last_warn_time_).seconds() >= 2.0)
-    {
+    if ((now - last_warn_time_).seconds() >= 2.0) {
       RCLCPP_WARN(this->get_logger(), "seed: %d", seed_);
       last_warn_time_ = now;
     }
@@ -274,16 +262,14 @@ private:
     if (isnan(searchPoint.x) || isnan(searchPoint.y) || isnan(searchPoint.z))
       return;
 
-    if (kdtreeLocalMap_.radiusSearch(searchPoint, _sensing_range, pointIdxRadiusSearch_, pointRadiusSquaredDistance_) > 0)
-    {
-      for (size_t i = 0; i < pointIdxRadiusSearch_.size(); ++i)
-      {
+    if (kdtreeLocalMap_.radiusSearch(searchPoint, _sensing_range,
+                                     pointIdxRadiusSearch_,
+                                     pointRadiusSquaredDistance_) > 0) {
+      for (size_t i = 0; i < pointIdxRadiusSearch_.size(); ++i) {
         pt = cloudMap_.points[pointIdxRadiusSearch_[i]];
         localMap.points.push_back(pt);
       }
-    }
-    else
-    {
+    } else {
       RCLCPP_ERROR(this->get_logger(), "[Map server] No obstacles .");
       return;
     }
@@ -299,8 +285,7 @@ private:
     _local_map_pub->publish(localMap_pcd);
   }
 
-  void clickCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
-  {
+  void clickCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
     double x = msg->pose.position.x;
     double y = msg->pose.position.y;
     double w = rand_w_(eng_);
@@ -313,12 +298,10 @@ private:
     int widNum = ceil(w / _resolution);
 
     for (int r = -widNum / 2.0; r < widNum / 2.0; r++)
-      for (int s = -widNum / 2.0; s < widNum / 2.0; s++)
-      {
+      for (int s = -widNum / 2.0; s < widNum / 2.0; s++) {
         h = rand_h_(eng_);
         int heiNum = ceil(h / _resolution);
-        for (int t = -20; t < heiNum; t++)
-        {
+        for (int t = -20; t < heiNum; t++) {
           pt_random.x = x + (r + 0.5) * _resolution + 1e-2;
           pt_random.y = y + (s + 0.5) * _resolution + 1e-2;
           pt_random.z = (t + 0.5) * _resolution + 1e-2;
@@ -345,10 +328,10 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _local_map_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _all_map_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr click_map_pub_;
-  
+
   // Subscribers
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr _odom_sub;
-  
+
   // Timer
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -393,8 +376,7 @@ private:
   rclcpp::Time last_warn_time_{0, 0, RCL_ROS_TIME};
 };
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<RandomForestSensing>();
   rclcpp::spin(node);

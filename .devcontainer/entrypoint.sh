@@ -1,26 +1,37 @@
 #!/bin/bash
 set -e
-shopt -s nullglob
 
 source_if_exists() {
   local setup_file="$1"
   if [ -f "${setup_file}" ]; then
-    # shellcheck disable=SC1090
     source "${setup_file}"
   fi
 }
 
-# Source ROS 2
-source_if_exists /opt/ros/jazzy/setup.bash
+source_if_exists "/opt/ros/jazzy/setup.bash"
+source_if_exists "/workspace/install/setup.bash"
 
-# Source the primary workspace (if present)
-source_if_exists /workspace/install/setup.bash
-
-# Automatically source any nested workspaces under /workspace/*/install
+# Source nested workspaces
 for ws_install in /workspace/*/install; do
   if [ -d "${ws_install}" ] && [ "${ws_install}" != "/workspace/install" ]; then
     source_if_exists "${ws_install}/setup.bash"
   fi
 done
+
+# Ensure zshrc sources ROS 2 setup if zsh is being executed
+if [[ "$*" == *"zsh"* ]]; then
+  ZSHRC="$HOME/.zshrc"
+  if [ -f "$ZSHRC" ]; then
+    if ! grep -q "source /opt/ros/jazzy/setup.zsh" "$ZSHRC"; then
+      echo "Configuring zshrc for ROS 2..."
+      {
+        echo ""
+        echo "# Auto-added by entrypoint.sh"
+        echo "source /opt/ros/jazzy/setup.zsh"
+        echo "if [ -f /workspace/install/setup.zsh ]; then source /workspace/install/setup.zsh; fi"
+      } >> "$ZSHRC"
+    fi
+  fi
+fi
 
 exec "$@"

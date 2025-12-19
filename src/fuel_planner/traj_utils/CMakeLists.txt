@@ -23,6 +23,7 @@ find_package(bspline REQUIRED)
 find_package(bspline_opt REQUIRED)
 find_package(path_searching REQUIRED)
 find_package(poly_traj REQUIRED)
+find_package(quadrotor_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(pcl_conversions REQUIRED)
@@ -51,6 +52,7 @@ ament_target_dependencies(traj_utils
   path_searching
   poly_traj
   pcl_conversions
+  quadrotor_msgs
 )
 
 target_link_libraries(traj_utils
@@ -72,14 +74,26 @@ ament_target_dependencies(process_msg
   sensor_msgs
   visualization_msgs
   pcl_conversions
+  quadrotor_msgs
 )
 
 target_link_libraries(process_msg
   ${PCL_LIBRARIES}
 )
 
+add_executable(circle_publisher 
+  src/circle_publisher.cpp
+)
+
+ament_target_dependencies(circle_publisher
+  rclcpp
+  std_msgs
+  geometry_msgs
+  quadrotor_msgs
+)
+
 # Install
-install(TARGETS traj_utils process_msg
+install(TARGETS traj_utils process_msg circle_publisher
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -97,6 +111,6 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(traj_utils)
-ament_export_dependencies(rclcpp std_msgs sensor_msgs visualization_msgs cv_bridge bspline bspline_opt path_searching poly_traj)
+ament_export_dependencies(rclcpp std_msgs sensor_msgs visualization_msgs cv_bridge bspline bspline_opt path_searching poly_traj quadrotor_msgs)
 
 ament_package()  

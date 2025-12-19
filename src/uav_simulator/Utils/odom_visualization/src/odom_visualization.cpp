@@ -35,6 +35,10 @@ public:
     this->declare_parameter("color/g", 0.0);
     this->declare_parameter("color/b", 0.0);
     this->declare_parameter("color/a", 1.0);
+    this->declare_parameter("cmd_color/r", 1.0);
+    this->declare_parameter("cmd_color/g", 0.0);
+    this->declare_parameter("cmd_color/b", 0.0);
+    this->declare_parameter("cmd_color/a", 1.0);
     this->declare_parameter("origin", false);
     this->declare_parameter("robot_scale", 2.0);
     this->declare_parameter("frame_id", "world");
@@ -50,6 +54,10 @@ public:
     color_g_ = this->get_parameter("color/g").as_double();
     color_b_ = this->get_parameter("color/b").as_double();
     color_a_ = this->get_parameter("color/a").as_double();
+    cmd_color_r_ = this->get_parameter("cmd_color/r").as_double();
+    cmd_color_g_ = this->get_parameter("cmd_color/g").as_double();
+    cmd_color_b_ = this->get_parameter("cmd_color/b").as_double();
+    cmd_color_a_ = this->get_parameter("cmd_color/a").as_double();
     origin_ = this->get_parameter("origin").as_bool();
     scale_ = this->get_parameter("robot_scale").as_double();
     frame_id_ = this->get_parameter("frame_id").as_string();
@@ -66,6 +74,7 @@ public:
 
     // Initialize time tracking variables
     prevt_ = this->now();
+    prev_cmd_t_ = this->now();
     pt_ = this->now();
     ppose_ = zeros<colvec>(6);
 
@@ -73,6 +82,7 @@ public:
     posePub_ =
         this->create_publisher<geometry_msgs::msg::PoseStamped>("pose", 100);
     pathPub_ = this->create_publisher<nav_msgs::msg::Path>("path", 100);
+    cmdPathPub_ = this->create_publisher<nav_msgs::msg::Path>("cmd_path", 100);
     velPub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "velocity", 100);
     covPub_ = this->create_publisher<visualization_msgs::msg::Marker>(
@@ -85,6 +95,10 @@ public:
         this->create_publisher<visualization_msgs::msg::Marker>("sensor", 100);
     meshPub_ =
         this->create_publisher<visualization_msgs::msg::Marker>("robot", 100);
+    cmdVisPub_ = 
+        this->create_publisher<visualization_msgs::msg::Marker>("cmd_vis", 100);
+    cmdPosePub_ =
+        this->create_publisher<geometry_msgs::msg::PoseStamped>("cmd_pose", 100);
     heightPub_ = this->create_publisher<sensor_msgs::msg::Range>("height", 100);
 
     // Create TF broadcaster
@@ -107,6 +121,7 @@ private:
   // Parameters
   string mesh_resource_;
   double color_r_, color_g_, color_b_, color_a_, cov_scale_, scale_;
+  double cmd_color_r_, cmd_color_g_, cmd_color_b_, cmd_color_a_;
   bool cross_config_;
   bool tf45_;
   bool cov_pos_;
@@ -120,12 +135,15 @@ private:
   // Publishers
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr posePub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPub_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr cmdPathPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr velPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr covPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr covVelPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr trajPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr sensorPub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr meshPub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmdVisPub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr cmdPosePub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr heightPub_;
 
   // Subscribers
@@ -139,6 +157,7 @@ private:
   // Message storage
   geometry_msgs::msg::PoseStamped poseROS_;
   nav_msgs::msg::Path pathROS_;
+  nav_msgs::msg::Path cmdPathROS_;
   visualization_msgs::msg::Marker velROS_;
   visualization_msgs::msg::Marker covROS_;
   visualization_msgs::msg::Marker covVelROS_;
@@ -149,6 +168,7 @@ private:
 
   // Time tracking
   rclcpp::Time prevt_;
+  rclcpp::Time prev_cmd_t_;
   rclcpp::Time pt_;
   colvec ppose_;
 
@@ -522,8 +542,8 @@ private:
     // Mesh model
     meshROS_.header.frame_id = frame_id_;
     meshROS_.header.stamp = cmd->header.stamp;
-    meshROS_.ns = "mesh";
-    meshROS_.id = 0;
+    meshROS_.ns = "cmd_mesh";
+    meshROS_.id = 1;
     meshROS_.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
     meshROS_.action = visualization_msgs::msg::Marker::ADD;
     meshROS_.pose.position.x = cmd->position.x;
@@ -542,12 +562,36 @@ private:
     meshROS_.scale.x = 2.0;
     meshROS_.scale.y = 2.0;
     meshROS_.scale.z = 2.0;
-    meshROS_.color.a = color_a_;
-    meshROS_.color.r = color_r_;
-    meshROS_.color.g = color_g_;
-    meshROS_.color.b = color_b_;
+    meshROS_.color.a = cmd_color_a_;
+    meshROS_.color.r = cmd_color_r_;
+    meshROS_.color.g = cmd_color_g_;
+    meshROS_.color.b = cmd_color_b_;
     meshROS_.mesh_resource = mesh_resource_;
-    meshPub_->publish(meshROS_);
+    cmdVisPub_->publish(meshROS_);
+
+    // Publish Command Pose
+    geometry_msgs::msg::PoseStamped cmdPose;
+    cmdPose.header = cmd->header;
+    cmdPose.pose.position.x = cmd->position.x;
+    cmdPose.pose.position.y = cmd->position.y;
+    cmdPose.pose.position.z = cmd->position.z;
+    cmdPose.pose.orientation.w = q(0);
+    cmdPose.pose.orientation.x = q(1);
+    cmdPose.pose.orientation.y = q(2);
+    cmdPose.pose.orientation.z = q(3);
+    cmdPosePub_->publish(cmdPose);
+
+    // Command Path
+    if ((rclcpp::Time(cmd->header.stamp) - prev_cmd_t_).seconds() > 0.1) {
+      prev_cmd_t_ = rclcpp::Time(cmd->header.stamp);
+      cmdPathROS_.header = cmdPose.header;
+      cmdPathROS_.header.frame_id = "world";
+      cmdPathROS_.poses.push_back(cmdPose);
+      if (cmdPathROS_.poses.size() > 1000) {
+        cmdPathROS_.poses.erase(cmdPathROS_.poses.begin());
+      }
+      cmdPathPub_->publish(cmdPathROS_);
+    }
   }
 };
 

@@ -48,6 +48,10 @@ install(TARGETS odom_visualization
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(DIRECTORY meshes
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Testing
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

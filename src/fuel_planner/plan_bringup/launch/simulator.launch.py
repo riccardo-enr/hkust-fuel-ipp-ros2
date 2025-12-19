@@ -1,5 +1,6 @@
 import os
 import yaml
+import launch
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
@@ -36,42 +37,61 @@ def generate_launch_description():
         DeclareLaunchArgument('init_z', default_value='1.0'),
         DeclareLaunchArgument('map_size_x', default_value='40.0'),
         DeclareLaunchArgument('map_size_y', default_value='20.0'),
-        DeclareLaunchArgument('map_size_z', default_value='5.0'),
-        DeclareLaunchArgument('odometry_topic', default_value='/state_ukf/odom'),
-
-        # Map Generator (Random Forest)
-        Node(
-            package='map_generator',
-            executable='random_forest',
-            name='random_forest',
-            output='screen',
-            parameters=[{
-                'init_state_x': init_x,
-                'init_state_y': init_y,
-                'map/x_size': map_size_x,
-                'map/y_size': map_size_y,
-                'map/z_size': map_size_z,
-                'map/resolution': 0.1,
-                'ObstacleShape/seed': 1,
-                'map/obs_num': 80,
-                'map/circle_num': 80,
-                'ObstacleShape/lower_rad': 0.5,
-                'ObstacleShape/upper_rad': 0.8,
-                'ObstacleShape/lower_hei': 0.0,
-                'ObstacleShape/upper_hei': 3.0,
-                'ObstacleShape/radius_l': 0.7,
-                'ObstacleShape/radius_h': 0.8,
-                'ObstacleShape/z_l': 0.7,
-                'ObstacleShape/z_h': 0.8,
-                'ObstacleShape/theta': 0.5,
-                'sensing/radius': 5.0,
-                'sensing/rate': 10.0,
-            }],
-            remappings=[
-                ('odometry', odometry_topic),
-            ]
-        ),
-
+            DeclareLaunchArgument('map_size_z', default_value='5.0'),
+            DeclareLaunchArgument('odometry_topic', default_value='/state_ukf/odom'),
+            DeclareLaunchArgument('map_type', default_value='random_forest', description='Map generator type: random_forest or empty_world'),
+        
+            # Map Generator (Random Forest)
+            Node(
+                package='map_generator',
+                executable='random_forest',
+                name='random_forest',
+                condition=launch.conditions.IfCondition(launch.substitutions.PythonExpression(["'", LaunchConfiguration('map_type'), "' == 'random_forest'"])),
+                output='screen',
+                parameters=[{
+                    'init_state_x': init_x,
+                    'init_state_y': init_y,
+                    'map/x_size': map_size_x,
+                    'map/y_size': map_size_y,
+                    'map/z_size': map_size_z,
+                    'map/resolution': 0.1,
+                    'ObstacleShape/seed': 1,
+                    'map/obs_num': 80,
+                    'map/circle_num': 80,
+                    'ObstacleShape/lower_rad': 0.5,
+                    'ObstacleShape/upper_rad': 0.8,
+                    'ObstacleShape/lower_hei': 0.0,
+                    'ObstacleShape/upper_hei': 3.0,
+                    'ObstacleShape/radius_l': 0.7,
+                    'ObstacleShape/radius_h': 0.8,
+                    'ObstacleShape/z_l': 0.7,
+                    'ObstacleShape/z_h': 0.8,
+                    'ObstacleShape/theta': 0.5,
+                    'sensing/radius': 5.0,
+                    'sensing/rate': 10.0,
+                }],
+                remappings=[
+                    ('odometry', odometry_topic),
+                ]
+            ),
+        
+            # Map Generator (Empty World)
+            Node(
+                package='map_generator',
+                executable='empty_world',
+                name='empty_world',
+                condition=launch.conditions.IfCondition(launch.substitutions.PythonExpression(["'", LaunchConfiguration('map_type'), "' == 'empty_world'"])),
+                output='screen',
+                parameters=[{
+                    'map/x_size': map_size_x,
+                    'map/y_size': map_size_y,
+                    'map/resolution': 0.1,
+                    'sensing/rate': 10.0,
+                }],
+                remappings=[
+                    ('odometry', odometry_topic),
+                ]
+            ),
         # Traj Utils Process Msg
         Node(
             package='traj_utils',
@@ -115,7 +135,7 @@ def generate_launch_description():
                         gains_config,
                         corrections_config,
                         {
-                            'mass': 0.74,
+                            'mass': 0.98,
                             'use_angle_corrections': False,
                             'use_external_yaw': False,
                             'gains/rot/z': 1.0,
@@ -154,17 +174,23 @@ def generate_launch_description():
             package='odom_visualization',
             executable='odom_visualization',
             name='odom_visualization',
+            namespace='odom_visualization',
             output='screen',
             parameters=[{
                 'color/a': 1.0,
                 'color/r': 0.0,
                 'color/g': 0.0,
                 'color/b': 1.0,
+                'cmd_color/a': 0.5,
+                'cmd_color/r': 1.0,
+                'cmd_color/g': 0.0,
+                'cmd_color/b': 0.0,
                 'covariance_scale': 100.0,
                 'robot_scale': 1.0,
             }],
             remappings=[
                 ('odom', '/visual_slam/odom'),
+                ('cmd', '/planning/pos_cmd'),
             ]
         ),
 

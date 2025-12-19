@@ -39,6 +39,7 @@ services:
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
+    command: zsh
 
   fuel-runtime:
     build:
