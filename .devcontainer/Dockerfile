@@ -65,7 +65,6 @@ RUN if ! getent group $USER_GID > /dev/null 2>&1; then \
   && chmod 0440 /etc/sudoers.d/$USERNAME \
   && usermod -aG sudo $USERNAME
 
-
 # Ensure home directory permissions for potential mounts
 RUN mkdir -p /home/$USERNAME/.config/nvim \
   /home/$USERNAME/.local/share/nvim \
@@ -79,13 +78,22 @@ RUN for shell_rc in /root/.bashrc /home/$USERNAME/.bashrc; do \
   echo "if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi" >> ${shell_rc}; \
   done
 
+# Also source ROS 2 in zshrc since we're using zsh
+# Also source ROS 2 in zshrc since we're using zsh
+RUN for shell_rc in /root/.zshrc /home/$USERNAME/.zshrc; do \
+  echo "source /opt/ros/jazzy/setup.zsh" >> ${shell_rc}; \
+  echo "if [ -f /workspace/install/setup.zsh ]; then source /workspace/install/setup.zsh; fi" >> ${shell_rc}; \
+  done
+
+# RUN chsh -s $(which zsh) $USERNAME
+# ENV SHELL=/usr/bin/zsh
+
 # Initialize rosdep
 RUN rosdep init || true && rosdep update
 
 # ==============================================================================
 
 # Stage 1: dev
-# Extends 'base' with development tools like Neovim, debuggers, LSP, etc.
 FROM base AS dev
 
 ARG USERNAME=ubuntu
@@ -107,15 +115,14 @@ RUN apt-get update && apt-get install -y \
 # Install Oh My Zsh for the user
 USER $USERNAME
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
-# Install zoxide
 RUN curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 USER root
 
-# Set zsh as the default shell for the ubuntu user
-RUN chsh -s $(which zsh) $USERNAME
+# FIX: Use usermod instead of chsh to avoid PAM/Password errors in Ubuntu 24.04
+RUN usermod --shell /usr/bin/zsh $USERNAME
 ENV SHELL=/usr/bin/zsh
 
-# Install Node.js (for Codex CLI) and the Gemin/Codex tooling
+# Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
   apt-get install -y nodejs && \
   npm install -g @openai/codex && \
@@ -123,14 +130,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
   npm install -g markdownlint-cli2 && \
   rm -rf /var/lib/apt/lists/*
 
-# Install Neovim from tarball
+# Install Neovim (x86_64 for your workstation)
 RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz \
   && tar xzvf nvim-linux-x86_64.tar.gz \
   && mv nvim-linux-x86_64 /opt/nvim \
   && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
   && rm nvim-linux-x86_64.tar.gz
 
-# Install Lazygit
+# Install Lazygit (x86_64 for your workstation)
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^" ]*') \
   && curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" \
   && tar xf lazygit.tar.gz -C /usr/local/bin \
