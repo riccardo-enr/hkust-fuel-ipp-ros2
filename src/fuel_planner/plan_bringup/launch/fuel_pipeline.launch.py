@@ -4,7 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetLaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -29,11 +29,14 @@ def generate_launch_description():
   publish_simulator_tf = LaunchConfiguration("publish_simulator_tf")
   traj_server_params_file = LaunchConfiguration("traj_server_params_file")
   fast_planner_params_file = LaunchConfiguration("fast_planner_params_file")
+  exploration_params_file = LaunchConfiguration("exploration_params_file")
   init_x = LaunchConfiguration("init_x")
   init_y = LaunchConfiguration("init_y")
   init_z = LaunchConfiguration("init_z")
+  exploration = LaunchConfiguration("exploration")
 
   plan_manage_dir = get_package_share_directory("plan_manage")
+  exploration_manager_dir = get_package_share_directory("exploration_manager")
 
   simulator_launch = IncludeLaunchDescription(
       PythonLaunchDescriptionSource(
@@ -67,6 +70,7 @@ def generate_launch_description():
           os.path.join(plan_bringup_dir, "launch", "fast_planner.launch.py")
       ),
       launch_arguments={
+          "params_file": fast_planner_params_file,
           "planner_mode": planner_mode,
           "odom_topic": odom_topic,
           "sensor_pose_topic": sensor_pose_topic,
@@ -77,6 +81,25 @@ def generate_launch_description():
           "waypoint_traj_trigger": waypoint_traj_trigger,
           "waypoint_type": waypoint_type,
       }.items(),
+      condition=UnlessCondition(exploration)
+  )
+
+  exploration_launch = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource(
+          os.path.join(plan_bringup_dir, "launch", "exploration.launch.py")
+      ),
+      launch_arguments={
+          "params_file": exploration_params_file,
+          "odom_topic": odom_topic,
+          "sensor_pose_topic": sensor_pose_topic,
+          "depth_topic": depth_topic,
+          "cloud_topic": cloud_topic,
+          "launch_waypoint_generator": launch_waypoint_generator,
+          "waypoint_goal_topic": waypoint_goal_topic,
+          "waypoint_traj_trigger": waypoint_traj_trigger,
+          "waypoint_type": waypoint_type,
+      }.items(),
+      condition=IfCondition(exploration)
   )
 
   rviz_node = Node(
@@ -180,6 +203,11 @@ def generate_launch_description():
               description="YAML file providing fast_planner parameters.",
           ),
           DeclareLaunchArgument(
+              "exploration_params_file",
+              default_value=os.path.join(exploration_manager_dir, "config", "exploration.yaml"),
+              description="YAML file providing exploration_node parameters.",
+          ),
+          DeclareLaunchArgument(
               "publish_simulator_tf",
               default_value="true",
               description="Publish a world->simulator static transform for RViz.",
@@ -199,11 +227,17 @@ def generate_launch_description():
               default_value="1.0",
               description="Initial z position",
           ),
+          DeclareLaunchArgument(
+              "exploration",
+              default_value="false",
+              description="Set true to run in autonomous exploration mode.",
+          ),
           simulator_launch,
           SetLaunchConfiguration("params_file", traj_server_params_file),
           traj_server_launch,
           SetLaunchConfiguration("params_file", fast_planner_params_file),
           fast_planner_launch,
+          exploration_launch,
           simulator_tf,
           rviz_node,
       ]
