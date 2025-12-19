@@ -25,36 +25,42 @@ const int BsplineOptimizer::NORMAL_PHASE = BsplineOptimizer::SMOOTHNESS | Bsplin
 void BsplineOptimizer::setParam(rclcpp::Node::SharedPtr node) {
   node_ = node;
   clock_ = node_->get_clock();
+
+  auto declare_if_missing = [this](const std::string& name, const auto& value) {
+    if (!node_->has_parameter(name)) {
+      node_->declare_parameter(name, value);
+    }
+  };
   
-  node_->declare_parameter("optimization/ld_smooth", -1.0);
-  node_->declare_parameter("optimization/ld_dist", -1.0);
-  node_->declare_parameter("optimization/ld_feasi", -1.0);
-  node_->declare_parameter("optimization/ld_start", -1.0);
-  node_->declare_parameter("optimization/ld_end", -1.0);
-  node_->declare_parameter("optimization/ld_guide", -1.0);
-  node_->declare_parameter("optimization/ld_waypt", -1.0);
-  node_->declare_parameter("optimization/ld_view", -1.0);
-  node_->declare_parameter("optimization/ld_time", -1.0);
+  declare_if_missing("optimization/ld_smooth", -1.0);
+  declare_if_missing("optimization/ld_dist", -1.0);
+  declare_if_missing("optimization/ld_feasi", -1.0);
+  declare_if_missing("optimization/ld_start", -1.0);
+  declare_if_missing("optimization/ld_end", -1.0);
+  declare_if_missing("optimization/ld_guide", -1.0);
+  declare_if_missing("optimization/ld_waypt", -1.0);
+  declare_if_missing("optimization/ld_view", -1.0);
+  declare_if_missing("optimization/ld_time", -1.0);
   
-  node_->declare_parameter("optimization/dist0", -1.0);
-  node_->declare_parameter("optimization/max_vel", -1.0);
-  node_->declare_parameter("optimization/max_acc", -1.0);
-  node_->declare_parameter("optimization/dlmin", -1.0);
-  node_->declare_parameter("optimization/wnl", -1.0);
+  declare_if_missing("optimization/dist0", -1.0);
+  declare_if_missing("optimization/max_vel", -1.0);
+  declare_if_missing("optimization/max_acc", -1.0);
+  declare_if_missing("optimization/dlmin", -1.0);
+  declare_if_missing("optimization/wnl", -1.0);
   
-  node_->declare_parameter("optimization/max_iteration_num1", -1);
-  node_->declare_parameter("optimization/max_iteration_num2", -1);
-  node_->declare_parameter("optimization/max_iteration_num3", -1);
-  node_->declare_parameter("optimization/max_iteration_num4", -1);
+  declare_if_missing("optimization/max_iteration_num1", -1);
+  declare_if_missing("optimization/max_iteration_num2", -1);
+  declare_if_missing("optimization/max_iteration_num3", -1);
+  declare_if_missing("optimization/max_iteration_num4", -1);
   
-  node_->declare_parameter("optimization/max_iteration_time1", -1.0);
-  node_->declare_parameter("optimization/max_iteration_time2", -1.0);
-  node_->declare_parameter("optimization/max_iteration_time3", -1.0);
-  node_->declare_parameter("optimization/max_iteration_time4", -1.0);
+  declare_if_missing("optimization/max_iteration_time1", -1.0);
+  declare_if_missing("optimization/max_iteration_time2", -1.0);
+  declare_if_missing("optimization/max_iteration_time3", -1.0);
+  declare_if_missing("optimization/max_iteration_time4", -1.0);
   
-  node_->declare_parameter("optimization/algorithm1", -1);
-  node_->declare_parameter("optimization/algorithm2", -1);
-  node_->declare_parameter("manager/bspline_degree", 3);
+  declare_if_missing("optimization/algorithm1", -1);
+  declare_if_missing("optimization/algorithm2", -1);
+  declare_if_missing("manager/bspline_degree", 3);
 
   node_->get_parameter("optimization/ld_smooth", ld_smooth_);
   node_->get_parameter("optimization/ld_dist", ld_dist_);
