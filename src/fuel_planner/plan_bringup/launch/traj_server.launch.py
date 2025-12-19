@@ -12,6 +12,9 @@ def generate_launch_description():
     odom_topic = LaunchConfiguration("odom_topic")
     command_topic = LaunchConfiguration("command_topic")
     use_backup = LaunchConfiguration("use_backup")
+    init_x = LaunchConfiguration("init_x")
+    init_y = LaunchConfiguration("init_y")
+    init_z = LaunchConfiguration("init_z")
 
     default_params = PathJoinSubstitution([
         FindPackageShare("plan_manage"),
@@ -40,6 +43,21 @@ def generate_launch_description():
             default_value="false",
             description="Set true to run the simpler traj_server_backup node.",
         ),
+        DeclareLaunchArgument(
+            "init_x",
+            default_value="0.0",
+            description="Initial x position",
+        ),
+        DeclareLaunchArgument(
+            "init_y",
+            default_value="0.0",
+            description="Initial y position",
+        ),
+        DeclareLaunchArgument(
+            "init_z",
+            default_value="0.0",
+            description="Initial z position",
+        ),
         Node(
             package="plan_manage",
             executable="traj_server",
@@ -50,6 +68,9 @@ def generate_launch_description():
                 {
                     "traj_server.odom_topic": odom_topic,
                     "traj_server.command_topic": command_topic,
+                    "traj_server.init_x": init_x,
+                    "traj_server.init_y": init_y,
+                    "traj_server.init_z": init_z,
                 },
             ],
             output="screen",
@@ -64,6 +85,9 @@ def generate_launch_description():
                 {
                     "traj_server.odom_topic": odom_topic,
                     "traj_server.command_topic": command_topic,
+                    "traj_server.init_x": init_x,
+                    "traj_server.init_y": init_y,
+                    "traj_server.init_z": init_z,
                 },
             ],
             output="screen",

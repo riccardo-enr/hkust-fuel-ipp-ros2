@@ -2,7 +2,7 @@ fast_planner_node:
   ros__parameters:
     "planner_node/planner": 1
 
-    "fsm/flight_type": 2
+    "fsm/flight_type": 1
     "fsm/thresh_replan": 1.5
     "fsm/thresh_no_replan": 2.0
     "fsm/waypoint_num": 1
