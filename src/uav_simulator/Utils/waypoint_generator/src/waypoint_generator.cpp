@@ -54,17 +54,24 @@ private:
   std::deque<nav_msgs::msg::Path> waypointSegments_;
   rclcpp::Time trigged_time_;
 
+  template <typename T>
+  void ensure_parameter(const std::string& name, const T& default_value) {
+    if (!this->has_parameter(name)) {
+      this->declare_parameter<T>(name, default_value);
+    }
+  }
+
   void load_seg(int segid, const rclcpp::Time& time_base) {
     std::string seg_str = boost::str(bfmt("seg%d/") % segid);
     double yaw;
     double time_from_start;
     RCLCPP_INFO(this->get_logger(), "Getting segment %d", segid);
     
-    this->declare_parameter<double>(seg_str + "yaw", 0.0);
-    this->declare_parameter<double>(seg_str + "time_from_start", 0.0);
-    this->declare_parameter<std::vector<double>>(seg_str + "x", std::vector<double>());
-    this->declare_parameter<std::vector<double>>(seg_str + "y", std::vector<double>());
-    this->declare_parameter<std::vector<double>>(seg_str + "z", std::vector<double>());
+    ensure_parameter<double>(seg_str + "yaw", 0.0);
+    ensure_parameter<double>(seg_str + "time_from_start", 0.0);
+    ensure_parameter<std::vector<double>>(seg_str + "x", std::vector<double>());
+    ensure_parameter<std::vector<double>>(seg_str + "y", std::vector<double>());
+    ensure_parameter<std::vector<double>>(seg_str + "z", std::vector<double>());
     
     yaw = this->get_parameter(seg_str + "yaw").as_double();
     time_from_start = this->get_parameter(seg_str + "time_from_start").as_double();
@@ -119,7 +126,7 @@ private:
     int seg_cnt = 0;
     waypointSegments_.clear();
     
-    this->declare_parameter<int>("segment_cnt", 0);
+    ensure_parameter<int>("segment_cnt", 0);
     seg_cnt = this->get_parameter("segment_cnt").as_int();
     
     for (int i = 0; i < seg_cnt; ++i) {
@@ -197,7 +204,7 @@ private:
     trigged_time_ = this->now();
 
     // Update waypoint_type parameter
-    this->declare_parameter<std::string>("waypoint_type", "manual");
+    ensure_parameter<std::string>("waypoint_type", "manual");
     waypoint_type_ = this->get_parameter("waypoint_type").as_string();
 
     if (waypoint_type_ == string("circle")) {
@@ -265,7 +272,7 @@ private:
     }
 
     // Update waypoint_type parameter
-    this->declare_parameter<std::string>("waypoint_type", "manual");
+    ensure_parameter<std::string>("waypoint_type", "manual");
     waypoint_type_ = this->get_parameter("waypoint_type").as_string();
 
     RCLCPP_ERROR_STREAM(this->get_logger(), "Pattern " << waypoint_type_ << " generated!");

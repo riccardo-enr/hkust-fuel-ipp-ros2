@@ -23,7 +23,7 @@ fast_planner_node:
     "sdf_map/map_size_z": 5.0
     "sdf_map/obstacles_inflation": 0.099
     "sdf_map/local_bound_inflate": 0.5
-    "sdf_map/local_map_margin": 50.0
+    "sdf_map/local_map_margin": 50
     "sdf_map/ground_height": -1.0
     "sdf_map/default_dist": 5.0
     "sdf_map/p_hit": 0.65
@@ -43,7 +43,7 @@ fast_planner_node:
     "map_ros/fy": 387.229248046875
     "map_ros/depth_filter_maxdist": 5.0
     "map_ros/depth_filter_mindist": 0.2
-    "map_ros/depth_filter_margin": 2.0
+    "map_ros/depth_filter_margin": 2
     "map_ros/k_depth_scaling_factor": 1000.0
     "map_ros/skip_pixel": 2
     "map_ros/esdf_slice_height": 0.3
