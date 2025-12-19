@@ -58,6 +58,7 @@
   <depend>bspline_opt</depend>
   <depend>path_searching</depend>
   <depend>poly_traj</depend>
+  <depend>quadrotor_msgs</depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

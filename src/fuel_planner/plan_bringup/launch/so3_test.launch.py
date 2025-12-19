@@ -29,24 +29,28 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Command to publish a test position after 8 seconds
-    # Note: We use 'ros2 topic pub' with 'execute_process'
-    test_command = ExecuteProcess(
-        cmd=[
-            'ros2', 'topic', 'pub', '--once', '/planning/pos_cmd',
-            'quadrotor_msgs/msg/PositionCommand',
-            '{header: {stamp: {sec: 0, nanosec: 0}, frame_id: "world"}, position: {x: -18.0, y: -1.0, z: 2.0}, velocity: {x: 0.0, y: 0.0, z: 0.0}, acceleration: {x: 0.0, y: 0.0, z: 0.0}, yaw: 0.0, kx: [5.7, 5.7, 6.2], kv: [3.4, 3.4, 4.0], trajectory_flag: 1}'
-        ],
-        output='screen'
+    # Circle Publisher Node to publish a dynamic circular reference after 8 seconds
+    circle_publisher_node = Node(
+        package='traj_utils',
+        executable='circle_publisher',
+        name='circle_publisher',
+        output='screen',
+        parameters=[{
+            'radius': 2.0,
+            'omega': 1.0,
+            'center_x': -18.0,
+            'center_y': -1.0,
+            'center_z': 2.0,
+        }]
     )
 
-    delayed_test_command = TimerAction(
+    delayed_circle_command = TimerAction(
         period=8.0,
-        actions=[test_command]
+        actions=[circle_publisher_node]
     )
 
     return LaunchDescription([
         simulator_launch,
         rviz_node,
-        delayed_test_command
+        delayed_circle_command
     ])
