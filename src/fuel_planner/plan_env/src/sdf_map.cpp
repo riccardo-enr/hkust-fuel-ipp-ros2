@@ -16,17 +16,29 @@ void SDFMap::initMap(rclcpp::Node::SharedPtr node) {
 
   // Params of map properties
   double x_size, y_size, z_size;
-  mp_->resolution_ = node->declare_parameter("sdf_map/resolution", -1.0);
-  x_size = node->declare_parameter("sdf_map/map_size_x", -1.0);
-  y_size = node->declare_parameter("sdf_map/map_size_y", -1.0);
-  z_size = node->declare_parameter("sdf_map/map_size_z", -1.0);
-  mp_->obstacles_inflation_ = node->declare_parameter("sdf_map/obstacles_inflation", -1.0);
-  mp_->local_bound_inflate_ = node->declare_parameter("sdf_map/local_bound_inflate", 1.0);
-  mp_->local_map_margin_ = node->declare_parameter("sdf_map/local_map_margin", 1);
-  mp_->ground_height_ = node->declare_parameter("sdf_map/ground_height", 1.0);
-  mp_->default_dist_ = node->declare_parameter("sdf_map/default_dist", 5.0);
-  mp_->optimistic_ = node->declare_parameter("sdf_map/optimistic", true);
-  mp_->signed_dist_ = node->declare_parameter("sdf_map/signed_dist", false);
+  if (!node->has_parameter("sdf_map/resolution")) node->declare_parameter("sdf_map/resolution", -1.0);
+  if (!node->has_parameter("sdf_map/map_size_x")) node->declare_parameter("sdf_map/map_size_x", -1.0);
+  if (!node->has_parameter("sdf_map/map_size_y")) node->declare_parameter("sdf_map/map_size_y", -1.0);
+  if (!node->has_parameter("sdf_map/map_size_z")) node->declare_parameter("sdf_map/map_size_z", -1.0);
+  if (!node->has_parameter("sdf_map/obstacles_inflation")) node->declare_parameter("sdf_map/obstacles_inflation", -1.0);
+  if (!node->has_parameter("sdf_map/local_bound_inflate")) node->declare_parameter("sdf_map/local_bound_inflate", 1.0);
+  if (!node->has_parameter("sdf_map/local_map_margin")) node->declare_parameter("sdf_map/local_map_margin", 1);
+  if (!node->has_parameter("sdf_map/ground_height")) node->declare_parameter("sdf_map/ground_height", 1.0);
+  if (!node->has_parameter("sdf_map/default_dist")) node->declare_parameter("sdf_map/default_dist", 5.0);
+  if (!node->has_parameter("sdf_map/optimistic")) node->declare_parameter("sdf_map/optimistic", true);
+  if (!node->has_parameter("sdf_map/signed_dist")) node->declare_parameter("sdf_map/signed_dist", false);
+
+  mp_->resolution_ = node->get_parameter("sdf_map/resolution").as_double();
+  x_size = node->get_parameter("sdf_map/map_size_x").as_double();
+  y_size = node->get_parameter("sdf_map/map_size_y").as_double();
+  z_size = node->get_parameter("sdf_map/map_size_z").as_double();
+  mp_->obstacles_inflation_ = node->get_parameter("sdf_map/obstacles_inflation").as_double();
+  mp_->local_bound_inflate_ = node->get_parameter("sdf_map/local_bound_inflate").as_double();
+  mp_->local_map_margin_ = node->get_parameter("sdf_map/local_map_margin").as_int();
+  mp_->ground_height_ = node->get_parameter("sdf_map/ground_height").as_double();
+  mp_->default_dist_ = node->get_parameter("sdf_map/default_dist").as_double();
+  mp_->optimistic_ = node->get_parameter("sdf_map/optimistic").as_bool();
+  mp_->signed_dist_ = node->get_parameter("sdf_map/signed_dist").as_bool();
 
   mp_->local_bound_inflate_ = max(mp_->resolution_, mp_->local_bound_inflate_);
   mp_->resolution_inv_ = 1 / mp_->resolution_;
@@ -38,13 +50,21 @@ void SDFMap::initMap(rclcpp::Node::SharedPtr node) {
   mp_->map_max_boundary_ = mp_->map_origin_ + mp_->map_size_;
 
   // Params of raycasting-based fusion
-  mp_->p_hit_ = node->declare_parameter("sdf_map/p_hit", 0.70);
-  mp_->p_miss_ = node->declare_parameter("sdf_map/p_miss", 0.35);
-  mp_->p_min_ = node->declare_parameter("sdf_map/p_min", 0.12);
-  mp_->p_max_ = node->declare_parameter("sdf_map/p_max", 0.97);
-  mp_->p_occ_ = node->declare_parameter("sdf_map/p_occ", 0.80);
-  mp_->max_ray_length_ = node->declare_parameter("sdf_map/max_ray_length", -0.1);
-  mp_->virtual_ceil_height_ = node->declare_parameter("sdf_map/virtual_ceil_height", -0.1);
+  if (!node->has_parameter("sdf_map/p_hit")) node->declare_parameter("sdf_map/p_hit", 0.70);
+  if (!node->has_parameter("sdf_map/p_miss")) node->declare_parameter("sdf_map/p_miss", 0.35);
+  if (!node->has_parameter("sdf_map/p_min")) node->declare_parameter("sdf_map/p_min", 0.12);
+  if (!node->has_parameter("sdf_map/p_max")) node->declare_parameter("sdf_map/p_max", 0.97);
+  if (!node->has_parameter("sdf_map/p_occ")) node->declare_parameter("sdf_map/p_occ", 0.80);
+  if (!node->has_parameter("sdf_map/max_ray_length")) node->declare_parameter("sdf_map/max_ray_length", -0.1);
+  if (!node->has_parameter("sdf_map/virtual_ceil_height")) node->declare_parameter("sdf_map/virtual_ceil_height", -0.1);
+
+  mp_->p_hit_ = node->get_parameter("sdf_map/p_hit").as_double();
+  mp_->p_miss_ = node->get_parameter("sdf_map/p_miss").as_double();
+  mp_->p_min_ = node->get_parameter("sdf_map/p_min").as_double();
+  mp_->p_max_ = node->get_parameter("sdf_map/p_max").as_double();
+  mp_->p_occ_ = node->get_parameter("sdf_map/p_occ").as_double();
+  mp_->max_ray_length_ = node->get_parameter("sdf_map/max_ray_length").as_double();
+  mp_->virtual_ceil_height_ = node->get_parameter("sdf_map/virtual_ceil_height").as_double();
 
   auto logit = [](const double& x) { return log(x / (1 - x)); };
   mp_->prob_hit_log_ = logit(mp_->p_hit_);

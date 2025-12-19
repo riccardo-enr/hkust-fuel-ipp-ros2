@@ -104,13 +104,13 @@ HeadingPlanner::HeadingPlanner(const rclcpp::Node::SharedPtr& node) : node_(node
   visib_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/heading_planner/visib", 20);
   box_pub_ = node_->create_publisher<visualization_msgs::msg::Marker>("/heading_planner/box", 20);
 
-  node_->declare_parameter("heading_planner/yaw_diff", -1.0);
-  node_->declare_parameter("heading_planner/lambda1", -1.0);
-  node_->declare_parameter("heading_planner/lambda2", -1.0);
-  node_->declare_parameter("heading_planner/half_vert_num", -1);
-  node_->declare_parameter("heading_planner/max_yaw_rate", -1.0);
-  node_->declare_parameter("heading_planner/w", -1.0);
-  node_->declare_parameter("heading_planner/weight_type", -1);
+  if (!node_->has_parameter("heading_planner/yaw_diff")) node_->declare_parameter("heading_planner/yaw_diff", -1.0);
+  if (!node_->has_parameter("heading_planner/lambda1")) node_->declare_parameter("heading_planner/lambda1", -1.0);
+  if (!node_->has_parameter("heading_planner/lambda2")) node_->declare_parameter("heading_planner/lambda2", -1.0);
+  if (!node_->has_parameter("heading_planner/half_vert_num")) node_->declare_parameter("heading_planner/half_vert_num", -1);
+  if (!node_->has_parameter("heading_planner/max_yaw_rate")) node_->declare_parameter("heading_planner/max_yaw_rate", -1.0);
+  if (!node_->has_parameter("heading_planner/w")) node_->declare_parameter("heading_planner/w", -1.0);
+  if (!node_->has_parameter("heading_planner/weight_type")) node_->declare_parameter("heading_planner/weight_type", -1);
 
   yaw_diff_ = node_->get_parameter("heading_planner/yaw_diff").as_double();
   lambda1_ = node_->get_parameter("heading_planner/lambda1").as_double();

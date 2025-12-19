@@ -27,18 +27,18 @@ FrontierFinder::FrontierFinder(const EDTEnvironment::Ptr& edt, const rclcpp::Nod
   frontier_flag_ = vector<char>(voxel_num, 0);
   fill(frontier_flag_.begin(), frontier_flag_.end(), 0);
 
-  node->declare_parameter("frontier/cluster_min", -1);
-  node->declare_parameter("frontier/cluster_size_xy", -1.0);
-  node->declare_parameter("frontier/cluster_size_z", -1.0);
-  node->declare_parameter("frontier/min_candidate_dist", -1.0);
-  node->declare_parameter("frontier/min_candidate_clearance", -1.0);
-  node->declare_parameter("frontier/candidate_dphi", -1.0);
-  node->declare_parameter("frontier/candidate_rmax", -1.0);
-  node->declare_parameter("frontier/candidate_rmin", -1.0);
-  node->declare_parameter("frontier/candidate_rnum", -1);
-  node->declare_parameter("frontier/down_sample", -1);
-  node->declare_parameter("frontier/min_visib_num", -1);
-  node->declare_parameter("frontier/min_view_finish_fraction", -1.0);
+  if (!node->has_parameter("frontier/cluster_min")) node->declare_parameter("frontier/cluster_min", -1);
+  if (!node->has_parameter("frontier/cluster_size_xy")) node->declare_parameter("frontier/cluster_size_xy", -1.0);
+  if (!node->has_parameter("frontier/cluster_size_z")) node->declare_parameter("frontier/cluster_size_z", -1.0);
+  if (!node->has_parameter("frontier/min_candidate_dist")) node->declare_parameter("frontier/min_candidate_dist", -1.0);
+  if (!node->has_parameter("frontier/min_candidate_clearance")) node->declare_parameter("frontier/min_candidate_clearance", -1.0);
+  if (!node->has_parameter("frontier/candidate_dphi")) node->declare_parameter("frontier/candidate_dphi", -1.0);
+  if (!node->has_parameter("frontier/candidate_rmax")) node->declare_parameter("frontier/candidate_rmax", -1.0);
+  if (!node->has_parameter("frontier/candidate_rmin")) node->declare_parameter("frontier/candidate_rmin", -1.0);
+  if (!node->has_parameter("frontier/candidate_rnum")) node->declare_parameter("frontier/candidate_rnum", -1);
+  if (!node->has_parameter("frontier/down_sample")) node->declare_parameter("frontier/down_sample", -1);
+  if (!node->has_parameter("frontier/min_visib_num")) node->declare_parameter("frontier/min_visib_num", -1);
+  if (!node->has_parameter("frontier/min_view_finish_fraction")) node->declare_parameter("frontier/min_view_finish_fraction", -1.0);
 
   cluster_min_ = node->get_parameter("frontier/cluster_min").as_int();
   cluster_size_xy_ = node->get_parameter("frontier/cluster_size_xy").as_double();
