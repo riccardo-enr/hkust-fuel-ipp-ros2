@@ -7,7 +7,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select cmake_utils pose_utils quadrotor_msgs uav_utils poscmd_2_odom waypoint_generator odom_visualization map_generator so3_disturbance_generator swarmtal_msgs --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        "source /opt/ros/jazzy/setup.bash && CC=gcc-12 CXX=g++-12 colcon build --packages-select cmake_utils pose_utils quadrotor_msgs uav_utils poscmd_2_odom waypoint_generator odom_visualization map_generator so3_disturbance_generator swarmtal_msgs --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_HOST_COMPILER=gcc-12 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "problemMatcher": [
         "$gcc"
@@ -23,7 +23,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select bspline poly_traj path_searching bspline_opt plan_env traj_utils active_perception lkh_tsp_solver --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        "source /opt/ros/jazzy/setup.bash && CC=gcc-12 CXX=g++-12 colcon build --packages-select bspline poly_traj path_searching bspline_opt plan_env traj_utils active_perception lkh_tsp_solver --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_HOST_COMPILER=gcc-12 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "problemMatcher": [
         "$gcc"
@@ -39,7 +39,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select plan_manage exploration_manager --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        "source /opt/ros/jazzy/setup.bash && CC=gcc-12 CXX=g++-12 colcon build --packages-select plan_manage exploration_manager --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_HOST_COMPILER=gcc-12 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "problemMatcher": [
         "$gcc"
@@ -55,7 +55,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select so3_control so3_quadrotor_simulator local_sensing_node multi_map_server --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        "source /opt/ros/jazzy/setup.bash && CC=gcc-12 CXX=g++-12 colcon build --packages-select so3_control so3_quadrotor_simulator local_sensing_node multi_map_server --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_HOST_COMPILER=gcc-12 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "problemMatcher": [
         "$gcc"
@@ -71,7 +71,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/ros/jazzy/setup.bash && colcon build --packages-up-to plan_bringup --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        "source /opt/ros/jazzy/setup.bash && CC=gcc-12 CXX=g++-12 colcon build --packages-up-to plan_bringup --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_CUDA_HOST_COMPILER=gcc-12 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "group": {
         "kind": "build",
