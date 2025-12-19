@@ -12,16 +12,15 @@ Panels:
         - /Command1
         - /Command Pose1
       Splitter Ratio: 0.5
-    Tree Height: 600
+    Tree Height: 267
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
     Expanded:
       - /2D Pose Estimate1
-      - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.58
+    Splitter Ratio: 0.5799999833106995
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -41,7 +40,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.03
+        Line Width: 0.029999999329447746
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -55,6 +54,8 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: true
@@ -69,57 +70,112 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/Marker
       Enabled: true
-      Marker Topic: /odom_visualization/robot
       Name: Robot
       Namespaces:
         {}
-      Queue Size: 100
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: ""
       Value: true
-    - Class: rviz_default_plugins/Pose
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.3
-      Head Radius: 0.1
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
       Name: Robot Pose
       Shaft Length: 1
-      Shaft Radius: 0.05
+      Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /odom_visualization/pose
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /odom_visualization/pose
       Value: true
-    - Class: rviz_default_plugins/Odometry
-      Angle Tolerance: 0.1
-      Color: 255; 255; 127
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
       Enabled: true
       Keep: 100
-      Length: 1.0
       Name: Robot Odom
-      Position Tolerance: 0.1
-      Shape: Arrow
-      Topic: /visual_slam/odom
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 1
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 255; 25; 0
+        Head Length: 0.30000001192092896
+        Head Radius: 0.10000000149011612
+        Shaft Length: 1
+        Shaft Radius: 0.05000000074505806
+        Value: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /visual_slam/odom
       Value: true
     - Class: rviz_default_plugins/Marker
       Enabled: true
-      Marker Topic: /odom_visualization/cmd_vis
       Name: Command
       Namespaces:
         {}
-      Queue Size: 100
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: ""
       Value: true
-    - Class: rviz_default_plugins/Pose
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
       Color: 0; 255; 0
       Enabled: true
-      Head Length: 0.3
-      Head Radius: 0.1
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
       Name: Command Pose
       Shaft Length: 1
-      Shaft Radius: 0.05
+      Shaft Radius: 0.05000000074505806
       Shape: Axes
-      Topic: /odom_visualization/cmd_pose
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /odom_visualization/cmd_pose
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Default Light: true
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -129,39 +185,66 @@ Visualization Manager:
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
     - Class: rviz_default_plugins/SetInitialPose
-      Theta std deviation: 0.26
-      Topic: /initialpose
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
     - Class: rviz_default_plugins/SetGoal
-      Topic: /move_base_simple/goal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /move_base_simple/goal
     - Class: rviz_default_plugins/PublishPoint
       Single click: true
-      Topic: /clicked_point
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
   Value: true
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 30
+      Distance: 66.3204345703125
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
       Focal Point:
         X: -18
         Y: -1
         Z: 0
       Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.01
-      Pitch: 0.78
+      Near Clip Distance: 0.009999999776482582
+      Pitch: -0.02999962493777275
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 0.78
+      Yaw: 1.4849992990493774
+    Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 800
+  Height: 1043
   Hide Left Dock: false
   Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd000000010000000000000253000003bdfc0200000005fb000000100044006900730070006c006100790073010000003b00000146000000c700fffffffb0000001200530065006c0065006300740069006f006e01000001870000009e0000005c00fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000022b0000009e0000005c00fffffffb0000000a0056006900650077007301000002cf000000d9000000a000fffffffb0000000800540069006d006501000003ae0000004a0000003700ffffff00000527000003bd00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -170,6 +253,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1200
-  X: 0
+  Width: 1920
+  X: 1920
   Y: 0

@@ -135,7 +135,7 @@ def generate_launch_description():
                         gains_config,
                         corrections_config,
                         {
-                            'mass': 0.74,
+                            'mass': 0.98,
                             'use_angle_corrections': False,
                             'use_external_yaw': False,
                             'gains/rot/z': 1.0,
@@ -174,6 +174,7 @@ def generate_launch_description():
             package='odom_visualization',
             executable='odom_visualization',
             name='odom_visualization',
+            namespace='odom_visualization',
             output='screen',
             parameters=[{
                 'color/a': 1.0,
