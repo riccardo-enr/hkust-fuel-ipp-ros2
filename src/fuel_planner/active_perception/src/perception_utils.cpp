@@ -4,11 +4,11 @@
 
 namespace fast_planner {
 PerceptionUtils::PerceptionUtils(const rclcpp::Node::SharedPtr& node) {
-  node->declare_parameter("perception_utils/top_angle", -1.0);
-  node->declare_parameter("perception_utils/left_angle", -1.0);
-  node->declare_parameter("perception_utils/right_angle", -1.0);
-  node->declare_parameter("perception_utils/max_dist", -1.0);
-  node->declare_parameter("perception_utils/vis_dist", -1.0);
+  if (!node->has_parameter("perception_utils/top_angle")) node->declare_parameter("perception_utils/top_angle", -1.0);
+  if (!node->has_parameter("perception_utils/left_angle")) node->declare_parameter("perception_utils/left_angle", -1.0);
+  if (!node->has_parameter("perception_utils/right_angle")) node->declare_parameter("perception_utils/right_angle", -1.0);
+  if (!node->has_parameter("perception_utils/max_dist")) node->declare_parameter("perception_utils/max_dist", -1.0);
+  if (!node->has_parameter("perception_utils/vis_dist")) node->declare_parameter("perception_utils/vis_dist", -1.0);
 
   top_angle_ = node->get_parameter("perception_utils/top_angle").as_double();
   left_angle_ = node->get_parameter("perception_utils/left_angle").as_double();

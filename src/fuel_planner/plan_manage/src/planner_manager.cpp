@@ -23,42 +23,42 @@ void FastPlannerManager::initPlanModules(rclcpp::Node::SharedPtr node) {
   node_ = node;
   /* read algorithm parameters */
 
-  node_->declare_parameter("manager/max_vel", -1.0);
+  if (!node_->has_parameter("manager/max_vel")) node_->declare_parameter("manager/max_vel", -1.0);
   node_->get_parameter("manager/max_vel", pp_.max_vel_);
-  node_->declare_parameter("manager/max_acc", -1.0);
+  if (!node_->has_parameter("manager/max_acc")) node_->declare_parameter("manager/max_acc", -1.0);
   node_->get_parameter("manager/max_acc", pp_.max_acc_);
-  node_->declare_parameter("manager/max_jerk", -1.0);
+  if (!node_->has_parameter("manager/max_jerk")) node_->declare_parameter("manager/max_jerk", -1.0);
   node_->get_parameter("manager/max_jerk", pp_.max_jerk_);
-  node_->declare_parameter("manager/accept_vel", pp_.max_vel_ + 0.5);
+  if (!node_->has_parameter("manager/accept_vel")) node_->declare_parameter("manager/accept_vel", pp_.max_vel_ + 0.5);
   node_->get_parameter("manager/accept_vel", pp_.accept_vel_);
-  node_->declare_parameter("manager/accept_acc", pp_.max_acc_ + 0.5);
+  if (!node_->has_parameter("manager/accept_acc")) node_->declare_parameter("manager/accept_acc", pp_.max_acc_ + 0.5);
   node_->get_parameter("manager/accept_acc", pp_.accept_acc_);
-  node_->declare_parameter("manager/max_yawdot", -1.0);
+  if (!node_->has_parameter("manager/max_yawdot")) node_->declare_parameter("manager/max_yawdot", -1.0);
   node_->get_parameter("manager/max_yawdot", pp_.max_yawdot_);
-  node_->declare_parameter("manager/dynamic_environment", -1);
+  if (!node_->has_parameter("manager/dynamic_environment")) node_->declare_parameter("manager/dynamic_environment", -1);
   node_->get_parameter("manager/dynamic_environment", pp_.dynamic_);
-  node_->declare_parameter("manager/clearance_threshold", -1.0);
+  if (!node_->has_parameter("manager/clearance_threshold")) node_->declare_parameter("manager/clearance_threshold", -1.0);
   node_->get_parameter("manager/clearance_threshold", pp_.clearance_);
-  node_->declare_parameter("manager/local_segment_length", -1.0);
+  if (!node_->has_parameter("manager/local_segment_length")) node_->declare_parameter("manager/local_segment_length", -1.0);
   node_->get_parameter("manager/local_segment_length", pp_.local_traj_len_);
-  node_->declare_parameter("manager/control_points_distance", -1.0);
+  if (!node_->has_parameter("manager/control_points_distance")) node_->declare_parameter("manager/control_points_distance", -1.0);
   node_->get_parameter("manager/control_points_distance", pp_.ctrl_pt_dist);
-  node_->declare_parameter("manager/bspline_degree", 3);
+  if (!node_->has_parameter("manager/bspline_degree")) node_->declare_parameter("manager/bspline_degree", 3);
   node_->get_parameter("manager/bspline_degree", pp_.bspline_degree_);
-  node_->declare_parameter("manager/min_time", false);
+  if (!node_->has_parameter("manager/min_time")) node_->declare_parameter("manager/min_time", false);
   node_->get_parameter("manager/min_time", pp_.min_time_);
 
   bool use_geometric_path, use_kinodynamic_path, use_topo_path, use_optimization,
       use_active_perception;
-  node_->declare_parameter("manager/use_geometric_path", false);
+  if (!node_->has_parameter("manager/use_geometric_path")) node_->declare_parameter("manager/use_geometric_path", false);
   node_->get_parameter("manager/use_geometric_path", use_geometric_path);
-  node_->declare_parameter("manager/use_kinodynamic_path", false);
+  if (!node_->has_parameter("manager/use_kinodynamic_path")) node_->declare_parameter("manager/use_kinodynamic_path", false);
   node_->get_parameter("manager/use_kinodynamic_path", use_kinodynamic_path);
-  node_->declare_parameter("manager/use_topo_path", false);
+  if (!node_->has_parameter("manager/use_topo_path")) node_->declare_parameter("manager/use_topo_path", false);
   node_->get_parameter("manager/use_topo_path", use_topo_path);
-  node_->declare_parameter("manager/use_optimization", false);
+  if (!node_->has_parameter("manager/use_optimization")) node_->declare_parameter("manager/use_optimization", false);
   node_->get_parameter("manager/use_optimization", use_optimization);
-  node_->declare_parameter("manager/use_active_perception", false);
+  if (!node_->has_parameter("manager/use_active_perception")) node_->declare_parameter("manager/use_active_perception", false);
   node_->get_parameter("manager/use_active_perception", use_active_perception);
 
   local_data_.traj_id_ = 0;

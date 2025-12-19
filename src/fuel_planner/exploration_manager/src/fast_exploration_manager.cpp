@@ -45,19 +45,19 @@ void FastExplorationManager::initialize(rclcpp::Node::SharedPtr node) {
   ed_.reset(new ExplorationData);
   ep_.reset(new ExplorationParam);
 
-  node_->declare_parameter("exploration/refine_local", true);
-  node_->declare_parameter("exploration/refined_num", -1);
-  node_->declare_parameter("exploration/refined_radius", -1.0);
-  node_->declare_parameter("exploration/top_view_num", -1);
-  node_->declare_parameter("exploration/max_decay", -1.0);
-  node_->declare_parameter("exploration/tsp_dir", "null");
-  node_->declare_parameter("exploration/relax_time", 1.0);
+  if (!node_->has_parameter("exploration/refine_local")) node_->declare_parameter("exploration/refine_local", true);
+  if (!node_->has_parameter("exploration/refined_num")) node_->declare_parameter("exploration/refined_num", -1);
+  if (!node_->has_parameter("exploration/refined_radius")) node_->declare_parameter("exploration/refined_radius", -1.0);
+  if (!node_->has_parameter("exploration/top_view_num")) node_->declare_parameter("exploration/top_view_num", -1);
+  if (!node_->has_parameter("exploration/max_decay")) node_->declare_parameter("exploration/max_decay", -1.0);
+  if (!node_->has_parameter("exploration/tsp_dir")) node_->declare_parameter("exploration/tsp_dir", "null");
+  if (!node_->has_parameter("exploration/relax_time")) node_->declare_parameter("exploration/relax_time", 1.0);
 
-  node_->declare_parameter("exploration/vm", -1.0);
-  node_->declare_parameter("exploration/am", -1.0);
-  node_->declare_parameter("exploration/yd", -1.0);
-  node_->declare_parameter("exploration/ydd", -1.0);
-  node_->declare_parameter("exploration/w_dir", -1.0);
+  if (!node_->has_parameter("exploration/vm")) node_->declare_parameter("exploration/vm", -1.0);
+  if (!node_->has_parameter("exploration/am")) node_->declare_parameter("exploration/am", -1.0);
+  if (!node_->has_parameter("exploration/yd")) node_->declare_parameter("exploration/yd", -1.0);
+  if (!node_->has_parameter("exploration/ydd")) node_->declare_parameter("exploration/ydd", -1.0);
+  if (!node_->has_parameter("exploration/w_dir")) node_->declare_parameter("exploration/w_dir", -1.0);
 
   ep_->refine_local_ = node_->get_parameter("exploration/refine_local").as_bool();
   ep_->refined_num_ = node_->get_parameter("exploration/refined_num").as_int();

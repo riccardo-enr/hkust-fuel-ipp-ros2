@@ -9,15 +9,25 @@ void KinoReplanFSM::init(rclcpp::Node::SharedPtr node) {
   have_odom_ = false;
 
   /*  fsm param  */
-  target_type_ = node_->declare_parameter("fsm/flight_type", -1);
-  replan_thresh_ = node_->declare_parameter("fsm/thresh_replan", -1.0);
-  no_replan_thresh_ = node_->declare_parameter("fsm/thresh_no_replan", -1.0);
+  if (!node_->has_parameter("fsm/flight_type")) node_->declare_parameter("fsm/flight_type", -1);
+  target_type_ = node_->get_parameter("fsm/flight_type").as_int();
+  if (!node_->has_parameter("fsm/thresh_replan")) node_->declare_parameter("fsm/thresh_replan", -1.0);
+  replan_thresh_ = node_->get_parameter("fsm/thresh_replan").as_double();
+  if (!node_->has_parameter("fsm/thresh_no_replan")) node_->declare_parameter("fsm/thresh_no_replan", -1.0);
+  no_replan_thresh_ = node_->get_parameter("fsm/thresh_no_replan").as_double();
 
-  waypoint_num_ = node_->declare_parameter("fsm/waypoint_num", -1);
+  if (!node_->has_parameter("fsm/waypoint_num")) node_->declare_parameter("fsm/waypoint_num", -1);
+  waypoint_num_ = node_->get_parameter("fsm/waypoint_num").as_int();
   for (int i = 0; i < waypoint_num_; i++) {
-    waypoints_[i][0] = node_->declare_parameter("fsm/waypoint" + std::to_string(i) + "_x", -1.0);
-    waypoints_[i][1] = node_->declare_parameter("fsm/waypoint" + std::to_string(i) + "_y", -1.0);
-    waypoints_[i][2] = node_->declare_parameter("fsm/waypoint" + std::to_string(i) + "_z", -1.0);
+    if (!node_->has_parameter("fsm/waypoint" + std::to_string(i) + "_x"))
+      node_->declare_parameter("fsm/waypoint" + std::to_string(i) + "_x", -1.0);
+    waypoints_[i][0] = node_->get_parameter("fsm/waypoint" + std::to_string(i) + "_x").as_double();
+    if (!node_->has_parameter("fsm/waypoint" + std::to_string(i) + "_y"))
+      node_->declare_parameter("fsm/waypoint" + std::to_string(i) + "_y", -1.0);
+    waypoints_[i][1] = node_->get_parameter("fsm/waypoint" + std::to_string(i) + "_y").as_double();
+    if (!node_->has_parameter("fsm/waypoint" + std::to_string(i) + "_z"))
+      node_->declare_parameter("fsm/waypoint" + std::to_string(i) + "_z", -1.0);
+    waypoints_[i][2] = node_->get_parameter("fsm/waypoint" + std::to_string(i) + "_z").as_double();
   }
 
   /* initialize main modules */

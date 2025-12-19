@@ -265,19 +265,19 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
 }
 
 void KinodynamicAstar::setParam(rclcpp::Node::SharedPtr nh) {
-  nh->declare_parameter("search/max_tau", -1.0);
-  nh->declare_parameter("search/init_max_tau", -1.0);
-  nh->declare_parameter("search/max_vel", -1.0);
-  nh->declare_parameter("search/max_acc", -1.0);
-  nh->declare_parameter("search/w_time", -1.0);
-  nh->declare_parameter("search/horizon", -1.0);
-  nh->declare_parameter("search/resolution_astar", -1.0);
-  nh->declare_parameter("search/time_resolution", -1.0);
-  nh->declare_parameter("search/lambda_heu", -1.0);
-  nh->declare_parameter("search/allocate_num", -1);
-  nh->declare_parameter("search/check_num", -1);
-  nh->declare_parameter("search/optimistic", true);
-  nh->declare_parameter("search/vel_margin", 0.0);
+  if (!nh->has_parameter("search/max_tau")) nh->declare_parameter("search/max_tau", -1.0);
+  if (!nh->has_parameter("search/init_max_tau")) nh->declare_parameter("search/init_max_tau", -1.0);
+  if (!nh->has_parameter("search/max_vel")) nh->declare_parameter("search/max_vel", -1.0);
+  if (!nh->has_parameter("search/max_acc")) nh->declare_parameter("search/max_acc", -1.0);
+  if (!nh->has_parameter("search/w_time")) nh->declare_parameter("search/w_time", -1.0);
+  if (!nh->has_parameter("search/horizon")) nh->declare_parameter("search/horizon", -1.0);
+  if (!nh->has_parameter("search/resolution_astar")) nh->declare_parameter("search/resolution_astar", -1.0);
+  if (!nh->has_parameter("search/time_resolution")) nh->declare_parameter("search/time_resolution", -1.0);
+  if (!nh->has_parameter("search/lambda_heu")) nh->declare_parameter("search/lambda_heu", -1.0);
+  if (!nh->has_parameter("search/allocate_num")) nh->declare_parameter("search/allocate_num", -1);
+  if (!nh->has_parameter("search/check_num")) nh->declare_parameter("search/check_num", -1);
+  if (!nh->has_parameter("search/optimistic")) nh->declare_parameter("search/optimistic", true);
+  if (!nh->has_parameter("search/vel_margin")) nh->declare_parameter("search/vel_margin", 0.0);
   
   nh->get_parameter("search/max_tau", max_tau_);
   nh->get_parameter("search/init_max_tau", init_max_tau_);
