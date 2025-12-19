@@ -29,6 +29,9 @@ def generate_launch_description():
   publish_simulator_tf = LaunchConfiguration("publish_simulator_tf")
   traj_server_params_file = LaunchConfiguration("traj_server_params_file")
   fast_planner_params_file = LaunchConfiguration("fast_planner_params_file")
+  init_x = LaunchConfiguration("init_x")
+  init_y = LaunchConfiguration("init_y")
+  init_z = LaunchConfiguration("init_z")
 
   plan_manage_dir = get_package_share_directory("plan_manage")
 
@@ -39,6 +42,9 @@ def generate_launch_description():
       launch_arguments={
           "map_type": map_type,
           "odometry_topic": odom_topic,
+          "init_x": init_x,
+          "init_y": init_y,
+          "init_z": init_z,
       }.items(),
   )
 
@@ -50,6 +56,9 @@ def generate_launch_description():
           "odom_topic": odom_topic,
           "command_topic": command_topic,
           "use_backup": use_backup,
+          "init_x": init_x,
+          "init_y": init_y,
+          "init_z": init_z,
       }.items(),
   )
 
@@ -102,7 +111,7 @@ def generate_launch_description():
           ),
           DeclareLaunchArgument(
               "command_topic",
-              default_value="/position_cmd",
+              default_value="/planning/pos_cmd",
               description="Topic that receives position commands from the planner.",
           ),
           DeclareLaunchArgument(
@@ -174,6 +183,21 @@ def generate_launch_description():
               "publish_simulator_tf",
               default_value="true",
               description="Publish a world->simulator static transform for RViz.",
+          ),
+          DeclareLaunchArgument(
+              "init_x",
+              default_value="-19.99",
+              description="Initial x position",
+          ),
+          DeclareLaunchArgument(
+              "init_y",
+              default_value="-1.0",
+              description="Initial y position",
+          ),
+          DeclareLaunchArgument(
+              "init_z",
+              default_value="1.0",
+              description="Initial z position",
           ),
           simulator_launch,
           SetLaunchConfiguration("params_file", traj_server_params_file),
