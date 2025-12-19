@@ -19,3 +19,8 @@ log/
 
 .devcontainer/.env
 
+# VSCode database files
+.vscode/*.db*
+
+# Log files
+*.log
