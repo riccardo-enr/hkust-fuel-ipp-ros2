@@ -87,18 +87,19 @@ public:
     _obs_num = min(_obs_num, (int)_x_size * 10);
     _z_limit = _z_size;
 
-    rclcpp::sleep_for(std::chrono::milliseconds(500));
+    RCLCPP_INFO(this->get_logger(), "Starting map generation with seed %d", seed);
 
     // init random device
     if (seed < 0) {
       seed = rd_() % INT32_MAX;
     }
-    std::cout << "map seed: " << seed << std::endl;
     seed_ = seed;
 
     eng_ = default_random_engine(seed);
 
     RandomMapGenerate();
+
+    RCLCPP_INFO(this->get_logger(), "Map generation complete. Cloud size: %zu", cloudMap_.points.size());
 
     // Create timer for periodic sensing
     auto period = std::chrono::duration<double>(1.0 / _sense_rate);
@@ -377,9 +378,17 @@ private:
 };
 
 int main(int argc, char **argv) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<RandomForestSensing>();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
+  try {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<RandomForestSensing>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+  } catch (const std::exception &e) {
+    RCLCPP_ERROR(rclcpp::get_logger("random_forest"), "Exception: %s", e.what());
+    return 1;
+  } catch (...) {
+    RCLCPP_ERROR(rclcpp::get_logger("random_forest"), "Unknown exception");
+    return 1;
+  }
   return 0;
 }
