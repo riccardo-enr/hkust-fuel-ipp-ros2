@@ -1,5 +1,7 @@
 # FUEL - ROS 2 Port
 
+[![CI](https://github.com/riccardo-enr/hkust-fuel-ipp-ros2/actions/workflows/ci.yml/badge.svg)](https://github.com/riccardo-enr/hkust-fuel-ipp-ros2/actions/workflows/ci.yml)
+
 __Status:__ This is a ROS 2 port of the original FUEL project. Migration is in progress.
 
 __Original Project:__ [HKUST-Aerial-Robotics/FUEL](https://github.com/HKUST-Aerial-Robotics/FUEL)
