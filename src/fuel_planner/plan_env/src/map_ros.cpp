@@ -73,6 +73,7 @@ void MapROS::init() {
   esdf_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/esdf", rclcpp::QoS(10));
   update_range_pub_ = node_->create_publisher<visualization_msgs::msg::Marker>("/sdf_map/update_range", rclcpp::QoS(10));
   depth_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/depth_cloud", rclcpp::QoS(10));
+  volume_pub_ = node_->create_publisher<std_msgs::msg::Float32>("/sdf_map/explored_volume", rclcpp::QoS(10));
 
   depth_sub_.reset(new message_filters::Subscriber<sensor_msgs::msg::Image>(node_, "/map_ros/depth", rclcpp::QoS(50).get_rmw_qos_profile()));
   cloud_sub_.reset(
@@ -257,6 +258,10 @@ void MapROS::publishMapAll() {
         if (map_->md_->occupancy_buffer_[map_->toAddress(x, y, z)] > map_->mp_->clamp_min_log_ - 1e-3)
           known_volumn += 0.1 * 0.1 * 0.1;
       }
+
+  std_msgs::msg::Float32 vol_msg;
+  vol_msg.data = known_volumn;
+  volume_pub_->publish(vol_msg);
 
   ofstream file("/home/boboyu/workspaces/plan_ws/src/fast_planner/exploration_manager/resource/"
                 "curve1.txt",
