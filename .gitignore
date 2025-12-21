@@ -33,4 +33,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-src/fuel_planner/plan_bringup/scripts/exploration_supervisor
+
+# MkDocs
+site/

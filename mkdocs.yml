@@ -1,0 +1,76 @@
+site_name: FUEL ROS 2 Port
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.id=js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: README.md
+  - Overview:
+      - Introduction: wiki/overview/README.md
+      - Architecture: wiki/overview/architecture.md
+      - Project Overview: wiki/overview/project_overview.md
+      - Roadmap: wiki/overview/roadmap.md
+  - Setup:
+      - Getting Started: wiki/setup/README.md
+      - Dev Container: wiki/setup/dev_container.md
+      - Environment: wiki/setup/env_configuration.md
+      - Simulator: wiki/setup/simulator_launch.md
+  - Development:
+      - Overview: wiki/development/README.md
+      - Exploration Metrics: wiki/development/exploration_metrics.md
+      - MPPI Test Plan: wiki/development/mppi_test_plan.md
+  - Migration:
+      - Porting Guide: wiki/migration/README.md
+      - API Changes: wiki/migration/api_changes.md
+      - Porting Playbook: wiki/migration/porting_playbook.md
+      - Checklist: wiki/migration/ros1_to_ros2_checklist.md
+  - Reference:
+      - CLI: wiki/reference/cli_reference.md
+      - Messages: wiki/reference/message_schemas.md
+      - Parameters: wiki/reference/parameter_tables.md
+  - Simulator:
+      - Performance Tuning: wiki/simulator/performance_tuning.md
+      - Visualization: wiki/simulator/visualization.md
+      - Worlds: wiki/simulator/worlds.md
+  - Troubleshooting:
+      - Common Issues: wiki/troubleshooting/common_issues.md
+      - Debugging: wiki/troubleshooting/debugging.md
+  - Templates:
+      - Runbook: wiki/templates/runbook_template.md
+      - Wiki Page: wiki/templates/wiki_page_template.md
+  - Porting Progress: porting/PORTING_PROGRESS.md
+
+docs_dir: docs
