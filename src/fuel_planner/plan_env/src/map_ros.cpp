@@ -251,16 +251,24 @@ void MapROS::publishMapAll() {
   // Output time and known volumn
   double time_now = (clock_->now() - map_start_time_).seconds();
   double known_volumn = 0;
+  double resolution = map_->mp_->resolution_;
+  double voxel_vol = resolution * resolution * resolution;
 
   for (int x = map_->mp_->box_min_(0) /* + 1 */; x < map_->mp_->box_max_(0); ++x)
     for (int y = map_->mp_->box_min_(1) /* + 1 */; y < map_->mp_->box_max_(1); ++y)
       for (int z = map_->mp_->box_min_(2) /* + 1 */; z < map_->mp_->box_max_(2); ++z) {
         if (map_->md_->occupancy_buffer_[map_->toAddress(x, y, z)] > map_->mp_->clamp_min_log_ - 1e-3)
-          known_volumn += 0.1 * 0.1 * 0.1;
+          known_volumn += voxel_vol;
       }
 
+  double total_vol = map_->mp_->map_size_(0) * map_->mp_->map_size_(1) * map_->mp_->map_size_(2);
+  double percentage = 0.0;
+  if (total_vol > 1e-3) {
+    percentage = (known_volumn / total_vol) * 100.0;
+  }
+
   std_msgs::msg::Float32 vol_msg;
-  vol_msg.data = known_volumn;
+  vol_msg.data = percentage;
   volume_pub_->publish(vol_msg);
 
   ofstream file("/home/boboyu/workspaces/plan_ws/src/fast_planner/exploration_manager/resource/"
