@@ -15,10 +15,15 @@ Astar::~Astar() {
 }
 
 void Astar::init(rclcpp::Node::SharedPtr node, const EDTEnvironment::Ptr& env) {
-  resolution_ = node->declare_parameter("astar/resolution_astar", -1.0);
-  lambda_heu_ = node->declare_parameter("astar/lambda_heu", -1.0);
-  max_search_time_ = node->declare_parameter("astar/max_search_time", -1.0);
-  allocate_num_ = node->declare_parameter("astar/allocate_num", -1);
+  if (!node->has_parameter("astar/resolution_astar")) node->declare_parameter("astar/resolution_astar", -1.0);
+  if (!node->has_parameter("astar/lambda_heu")) node->declare_parameter("astar/lambda_heu", -1.0);
+  if (!node->has_parameter("astar/max_search_time")) node->declare_parameter("astar/max_search_time", -1.0);
+  if (!node->has_parameter("astar/allocate_num")) node->declare_parameter("astar/allocate_num", -1);
+
+  resolution_ = node->get_parameter("astar/resolution_astar").as_double();
+  lambda_heu_ = node->get_parameter("astar/lambda_heu").as_double();
+  max_search_time_ = node->get_parameter("astar/max_search_time").as_double();
+  allocate_num_ = node->get_parameter("astar/allocate_num").as_int();
 
   clock_ = node->get_clock();
 
