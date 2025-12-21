@@ -1,6 +1,7 @@
 # FUEL - ROS 2 Port
 
-[![CI](https://github.com/riccardo-enr/hkust-fuel-ipp-ros2/actions/workflows/ci.yml/badge.svg)](https://github.com/riccardo-enr/hkust-fuel-ipp-ros2/actions/workflows/ci.yml)
+[![Build](https://github.com/riccardo-enr/hkust-fuel-ipp-ros2/actions/workflows/ci.yml/badge.svg)](https://github.com/riccardo-enr/hkust-fuel-ipp-ros2/actions/workflows/ci.yml)
+[![ROS 2 Jazzy](https://img.shields.io/badge/ROS2-Jazzy-blue)](https://docs.ros.org/en/jazzy/index.html)
 
 __Status:__ This is a ROS 2 port of the original FUEL project. Migration is in progress.
 
