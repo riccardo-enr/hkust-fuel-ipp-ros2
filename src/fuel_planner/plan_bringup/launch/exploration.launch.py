@@ -78,7 +78,7 @@ def generate_launch_description():
             name="exploration_node",
             parameters=[
                 params_file,
-                {"exploration.tsp_dir": tsp_dir},
+                {"exploration/tsp_dir": tsp_dir},
             ],
             remappings=[
                 ("/odom_world", odom_topic),
@@ -97,6 +97,7 @@ def generate_launch_description():
                 ("odom", odom_topic),
                 ("goal", waypoint_goal_topic),
                 ("traj_start_trigger", waypoint_traj_trigger),
+                ("waypoints", "/waypoint_generator/waypoints"),
             ],
             parameters=[{"waypoint_type": waypoint_type}],
             output="screen",
