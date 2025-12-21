@@ -80,6 +80,26 @@
       "problemMatcher": [
         "$gcc"
       ]
+    },
+    {
+      "label": "Run: Fuel Exploration",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true waypoint_type:=manual-lonely-waypoint"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Fuel Manual",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false"
+      ],
+      "problemMatcher": []
     }
   ]
 }
