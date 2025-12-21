@@ -77,6 +77,8 @@ private:
   // Publishers
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_local_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_local_inflate_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr free_all_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr free_local_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr esdf_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_all_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr unknown_pub_;
