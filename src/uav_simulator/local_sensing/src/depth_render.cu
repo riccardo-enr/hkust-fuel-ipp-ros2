@@ -85,6 +85,14 @@ void DepthRender::set_para(float _fx, float _fy, float _cx, float _cy, int _widt
 
 void DepthRender::set_data(vector<float> &cloud_data)
 {
+	if(has_devptr)
+	{
+		free(host_cloud_ptr);
+		cudaFree(dev_cloud_ptr);
+		cudaFree(parameter_devptr);
+		has_devptr = false;
+	}
+
 	cloud_size = cloud_data.size() / 3;
 	parameter.point_number = cloud_size;
 
