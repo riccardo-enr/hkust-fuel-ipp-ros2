@@ -79,7 +79,6 @@ RUN for shell_rc in /root/.bashrc /home/$USERNAME/.bashrc; do \
   done
 
 # Also source ROS 2 in zshrc since we're using zsh
-# Also source ROS 2 in zshrc since we're using zsh
 RUN for shell_rc in /root/.zshrc /home/$USERNAME/.zshrc; do \
   echo "source /opt/ros/jazzy/setup.zsh" >> ${shell_rc}; \
   echo "if [ -f /workspace/install/setup.zsh ]; then source /workspace/install/setup.zsh; fi" >> ${shell_rc}; \
@@ -110,12 +109,16 @@ RUN apt-get update && apt-get install -y \
   xclip \
   clangd \
   zsh \
+  fzf \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Oh My Zsh for the user
 USER $USERNAME
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
 RUN curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+# Install fzf (user-scoped) with shell key-bindings and completion, without modifying rc files
+RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && \
+  ~/.fzf/install --all --no-update-rc
 USER root
 
 # FIX: Use usermod instead of chsh to avoid PAM/Password errors in Ubuntu 24.04
