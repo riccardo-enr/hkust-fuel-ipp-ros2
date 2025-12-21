@@ -27,6 +27,10 @@ FrontierFinder::FrontierFinder(const EDTEnvironment::Ptr& edt, const rclcpp::Nod
   frontier_flag_ = vector<char>(voxel_num, 0);
   fill(frontier_flag_.begin(), frontier_flag_.end(), 0);
 
+  discovered_flag_ = vector<char>(voxel_num, 0);
+  fill(discovered_flag_.begin(), discovered_flag_.end(), 0);
+  total_frontier_cells_ = 0;
+
   if (!node->has_parameter("frontier/cluster_min")) node->declare_parameter("frontier/cluster_min", -1);
   if (!node->has_parameter("frontier/cluster_size_xy")) node->declare_parameter("frontier/cluster_size_xy", -1.0);
   if (!node->has_parameter("frontier/cluster_size_z")) node->declare_parameter("frontier/cluster_size_z", -1.0);
@@ -166,6 +170,11 @@ void FrontierFinder::expandFrontier(
       expanded.push_back(pos);
       cell_queue.push(nbr);
       frontier_flag_[adr] = 1;
+
+      if (discovered_flag_[adr] == 0) {
+        discovered_flag_[adr] = 1;
+        total_frontier_cells_++;
+      }
     }
   }
   if (expanded.size() > cluster_min_) {
@@ -175,6 +184,14 @@ void FrontierFinder::expandFrontier(
     computeFrontierInfo(frontier);
     tmp_frontiers_.push_back(frontier);
   }
+}
+
+double FrontierFinder::getExplorationRate() {
+  if (total_frontier_cells_ == 0) return 0.0;
+  int current_cells = 0;
+  for (auto& ft : frontiers_) current_cells += ft.cells_.size();
+  for (auto& ft : dormant_frontiers_) current_cells += ft.cells_.size();
+  return (double)(total_frontier_cells_ - current_cells) / total_frontier_cells_ * 100.0;
 }
 
 void FrontierFinder::splitLargeFrontiers(list<Frontier>& frontiers) {

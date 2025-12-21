@@ -7,6 +7,7 @@
 #include <exploration_manager/expl_data.h>
 #include <plan_env/edt_environment.h>
 #include <plan_env/sdf_map.h>
+#include <std_msgs/msg/float32.hpp>
 
 using Eigen::Vector4d;
 
@@ -51,6 +52,7 @@ void FastExplorationFSM::init(const rclcpp::Node::SharedPtr& node) {
   replan_pub_ = node_->create_publisher<std_msgs::msg::Empty>("/planning/replan", 10);
   new_pub_ = node_->create_publisher<std_msgs::msg::Empty>("/planning/new", 10);
   bspline_pub_ = node_->create_publisher<bspline::msg::Bspline>("/planning/bspline", 10);
+  exploration_rate_pub_ = node_->create_publisher<std_msgs::msg::Float32>("/exploration/frontier_rate", 10);
 }
 
 void FastExplorationFSM::FSMCallback() {
@@ -308,6 +310,10 @@ void FastExplorationFSM::frontierCallback() {
       // "frontier_boxes", i, 4);
     }
   }
+
+  std_msgs::msg::Float32 msg;
+  msg.data = expl_manager_->frontier_finder_->getExplorationRate();
+  exploration_rate_pub_->publish(msg);
 
   // if (!fd_->static_state_)
   // {

@@ -9,6 +9,7 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <bspline/msg/bspline.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -52,6 +53,7 @@ private:
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr replan_pub_, new_pub_;
   rclcpp::Publisher<bspline::msg::Bspline>::SharedPtr bspline_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr exploration_rate_pub_;
 
   /* helper functions */
   int callExplorationPlanner();

@@ -77,6 +77,8 @@ public:
   bool isFrontierCovered();
   void wrapYaw(double& yaw);
 
+  double getExplorationRate();
+
   shared_ptr<PerceptionUtils> percep_utils_;
 
 private:
@@ -110,7 +112,8 @@ private:
   void findViewpoints(const Vector3d& sample, const Vector3d& ftr_avg, vector<Viewpoint>& vps);
 
   // Data
-  vector<char> frontier_flag_;
+  vector<char> frontier_flag_, discovered_flag_;
+  int total_frontier_cells_;
   list<Frontier> frontiers_, dormant_frontiers_, tmp_frontiers_;
   vector<int> removed_ids_;
   list<Frontier>::iterator first_new_ftr_;
