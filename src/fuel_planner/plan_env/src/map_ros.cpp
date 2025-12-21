@@ -67,6 +67,8 @@ void MapROS::init() {
 
   map_all_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/occupancy_all", rclcpp::QoS(10));
   map_local_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/occupancy_local", rclcpp::QoS(10));
+  free_all_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/free_all", rclcpp::QoS(10));
+  free_local_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/free_local", rclcpp::QoS(10));
   map_local_inflate_pub_ =
       node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/occupancy_local_inflate", rclcpp::QoS(10));
   unknown_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("/sdf_map/unknown", rclcpp::QoS(10));
@@ -225,11 +227,12 @@ void MapROS::proessDepthImage() {
 
 void MapROS::publishMapAll() {
   pcl::PointXYZ pt;
-  pcl::PointCloud<pcl::PointXYZ> cloud1, cloud2;
+  pcl::PointCloud<pcl::PointXYZ> cloud1, cloud_free;
   for (int x = map_->mp_->box_min_(0) /* + 1 */; x < map_->mp_->box_max_(0); ++x)
     for (int y = map_->mp_->box_min_(1) /* + 1 */; y < map_->mp_->box_max_(1); ++y)
       for (int z = map_->mp_->box_min_(2) /* + 1 */; z < map_->mp_->box_max_(2); ++z) {
-        if (map_->md_->occupancy_buffer_[map_->toAddress(x, y, z)] > map_->mp_->min_occupancy_log_) {
+        double occ = map_->md_->occupancy_buffer_[map_->toAddress(x, y, z)];
+        if (occ > map_->mp_->min_occupancy_log_) {
           Eigen::Vector3d pos;
           map_->indexToPos(Eigen::Vector3i(x, y, z), pos);
           if (pos(2) > visualization_truncate_height_) continue;
@@ -238,6 +241,15 @@ void MapROS::publishMapAll() {
           pt.y = pos(1);
           pt.z = pos(2);
           cloud1.push_back(pt);
+        } else if (occ > map_->mp_->clamp_min_log_ - 1e-3) {
+          Eigen::Vector3d pos;
+          map_->indexToPos(Eigen::Vector3i(x, y, z), pos);
+          if (pos(2) > visualization_truncate_height_) continue;
+          if (pos(2) < visualization_truncate_low_) continue;
+          pt.x = pos(0);
+          pt.y = pos(1);
+          pt.z = pos(2);
+          cloud_free.push_back(pt);
         }
       }
   cloud1.width = cloud1.points.size();
@@ -247,6 +259,13 @@ void MapROS::publishMapAll() {
   sensor_msgs::msg::PointCloud2 cloud_msg;
   pcl::toROSMsg(cloud1, cloud_msg);
   map_all_pub_->publish(cloud_msg);
+
+  cloud_free.width = cloud_free.points.size();
+  cloud_free.height = 1;
+  cloud_free.is_dense = true;
+  cloud_free.header.frame_id = frame_id_;
+  pcl::toROSMsg(cloud_free, cloud_msg);
+  free_all_pub_->publish(cloud_msg);
 
   // Output time and known volumn
   double time_now = (clock_->now() - map_start_time_).seconds();
@@ -279,7 +298,7 @@ void MapROS::publishMapAll() {
 
 void MapROS::publishMapLocal() {
   pcl::PointXYZ pt;
-  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::PointCloud<pcl::PointXYZ> cloud, cloud_free;
   pcl::PointCloud<pcl::PointXYZ> cloud2;
   Eigen::Vector3i min_cut = map_->md_->local_bound_min_;
   Eigen::Vector3i max_cut = map_->md_->local_bound_max_;
@@ -290,7 +309,8 @@ void MapROS::publishMapLocal() {
   for (int x = min_cut(0); x <= max_cut(0); ++x)
     for (int y = min_cut(1); y <= max_cut(1); ++y)
       for (int z = map_->mp_->box_min_(2); z < map_->mp_->box_max_(2); ++z) {
-        if (map_->md_->occupancy_buffer_[map_->toAddress(x, y, z)] > map_->mp_->min_occupancy_log_) {
+        double occ = map_->md_->occupancy_buffer_[map_->toAddress(x, y, z)];
+        if (occ > map_->mp_->min_occupancy_log_) {
           // Occupied cells
           Eigen::Vector3d pos;
           map_->indexToPos(Eigen::Vector3i(x, y, z), pos);
@@ -301,28 +321,28 @@ void MapROS::publishMapLocal() {
           pt.y = pos(1);
           pt.z = pos(2);
           cloud.push_back(pt);
-        }
-        // else if (map_->md_->occupancy_buffer_inflate_[map_->toAddress(x, y, z)] == 1)
-        // {
-        //   // Inflated occupied cells
-        //   Eigen::Vector3d pos;
-        //   map_->indexToPos(Eigen::Vector3i(x, y, z), pos);
-        //   if (pos(2) > visualization_truncate_height_)
-        //     continue;
-        //   if (pos(2) < visualization_truncate_low_)
-        //     continue;
+        } else if (occ > map_->mp_->clamp_min_log_ - 1e-3) {
+          // Free cells
+          Eigen::Vector3d pos;
+          map_->indexToPos(Eigen::Vector3i(x, y, z), pos);
+          if (pos(2) > visualization_truncate_height_) continue;
+          if (pos(2) < visualization_truncate_low_) continue;
 
-        //   pt.x = pos(0);
-        //   pt.y = pos(1);
-        //   pt.z = pos(2);
-        //   cloud2.push_back(pt);
-        // }
+          pt.x = pos(0);
+          pt.y = pos(1);
+          pt.z = pos(2);
+          cloud_free.push_back(pt);
+        }
       }
 
   cloud.width = cloud.points.size();
   cloud.height = 1;
   cloud.is_dense = true;
   cloud.header.frame_id = frame_id_;
+  cloud_free.width = cloud_free.points.size();
+  cloud_free.height = 1;
+  cloud_free.is_dense = true;
+  cloud_free.header.frame_id = frame_id_;
   cloud2.width = cloud2.points.size();
   cloud2.height = 1;
   cloud2.is_dense = true;
@@ -331,6 +351,8 @@ void MapROS::publishMapLocal() {
 
   pcl::toROSMsg(cloud, cloud_msg);
   map_local_pub_->publish(cloud_msg);
+  pcl::toROSMsg(cloud_free, cloud_msg);
+  free_local_pub_->publish(cloud_msg);
   pcl::toROSMsg(cloud2, cloud_msg);
   map_local_inflate_pub_->publish(cloud_msg);
 }
