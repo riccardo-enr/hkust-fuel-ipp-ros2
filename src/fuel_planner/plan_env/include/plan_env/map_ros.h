@@ -17,6 +17,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <std_msgs/msg/float32.hpp>
 
 #include <memory>
 #include <random>
@@ -81,6 +82,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr unknown_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr update_range_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr depth_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr volume_pub_;
 
   // Timers
   rclcpp::TimerBase::SharedPtr esdf_timer_;
