@@ -3,7 +3,8 @@ import yaml
 import launch
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.conditions import IfCondition
 from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
@@ -22,6 +23,7 @@ def generate_launch_description():
     map_size_y = LaunchConfiguration('map_size_y')
     map_size_z = LaunchConfiguration('map_size_z')
     odometry_topic = LaunchConfiguration('odometry_topic')
+    controller_type = LaunchConfiguration('controller_type')
 
     # Paths and Configs
     so3_control_share = get_package_share_directory('so3_control')
@@ -31,67 +33,72 @@ def generate_launch_description():
     corrections_config = load_yaml(os.path.join(so3_control_share, 'config', 'corrections_hummingbird.yaml'))
     camera_config = load_yaml(os.path.join(local_sensing_share, 'params', 'camera.yaml'))
 
+    # Controller remappings logic
+    # If MPPI: so3_control node is bypassed (but simulator still needs so3_cmd)
+    # We will launch mppi_control and it will publish directly to so3_cmd
+
     return LaunchDescription([
         DeclareLaunchArgument('init_x', default_value='-19.99'),
         DeclareLaunchArgument('init_y', default_value='-1.0'),
         DeclareLaunchArgument('init_z', default_value='1.0'),
         DeclareLaunchArgument('map_size_x', default_value='40.0'),
         DeclareLaunchArgument('map_size_y', default_value='20.0'),
-            DeclareLaunchArgument('map_size_z', default_value='5.0'),
-            DeclareLaunchArgument('odometry_topic', default_value='/state_ukf/odom'),
-            DeclareLaunchArgument('map_type', default_value='random_forest', description='Map generator type: random_forest or empty_world'),
+        DeclareLaunchArgument('map_size_z', default_value='5.0'),
+        DeclareLaunchArgument('odometry_topic', default_value='/state_ukf/odom'),
+        DeclareLaunchArgument('map_type', default_value='random_forest', description='Map generator type: random_forest or empty_world'),
+        DeclareLaunchArgument('controller_type', default_value='so3', description='Controller type: so3 or mppi'),
         
-            # Map Generator (Random Forest)
-            Node(
-                package='map_generator',
-                executable='random_forest',
-                name='random_forest',
-                condition=launch.conditions.IfCondition(launch.substitutions.PythonExpression(["'", LaunchConfiguration('map_type'), "' == 'random_forest'"])),
-                output='screen',
-                parameters=[{
-                    'init_state_x': init_x,
-                    'init_state_y': init_y,
-                    'map/x_size': map_size_x,
-                    'map/y_size': map_size_y,
-                    'map/z_size': map_size_z,
-                    'map/resolution': 0.1,
-                    'ObstacleShape/seed': 1,
-                    'map/obs_num': 80,
-                    'map/circle_num': 80,
-                    'ObstacleShape/lower_rad': 0.5,
-                    'ObstacleShape/upper_rad': 0.8,
-                    'ObstacleShape/lower_hei': 0.0,
-                    'ObstacleShape/upper_hei': 3.0,
-                    'ObstacleShape/radius_l': 0.7,
-                    'ObstacleShape/radius_h': 0.8,
-                    'ObstacleShape/z_l': 0.7,
-                    'ObstacleShape/z_h': 0.8,
-                    'ObstacleShape/theta': 0.5,
-                    'sensing/radius': 5.0,
-                    'sensing/rate': 10.0,
-                }],
-                remappings=[
-                    ('odometry', odometry_topic),
-                ]
-            ),
+        # Map Generator (Random Forest)
+        Node(
+            package='map_generator',
+            executable='random_forest',
+            name='random_forest',
+            condition=IfCondition(PythonExpression(["'", LaunchConfiguration('map_type'), "' == 'random_forest'"])),
+            output='screen',
+            parameters=[{
+                'init_state_x': init_x,
+                'init_state_y': init_y,
+                'map/x_size': map_size_x,
+                'map/y_size': map_size_y,
+                'map/z_size': map_size_z,
+                'map/resolution': 0.1,
+                'ObstacleShape/seed': 1,
+                'map/obs_num': 80,
+                'map/circle_num': 80,
+                'ObstacleShape/lower_rad': 0.5,
+                'ObstacleShape/upper_rad': 0.8,
+                'ObstacleShape/lower_hei': 0.0,
+                'ObstacleShape/upper_hei': 3.0,
+                'ObstacleShape/radius_l': 0.7,
+                'ObstacleShape/radius_h': 0.8,
+                'ObstacleShape/z_l': 0.7,
+                'ObstacleShape/z_h': 0.8,
+                'ObstacleShape/theta': 0.5,
+                'sensing/radius': 5.0,
+                'sensing/rate': 10.0,
+            }],
+            remappings=[
+                ('odometry', odometry_topic),
+            ]
+        ),
         
-            # Map Generator (Empty World)
-            Node(
-                package='map_generator',
-                executable='empty_world',
-                name='empty_world',
-                condition=launch.conditions.IfCondition(launch.substitutions.PythonExpression(["'", LaunchConfiguration('map_type'), "' == 'empty_world'"])),
-                output='screen',
-                parameters=[{
-                    'map/x_size': map_size_x,
-                    'map/y_size': map_size_y,
-                    'map/resolution': 0.1,
-                    'sensing/rate': 10.0,
-                }],
-                remappings=[
-                    ('odometry', odometry_topic),
-                ]
-            ),
+        # Map Generator (Empty World)
+        Node(
+            package='map_generator',
+            executable='empty_world',
+            name='empty_world',
+            condition=IfCondition(PythonExpression(["'", LaunchConfiguration('map_type'), "' == 'empty_world'"])),
+            output='screen',
+            parameters=[{
+                'map/x_size': map_size_x,
+                'map/y_size': map_size_y,
+                'map/resolution': 0.1,
+                'sensing/rate': 10.0,
+            }],
+            remappings=[
+                ('odometry', odometry_topic),
+            ]
+        ),
         # Traj Utils Process Msg
         Node(
             package='traj_utils',
@@ -120,12 +127,46 @@ def generate_launch_description():
             ]
         ),
 
+        # MPPI Control (Composable Node) - only launched if controller_type == 'mppi'
+        ComposableNodeContainer(
+            name='mppi_control_container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            condition=IfCondition(PythonExpression(["'", controller_type, "' == 'mppi'"])),
+            composable_node_descriptions=[
+                ComposableNode(
+                    package='mppi_control',
+                    plugin='mppi_control::MPPIControlNode',
+                    name='mppi_control',
+                    parameters=[{
+                        'mppi/K': 500,
+                        'mppi/H': 20,
+                        'mppi/dt': 0.05,
+                        'mppi/sigma': 0.5,
+                        'mppi/lambda': 0.1,
+                        'mppi/Q_pos': 20.0,
+                        'mppi/Q_vel': 2.0,
+                        'mppi/R': 0.1,
+                        'mppi/w_obs': 100.0,
+                    }],
+                    remappings=[
+                        ('odom', '/state_ukf/odom'),
+                        ('planning/pos_cmd', '/planning/pos_cmd'),
+                        ('so3_cmd', 'so3_cmd'),
+                    ]
+                )
+            ],
+            output='screen',
+        ),
+
         # SO3 Control (Component)
         ComposableNodeContainer(
             name='so3_control_container',
             namespace='',
             package='rclcpp_components',
             executable='component_container',
+            condition=IfCondition(PythonExpression(["'", controller_type, "' == 'so3'"])),
             composable_node_descriptions=[
                 ComposableNode(
                     package='so3_control',

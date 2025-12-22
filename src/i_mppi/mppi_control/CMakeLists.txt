@@ -18,6 +18,9 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(plan_env REQUIRED)
 
@@ -45,6 +48,9 @@ ament_target_dependencies(mppi_control_component
   rclcpp_components
   nav_msgs
   quadrotor_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
   plan_env
 )
 

@@ -6,6 +6,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <quadrotor_msgs/msg/position_command.hpp>
+#include <quadrotor_msgs/msg/so3_command.hpp>
 #include <plan_env/sdf_map.h>
 #include <cuda_runtime.h>
 
@@ -55,11 +56,12 @@ private:
   // ROS Interfaces
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr pos_cmd_sub_;
-  rclcpp::Publisher<quadrotor_msgs::msg::PositionCommand>::SharedPtr mppi_cmd_pub_;
+  rclcpp::Publisher<quadrotor_msgs::msg::SO3Command>::SharedPtr so3_cmd_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   // State and Data
   Eigen::Vector3d curr_p_, curr_v_;
+  double current_yaw_;
   quadrotor_msgs::msg::PositionCommand ref_cmd_;
   bool odom_received_{false};
   bool ref_received_{false};
@@ -69,6 +71,10 @@ private:
   
   // SDFMap for obstacle costs
   std::shared_ptr<fast_planner::SDFMap> sdf_map_;
+
+  // SO3 Output Params
+  double mass_;
+  double kR_[3], kOm_[3];
 };
 
 } // namespace mppi_control

@@ -1,5 +1,7 @@
 #include "mppi_control/mppi_control_node.hpp"
 #include <rclcpp_components/register_node_macro.hpp>
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <random>
 #include <algorithm>
 #include <ctime>
@@ -25,6 +27,14 @@ MPPIControlNode::MPPIControlNode(const rclcpp::NodeOptions& options)
   params_.tilt_max = this->declare_parameter("mppi/tilt_max", 0.6); // ~34 deg
   params_.g = this->declare_parameter("mppi/g", 9.81);
 
+  mass_ = this->declare_parameter("mass", 0.98);
+  kR_[0] = this->declare_parameter("gains/rot/x", 1.5);
+  kR_[1] = this->declare_parameter("gains/rot/y", 1.5);
+  kR_[2] = this->declare_parameter("gains/rot/z", 1.0);
+  kOm_[0] = this->declare_parameter("gains/ang/x", 0.13);
+  kOm_[1] = this->declare_parameter("gains/ang/y", 0.13);
+  kOm_[2] = this->declare_parameter("gains/ang/z", 0.1);
+
   u_mean_.resize(params_.H, Eigen::Vector3d::Zero());
 
   // Publishers and Subscribers
@@ -34,11 +44,15 @@ MPPIControlNode::MPPIControlNode(const rclcpp::NodeOptions& options)
   pos_cmd_sub_ = this->create_subscription<quadrotor_msgs::msg::PositionCommand>(
     "planning/pos_cmd", 10, std::bind(&MPPIControlNode::posCmdCallback, this, std::placeholders::_1));
     
-  mppi_cmd_pub_ = this->create_publisher<quadrotor_msgs::msg::PositionCommand>(
-    "mppi/pos_cmd", 10);
+  so3_cmd_pub_ = this->create_publisher<quadrotor_msgs::msg::SO3Command>(
+    "so3_cmd", 10);
 
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(10), std::bind(&MPPIControlNode::controlLoop, this));
+
+  // Initialize SDFMap
+  sdf_map_.reset(new fast_planner::SDFMap);
+  sdf_map_->initMap(this->shared_from_this());
 
   RCLCPP_INFO(this->get_logger(), "MPPI Control Node Initialized");
 }
@@ -46,6 +60,16 @@ MPPIControlNode::MPPIControlNode(const rclcpp::NodeOptions& options)
 void MPPIControlNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
   curr_p_ = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
   curr_v_ = Eigen::Vector3d(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+  
+  tf2::Quaternion q(
+    msg->pose.pose.orientation.x,
+    msg->pose.pose.orientation.y,
+    msg->pose.pose.orientation.z,
+    msg->pose.pose.orientation.w);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch;
+  m.getRPY(roll, pitch, current_yaw_);
+  
   odom_received_ = true;
 }
 
@@ -59,14 +83,37 @@ void MPPIControlNode::controlLoop() {
 
   runMPPI();
 
-  auto out_msg = ref_cmd_;
-  out_msg.header.stamp = this->now();
-  // Output the optimized acceleration
-  out_msg.acceleration.x = u_mean_[0].x();
-  out_msg.acceleration.y = u_mean_[0].y();
-  out_msg.acceleration.z = u_mean_[0].z();
+  Eigen::Vector3d des_acc = u_mean_[0];
+  Eigen::Vector3d force = mass_ * (des_acc + Eigen::Vector3d(0, 0, params_.g));
+  
+  Eigen::Vector3d b1d(cos(ref_cmd_.yaw), sin(ref_cmd_.yaw), 0);
+  Eigen::Vector3d b3c = force.normalized();
+  Eigen::Vector3d b2c = b3c.cross(b1d).normalized();
+  Eigen::Vector3d b1c = b2c.cross(b3c).normalized();
+  
+  Eigen::Matrix3d R;
+  R << b1c, b2c, b3c;
+  Eigen::Quaterniond orientation(R);
 
-  mppi_cmd_pub_->publish(out_msg);
+  auto so3_cmd = std::make_shared<quadrotor_msgs::msg::SO3Command>();
+  so3_cmd->header.stamp = this->now();
+  so3_cmd->header.frame_id = "world";
+  so3_cmd->force.x = force.x();
+  so3_cmd->force.y = force.y();
+  so3_cmd->force.z = force.z();
+  so3_cmd->orientation.x = orientation.x();
+  so3_cmd->orientation.y = orientation.y();
+  so3_cmd->orientation.z = orientation.z();
+  so3_cmd->orientation.w = orientation.w();
+  for (int i = 0; i < 3; i++) {
+    so3_cmd->kr[i] = kR_[i];
+    so3_cmd->kom[i] = kOm_[i];
+  }
+  so3_cmd->aux.current_yaw = current_yaw_;
+  so3_cmd->aux.enable_motors = true;
+  so3_cmd->aux.use_external_yaw = false;
+
+  so3_cmd_pub_->publish(*so3_cmd);
 
   // Shift control sequence for next iteration (Warm start)
   for (int i = 0; i < params_.H - 1; ++i) {

@@ -34,6 +34,7 @@ def generate_launch_description():
   init_y = LaunchConfiguration("init_y")
   init_z = LaunchConfiguration("init_z")
   exploration = LaunchConfiguration("exploration")
+  controller_type = LaunchConfiguration("controller_type")
 
   plan_manage_dir = get_package_share_directory("plan_manage")
   exploration_manager_dir = get_package_share_directory("exploration_manager")
@@ -48,6 +49,7 @@ def generate_launch_description():
           "init_x": init_x,
           "init_y": init_y,
           "init_z": init_z,
+          "controller_type": controller_type,
       }.items(),
   )
 
@@ -231,6 +233,11 @@ def generate_launch_description():
               "exploration",
               default_value="false",
               description="Set true to run in autonomous exploration mode.",
+          ),
+          DeclareLaunchArgument(
+              "controller_type",
+              default_value="so3",
+              description="Controller type: so3 or mppi",
           ),
           DeclareLaunchArgument(
               "exploration_threshold",
