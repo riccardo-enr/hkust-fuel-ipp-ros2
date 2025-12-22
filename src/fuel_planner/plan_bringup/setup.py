@@ -11,6 +11,7 @@ setup(
             ['resource/plan_bringup']),
         ('share/plan_bringup', ['package.xml']),
         (os.path.join('share', 'plan_bringup', 'launch'), glob('launch/*.launch.py')),
+        (os.path.join('share', 'plan_bringup', 'config'), glob('config/*.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
