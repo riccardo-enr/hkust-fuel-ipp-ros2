@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
   ros-jazzy-rviz2 \
   ros-jazzy-rqt \
   ros-jazzy-rqt-common-plugins \
+  ros-jazzy-plotjuggler-ros \
   python3-colcon-common-extensions \
   python3-colcon-mixin \
   python3-rosdep \
