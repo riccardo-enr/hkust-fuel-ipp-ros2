@@ -295,47 +295,47 @@ void TrajServerNode::visualizationTimer()
 
 void TrajServerNode::commandTimer()
 {
-  if (!receive_traj_) {
-    return;
-  }
-
   const rclcpp::Time time_now = now();
-  const double t_cur = (time_now - traj_start_time_).seconds();
   Eigen::Vector3d pos;
-  Eigen::Vector3d vel;
-  Eigen::Vector3d acc;
+  Eigen::Vector3d vel = Eigen::Vector3d::Zero();
+  Eigen::Vector3d acc = Eigen::Vector3d::Zero();
   Eigen::Vector3d jer = Eigen::Vector3d::Zero();
   double yaw = 0.0;
   double yawdot = 0.0;
 
-  if (t_cur < traj_duration_ && t_cur >= 0.0) {
-    pos = traj_[0].evaluateDeBoorT(t_cur);
-    vel = traj_[1].evaluateDeBoorT(t_cur);
-    acc = traj_[2].evaluateDeBoorT(t_cur);
-    yaw = traj_[3].evaluateDeBoorT(t_cur)[0];
-    yawdot = traj_[4].evaluateDeBoorT(t_cur)[0];
-    jer = traj_[5].evaluateDeBoorT(t_cur);
-  } else if (t_cur >= traj_duration_) {
-    pos = traj_[0].evaluateDeBoorT(traj_duration_);
-    vel.setZero();
-    acc.setZero();
-    jer.setZero();
-    yaw = traj_[3].evaluateDeBoorT(traj_duration_)[0];
-    yawdot = 0.0;
-
-    if (stats_started_) {
-      const double len = calcPathLength(traj_cmd_);
-      const double flight_t = (stats_end_time_ - stats_start_time_).seconds();
-      if (flight_t > 1e-3) {
-        RCLCPP_WARN_THROTTLE(
-          get_logger(), *get_clock(), 2000,
-          "Flight time: %.3f s, path length: %.3f m, mean vel: %.3f m/s, energy: %.3f",
-          flight_t, len, len / flight_t, energy_);
-      }
-    }
+  if (!receive_traj_) {
+    pos = init_pos_;
   } else {
-    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "[Traj server]: invalid time");
-    return;
+    const double t_cur = (time_now - traj_start_time_).seconds();
+    if (t_cur < traj_duration_ && t_cur >= 0.0) {
+      pos = traj_[0].evaluateDeBoorT(t_cur);
+      vel = traj_[1].evaluateDeBoorT(t_cur);
+      acc = traj_[2].evaluateDeBoorT(t_cur);
+      yaw = traj_[3].evaluateDeBoorT(t_cur)[0];
+      yawdot = traj_[4].evaluateDeBoorT(t_cur)[0];
+      jer = traj_[5].evaluateDeBoorT(t_cur);
+    } else if (t_cur >= traj_duration_) {
+      pos = traj_[0].evaluateDeBoorT(traj_duration_);
+      vel.setZero();
+      acc.setZero();
+      jer.setZero();
+      yaw = traj_[3].evaluateDeBoorT(traj_duration_)[0];
+      yawdot = 0.0;
+
+      if (stats_started_) {
+        const double len = calcPathLength(traj_cmd_);
+        const double flight_t = (stats_end_time_ - stats_start_time_).seconds();
+        if (flight_t > 1e-3) {
+          RCLCPP_WARN_THROTTLE(
+            get_logger(), *get_clock(), 2000,
+            "Flight time: %.3f s, path length: %.3f m, mean vel: %.3f m/s, energy: %.3f",
+            flight_t, len, len / flight_t, energy_);
+        }
+      }
+    } else {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "[Traj server]: invalid time");
+      return;
+    }
   }
 
   if (is_loop_correction_) {
