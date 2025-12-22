@@ -52,19 +52,24 @@ The following packages build and run on ROS 2 without ROS 1 dependencies:
 13. `poly_traj` *(traj_generator node + ROS 2 launch/test harness)*
 14. `plan_manage` *(FSM entry point + traj_server ROS 2 nodes; benchmarking/test helpers now ROS 2 as of Dec 16, 2025)*
 15. `active_perception`
-16. `exploration_manager`
-17. `so3_quadrotor_simulator`
-18. `local_sensing`
+17. `exploration_manager`
+18. `so3_quadrotor_simulator`
+19. `local_sensing`
     - [x] `pointcloud_render_node.cpp`
     - [x] `depth_render_node.cpp`
     - [x] `pcl_render_node.cpp` *(CUDA path, optional via `ENABLE_CUDA` build)*
     - [x] `euroc.cpp` *(benchmark tool rebuilt on `rclcpp` + `message_filters` with CUDA depth rendering)*
-18. `multi_map_server` *(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)*
-19. `rviz_plugins`
+20. `multi_map_server` *(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)*
+21. `rviz_plugins`
+22. `mppi_control` *(CUDA-based MPPI controller for aggressive flight)*
 
 ### 🔄 Build System Ready (Source Pending)
 
 No additional packages require ROS 1 source rewrites; only the `rviz_plugins` build migration remains on the Catkin → ament list.
+
+### 🛠️ In-Progress / Planned Improvements
+
+- [ ] **MPPI Control:** Integrate reference acceleration (`ref_cmd_.acceleration`) as feed-forward in the MPPI optimization to improve tracking of dynamic trajectories.
 
 
 

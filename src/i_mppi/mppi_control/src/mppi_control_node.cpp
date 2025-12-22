@@ -96,7 +96,8 @@ void MPPIControlNode::controlLoop() {
 
   if (ready) {
     runMPPI();
-    des_acc = u_mean_[0];
+    Eigen::Vector3d ref_acc(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
+    des_acc = u_mean_[0] + ref_acc;
   } else {
     // Hover command if not ready
     des_acc.setZero();

@@ -64,8 +64,14 @@ __global__ void mppi_kernel(
     u.y += noise.y;
     u.z += noise.z;
 
+    // Use ref_a_base as feed-forward
+    float3 total_u;
+    total_u.x = u.x + ref_a_base.x;
+    total_u.y = u.y + ref_a_base.y;
+    total_u.z = u.z + ref_a_base.z;
+
     // Constraints (Simplified for GPU kernel)
-    float3 total_acc = make_float3(u.x, u.y, u.z + params.g);
+    float3 total_acc = make_float3(total_u.x, total_u.y, total_u.z + params.g);
     float thrust = sqrtf(total_acc.x * total_acc.x + total_acc.y * total_acc.y + total_acc.z * total_acc.z);
     
     if (thrust > params.a_max + params.g) {
@@ -90,26 +96,31 @@ __global__ void mppi_kernel(
         total_acc.z = target_z;
     }
 
-    u.x = total_acc.x;
-    u.y = total_acc.y;
-    u.z = total_acc.z - params.g;
+    total_u.x = total_acc.x;
+    total_u.y = total_acc.y;
+    total_u.z = total_acc.z - params.g;
 
-    // Store sample
+    // Control to be stored and used in cost is the delta from reference
+    u.x = total_u.x - ref_a_base.x;
+    u.y = total_u.y - ref_a_base.y;
+    u.z = total_u.z - ref_a_base.z;
+
+    // Store sample (the delta u)
     samples_u[k * params.H + h] = u;
 
-    // Dynamics Propagation using RK4
+    // Dynamics Propagation using RK4 with total_u
     // State x = [p, v], dot(x) = [v, a]
     float3 k1_p = v;
-    float3 k1_v = u;
+    float3 k1_v = total_u;
 
     float3 k2_p = make_float3(v.x + 0.5f * params.dt * k1_v.x, v.y + 0.5f * params.dt * k1_v.y, v.z + 0.5f * params.dt * k1_v.z);
-    float3 k2_v = u; // Acceleration is constant over dt
+    float3 k2_v = total_u; // Acceleration is constant over dt
 
     float3 k3_p = make_float3(v.x + 0.5f * params.dt * k2_v.x, v.y + 0.5f * params.dt * k2_v.y, v.z + 0.5f * params.dt * k2_v.z);
-    float3 k3_v = u;
+    float3 k3_v = total_u;
 
     float3 k4_p = make_float3(v.x + params.dt * k3_v.x, v.y + params.dt * k3_v.y, v.z + params.dt * k3_v.z);
-    float3 k4_v = u;
+    float3 k4_v = total_u;
 
     p.x += (params.dt / 6.0f) * (k1_p.x + 2.0f * k2_p.x + 2.0f * k3_p.x + k4_p.x);
     p.y += (params.dt / 6.0f) * (k1_p.y + 2.0f * k2_p.y + 2.0f * k3_p.y + k4_p.y);
