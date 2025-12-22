@@ -28,10 +28,12 @@ def generate_launch_description():
     # Paths and Configs
     so3_control_share = get_package_share_directory('so3_control')
     local_sensing_share = get_package_share_directory('local_sensing_node')
+    plan_manage_share = get_package_share_directory('plan_manage')
 
     gains_config = load_yaml(os.path.join(so3_control_share, 'config', 'gains_hummingbird.yaml'))
     corrections_config = load_yaml(os.path.join(so3_control_share, 'config', 'corrections_hummingbird.yaml'))
     camera_config = load_yaml(os.path.join(local_sensing_share, 'params', 'camera.yaml'))
+    fast_planner_config = load_yaml(os.path.join(plan_manage_share, 'config', 'fast_planner.yaml'))['fast_planner_node']['ros__parameters']
 
     # Controller remappings logic
     # If MPPI: so3_control node is bypassed (but simulator still needs so3_cmd)
@@ -139,17 +141,21 @@ def generate_launch_description():
                     package='mppi_control',
                     plugin='mppi_control::MPPIControlNode',
                     name='mppi_control',
-                    parameters=[{
-                        'mppi/K': 500,
-                        'mppi/H': 20,
-                        'mppi/dt': 0.05,
-                        'mppi/sigma': 0.5,
-                        'mppi/lambda': 0.1,
-                        'mppi/Q_pos': 20.0,
-                        'mppi/Q_vel': 2.0,
-                        'mppi/R': 0.1,
-                        'mppi/w_obs': 100.0,
-                    }],
+                    parameters=[
+                        fast_planner_config,
+                        gains_config,
+                        {
+                            'mppi/K': 1000,
+                            'mppi/H': 20,
+                            'mppi/dt': 0.05,
+                            'mppi/sigma': 0.2,
+                            'mppi/lambda': 0.1,
+                            'mppi/Q_pos': 20.0,
+                            'mppi/Q_vel': 2.0,
+                            'mppi/R': 0.1,
+                            'mppi/w_obs': 100.0,
+                        }
+                    ],
                     remappings=[
                         ('odom', '/state_ukf/odom'),
                         ('planning/pos_cmd', '/planning/pos_cmd'),

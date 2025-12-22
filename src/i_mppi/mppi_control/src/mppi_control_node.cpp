@@ -50,10 +50,6 @@ MPPIControlNode::MPPIControlNode(const rclcpp::NodeOptions& options)
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(10), std::bind(&MPPIControlNode::controlLoop, this));
 
-  // Initialize SDFMap
-  sdf_map_.reset(new fast_planner::SDFMap);
-  sdf_map_->initMap(this->shared_from_this());
-
   RCLCPP_INFO(this->get_logger(), "MPPI Control Node Initialized");
 }
 
@@ -79,14 +75,41 @@ void MPPIControlNode::posCmdCallback(const quadrotor_msgs::msg::PositionCommand:
 }
 
 void MPPIControlNode::controlLoop() {
-  if (!odom_received_ || !ref_received_) return;
+  if (!odom_received_) return;
 
-  runMPPI();
+  // Deferred initialization of SDFMap
+  if (!sdf_map_) {
+    sdf_map_.reset(new fast_planner::SDFMap);
+    sdf_map_->initMap(this->shared_from_this());
+  }
 
-  Eigen::Vector3d des_acc = u_mean_[0];
+  bool ready = ref_received_;
+  
+  // Safety: If reference is at origin and drone is not, it's likely an uninitialized reference
+  if (ready && ref_cmd_.position.x == 0 && ref_cmd_.position.y == 0 && ref_cmd_.position.z == 0) {
+    if (curr_p_.norm() > 1.0) {
+        ready = false; 
+    }
+  }
+
+  Eigen::Vector3d des_acc;
+
+  if (ready) {
+    runMPPI();
+    des_acc = u_mean_[0];
+  } else {
+    // Hover command if not ready
+    des_acc.setZero();
+    // Warm start with zero if not ready
+    std::fill(u_mean_.begin(), u_mean_.end(), Eigen::Vector3d::Zero());
+  }
+
   Eigen::Vector3d force = mass_ * (des_acc + Eigen::Vector3d(0, 0, params_.g));
   
-  Eigen::Vector3d b1d(cos(ref_cmd_.yaw), sin(ref_cmd_.yaw), 0);
+  // Use current yaw if reference not ready
+  double target_yaw = ready ? ref_cmd_.yaw : current_yaw_;
+
+  Eigen::Vector3d b1d(cos(target_yaw), sin(target_yaw), 0);
   Eigen::Vector3d b3c = force.normalized();
   Eigen::Vector3d b2c = b3c.cross(b1d).normalized();
   Eigen::Vector3d b1c = b2c.cross(b3c).normalized();
@@ -115,11 +138,13 @@ void MPPIControlNode::controlLoop() {
 
   so3_cmd_pub_->publish(*so3_cmd);
 
-  // Shift control sequence for next iteration (Warm start)
-  for (int i = 0; i < params_.H - 1; ++i) {
-    u_mean_[i] = u_mean_[i + 1];
+  if (ready) {
+    // Shift control sequence for next iteration (Warm start)
+    for (int i = 0; i < params_.H - 1; ++i) {
+      u_mean_[i] = u_mean_[i + 1];
+    }
+    u_mean_[params_.H - 1].setZero();
   }
-  u_mean_[params_.H - 1].setZero();
 }
 
 void MPPIControlNode::runMPPI() {
@@ -142,7 +167,7 @@ void MPPIControlNode::runMPPI() {
       params_.K, params_.H, params_.dt, params_.sigma, params_.lambda,
       params_.Q_pos, params_.Q_vel, params_.R, params_.w_obs,
       params_.a_max, params_.tilt_max, params_.g,
-      samples_u.data(), costs.data());
+      samples_u.data(), costs.data(), seed_++);
 
   // Weighting
   float min_cost = *std::min_element(costs.begin(), costs.end());

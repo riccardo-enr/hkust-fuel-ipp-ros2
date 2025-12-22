@@ -23,11 +23,11 @@ __global__ void mppi_kernel(
     const float3* u_mean,
     const float3 curr_p,
     const float3 curr_v,
-    const float3 ref_p,
-    const float3 ref_v,
-    const float3 ref_a,
+    const float3 ref_p_base,
+    const float3 ref_v_base,
+    const float3 ref_a_base,
     const MPPIParamsDevice params,
-    unsigned long seed,
+    unsigned int seed,
     float3* samples_u, // Out: [K * H]
     float* costs       // Out: [K]
 ) {
@@ -42,6 +42,17 @@ __global__ void mppi_kernel(
   float total_cost = 0.0f;
 
   for (int h = 0; h < params.H; ++h) {
+    // Reference Trajectory Prediction (Constant Acceleration Model)
+    float t = (h + 1) * params.dt;
+    float3 ref_p, ref_v;
+    ref_p.x = ref_p_base.x + ref_v_base.x * t + 0.5f * ref_a_base.x * t * t;
+    ref_p.y = ref_p_base.y + ref_v_base.y * t + 0.5f * ref_a_base.y * t * t;
+    ref_p.z = ref_p_base.z + ref_v_base.z * t + 0.5f * ref_a_base.z * t * t;
+
+    ref_v.x = ref_v_base.x + ref_a_base.x * t;
+    ref_v.y = ref_v_base.y + ref_a_base.y * t;
+    ref_v.z = ref_v_base.z + ref_a_base.z * t;
+
     // Generate noise
     float3 noise;
     noise.x = curand_normal(&state) * params.sigma;
@@ -115,9 +126,9 @@ __global__ void mppi_kernel(
     float dv_x = v.x - ref_v.x;
     float dv_y = v.y - ref_v.y;
     float dv_z = v.z - ref_v.z;
-    float da_x = u.x - ref_a.x;
-    float da_y = u.y - ref_a.y;
-    float da_z = u.z - ref_a.z;
+    float da_x = u.x - ref_a_base.x;
+    float da_y = u.y - ref_a_base.y;
+    float da_z = u.z - ref_a_base.z;
 
     total_cost += params.Q_pos * (dp_x * dp_x + dp_y * dp_y + dp_z * dp_z);
     total_cost += params.Q_vel * (dv_x * dv_x + dv_y * dv_y + dv_z * dv_z);
@@ -135,7 +146,8 @@ void launch_mppi_kernel(
     float Q_pos, float Q_vel, float R, float w_obs,
     float a_max, float tilt_max, float g,
     float3* samples_u_host,
-    float* costs_host
+    float* costs_host,
+    unsigned int seed
 ) {
   MPPIParamsDevice params = {K, H, dt, sigma, lambda, Q_pos, Q_vel, R, w_obs, a_max, tilt_max, g};
   
@@ -151,8 +163,6 @@ void launch_mppi_kernel(
   int threadsPerBlock = 256;
   int blocksPerGrid = (K + threadsPerBlock - 1) / threadsPerBlock;
   
-  unsigned long seed = time(NULL);
-
   mppi_kernel<<<blocksPerGrid, threadsPerBlock>>>(
       d_u_mean, curr_p, curr_v, ref_p, ref_v, ref_a, params, seed, d_samples_u, d_costs);
 

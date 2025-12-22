@@ -21,7 +21,8 @@ extern "C" void launch_mppi_kernel(
     float Q_pos, float Q_vel, float R, float w_obs,
     float a_max, float tilt_max, float g,
     float3* samples_u_host,
-    float* costs_host
+    float* costs_host,
+    uint32_t seed
 );
 
 struct MPPIParams {
@@ -68,6 +69,7 @@ private:
 
   MPPIParams params_;
   std::vector<Eigen::Vector3d> u_mean_; // Mean control sequence
+  uint32_t seed_{0};
   
   // SDFMap for obstacle costs
   std::shared_ptr<fast_planner::SDFMap> sdf_map_;
