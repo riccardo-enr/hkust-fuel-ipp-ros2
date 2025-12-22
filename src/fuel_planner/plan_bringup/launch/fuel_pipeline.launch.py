@@ -5,7 +5,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetLaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
@@ -13,6 +13,7 @@ def generate_launch_description():
   plan_bringup_dir = get_package_share_directory("plan_bringup")
 
   map_type = LaunchConfiguration("map_type")
+  world = LaunchConfiguration("world")
   odom_topic = LaunchConfiguration("odom_topic")
   command_topic = LaunchConfiguration("command_topic")
   planner_mode = LaunchConfiguration("planner_mode")
@@ -36,21 +37,24 @@ def generate_launch_description():
   exploration = LaunchConfiguration("exploration")
   controller_type = LaunchConfiguration("controller_type")
 
+  # Use 'world' if provided, otherwise 'map_type'
+  final_map_type = PythonExpression(["'", world, "' if '", world, "' != '' else '", map_type, "'"])
+
   plan_manage_dir = get_package_share_directory("plan_manage")
   exploration_manager_dir = get_package_share_directory("exploration_manager")
 
   simulator_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource(
-          os.path.join(plan_bringup_dir, "launch", "simulator.launch.py")
-      ),
-      launch_arguments={
-          "map_type": map_type,
-          "odometry_topic": odom_topic,
-          "init_x": init_x,
-          "init_y": init_y,
-          "init_z": init_z,
-          "controller_type": controller_type,
-      }.items(),
+    PythonLaunchDescriptionSource(
+      os.path.join(plan_bringup_dir, "launch", "simulator.launch.py")
+    ),
+    launch_arguments={
+      "map_type": final_map_type,
+      "odometry_topic": odom_topic,
+      "init_x": init_x,
+      "init_y": init_y,
+      "init_z": init_z,
+      "controller_type": controller_type,
+    }.items(),
   )
 
   traj_server_launch = IncludeLaunchDescription(
@@ -127,7 +131,12 @@ def generate_launch_description():
           DeclareLaunchArgument(
               "map_type",
               default_value="random_forest",
-              description="Scene generator type for the simulator.",
+              description="Scene generator type for the simulator: [random_forest, empty_world, office, office2, office3, pillar].",
+          ),
+          DeclareLaunchArgument(
+              "world",
+              default_value="",
+              description="Alias for map_type. If set, it overrides map_type.",
           ),
           DeclareLaunchArgument(
               "odom_topic",

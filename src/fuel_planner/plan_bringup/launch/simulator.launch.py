@@ -3,10 +3,11 @@ import yaml
 import launch
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration, PythonExpression, PathJoinSubstitution
 from launch.conditions import IfCondition
 from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
+from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
@@ -50,9 +51,23 @@ def generate_launch_description():
         DeclareLaunchArgument('map_size_y', default_value='20.0'),
         DeclareLaunchArgument('map_size_z', default_value='5.0'),
         DeclareLaunchArgument('odometry_topic', default_value='/state_ukf/odom'),
-        DeclareLaunchArgument('map_type', default_value='random_forest', description='Map generator type: random_forest or empty_world'),
+        DeclareLaunchArgument('map_type', default_value='random_forest', description='Map generator type: random_forest, empty_world, office, office2, office3, or pillar'),
         DeclareLaunchArgument('controller_type', default_value='so3', description='Controller type: so3 or mppi'),
         
+        # Map Generator (PCD)
+        Node(
+            package='map_generator',
+            executable='map_pub',
+            name='map_pub',
+            condition=IfCondition(PythonExpression(["'", LaunchConfiguration('map_type'), "' in ['office', 'office2', 'office3', 'pillar']"])),
+            output='screen',
+            arguments=[PathJoinSubstitution([
+                FindPackageShare('map_generator'),
+                'resource',
+                PythonExpression(["'", LaunchConfiguration('map_type'), "' + '.pcd'"])
+            ])],
+        ),
+
         # Map Generator (Random Forest)
         Node(
             package='map_generator',
@@ -153,6 +168,16 @@ def generate_launch_description():
                         ('odom', '/state_ukf/odom'),
                         ('planning/pos_cmd', '/planning/pos_cmd'),
                         ('so3_cmd', 'so3_cmd'),
+                        ('/sdf_map/occupancy_all', '/mppi_control/sdf_map/occupancy_all'),
+                        ('/sdf_map/occupancy_local', '/mppi_control/sdf_map/occupancy_local'),
+                        ('/sdf_map/free_all', '/mppi_control/sdf_map/free_all'),
+                        ('/sdf_map/free_local', '/mppi_control/sdf_map/free_local'),
+                        ('/sdf_map/occupancy_local_inflate', '/mppi_control/sdf_map/occupancy_local_inflate'),
+                        ('/sdf_map/unknown', '/mppi_control/sdf_map/unknown'),
+                        ('/sdf_map/esdf', '/mppi_control/sdf_map/esdf'),
+                        ('/sdf_map/update_range', '/mppi_control/sdf_map/update_range'),
+                        ('/sdf_map/depth_cloud', '/mppi_control/sdf_map/depth_cloud'),
+                        ('/sdf_map/explored_volume', '/mppi_control/sdf_map/explored_volume'),
                     ]
                 )
             ],
