@@ -46,7 +46,7 @@
       ]
     },
     {
-      "label": "Colcon: Step 4 Simulator & Rendering",
+      "label": "Colcon: Step 4 Simulator & Controllers",
       "dependsOrder": "sequence",
       "dependsOn": [
         "Colcon: Step 3 Planning Management"
@@ -55,7 +55,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select so3_control so3_quadrotor_simulator local_sensing_node multi_map_server --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        "source /opt/ros/jazzy/setup.bash && colcon build --packages-select so3_control mppi_control so3_quadrotor_simulator local_sensing_node multi_map_server --symlink-install --cmake-args -DENABLE_CUDA=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
       ],
       "problemMatcher": [
         "$gcc"
@@ -65,7 +65,7 @@
       "label": "Colcon: Step 5 Full Workspace",
       "dependsOrder": "sequence",
       "dependsOn": [
-        "Colcon: Step 4 Simulator & Rendering"
+        "Colcon: Step 4 Simulator & Controllers"
       ],
       "type": "shell",
       "command": "bash",
@@ -82,22 +82,42 @@
       ]
     },
     {
-      "label": "Run: Fuel Exploration",
+      "label": "Run: Fuel Exploration (SO3)",
       "type": "shell",
       "command": "bash",
       "args": [
         "-lc",
-        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true waypoint_type:=manual-lonely-waypoint"
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=so3"
       ],
       "problemMatcher": []
     },
     {
-      "label": "Run: Fuel Manual",
+      "label": "Run: Fuel Exploration (MPPI)",
       "type": "shell",
       "command": "bash",
       "args": [
         "-lc",
-        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false"
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Fuel Manual (SO3)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=so3"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Fuel Manual (MPPI)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi"
       ],
       "problemMatcher": []
     }
