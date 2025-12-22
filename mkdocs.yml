@@ -28,7 +28,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
-  - arithmatex:
+  - pymdownx.arithmatex:
       generic: true
 
 extra_javascript:
