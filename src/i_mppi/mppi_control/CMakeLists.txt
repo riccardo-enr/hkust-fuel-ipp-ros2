@@ -69,6 +69,18 @@ rclcpp_components_register_node(mppi_control_component
   EXECUTABLE mppi_control_node
 )
 
+# Install
+install(TARGETS
+  mppi_control_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(FILES mppi_control_component.xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
