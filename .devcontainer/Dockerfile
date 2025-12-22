@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y \
   python3-colcon-common-extensions \
   python3-colcon-mixin \
   python3-rosdep \
+  python3-pip \
   # Other utilities
   sudo \
   curl \
@@ -132,6 +133,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
   npm install -g @google/gemini-cli && \
   npm install -g markdownlint-cli2 && \
   rm -rf /var/lib/apt/lists/*
+
+# Install Python-based documentation tools
+RUN pip install --break-system-packages \
+  mkdocs \
+  mkdocs-material \
+  pymdown-extensions
 
 # Install Neovim (x86_64 for your workstation)
 RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz \
