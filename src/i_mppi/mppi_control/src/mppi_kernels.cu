@@ -1,0 +1,167 @@
+#include <cuda_runtime.h>
+#include <curand_kernel.h>
+#include <device_launch_parameters.h>
+
+extern "C" {
+
+struct MPPIParamsDevice {
+  int K;
+  int H;
+  float dt;
+  float sigma;
+  float lambda;
+  float Q_pos;
+  float Q_vel;
+  float R;
+  float w_obs;
+  float a_max;
+  float tilt_max;
+  float g;
+};
+
+__global__ void mppi_kernel(
+    const float3* u_mean,
+    const float3 curr_p,
+    const float3 curr_v,
+    const float3 ref_p,
+    const float3 ref_v,
+    const float3 ref_a,
+    const MPPIParamsDevice params,
+    unsigned long seed,
+    float3* samples_u, // Out: [K * H]
+    float* costs       // Out: [K]
+) {
+  int k = blockIdx.x * blockDim.x + threadIdx.x;
+  if (k >= params.K) return;
+
+  curandState state;
+  curand_init(seed, k, 0, &state);
+
+  float3 p = curr_p;
+  float3 v = curr_v;
+  float total_cost = 0.0f;
+
+  for (int h = 0; h < params.H; ++h) {
+    // Generate noise
+    float3 noise;
+    noise.x = curand_normal(&state) * params.sigma;
+    noise.y = curand_normal(&state) * params.sigma;
+    noise.z = curand_normal(&state) * params.sigma;
+
+    float3 u = u_mean[h];
+    u.x += noise.x;
+    u.y += noise.y;
+    u.z += noise.z;
+
+    // Constraints (Simplified for GPU kernel)
+    float3 total_acc = make_float3(u.x, u.y, u.z + params.g);
+    float thrust = sqrtf(total_acc.x * total_acc.x + total_acc.y * total_acc.y + total_acc.z * total_acc.z);
+    
+    if (thrust > params.a_max + params.g) {
+      float scale = (params.a_max + params.g) / thrust;
+      total_acc.x *= scale;
+      total_acc.y *= scale;
+      total_acc.z *= scale;
+      thrust = params.a_max + params.g;
+    }
+
+    // Tilt constraint (Angle with Z-axis)
+    float cos_tilt = total_acc.z / (thrust + 1e-6f);
+    if (cos_tilt < cosf(params.tilt_max)) {
+        // Project onto the cone
+        float s = sqrtf(total_acc.x * total_acc.x + total_acc.y * total_acc.y);
+        float target_s = thrust * sinf(params.tilt_max);
+        float target_z = thrust * cosf(params.tilt_max);
+        if (s > 1e-6f) {
+            total_acc.x *= target_s / s;
+            total_acc.y *= target_s / s;
+        }
+        total_acc.z = target_z;
+    }
+
+    u.x = total_acc.x;
+    u.y = total_acc.y;
+    u.z = total_acc.z - params.g;
+
+    // Store sample
+    samples_u[k * params.H + h] = u;
+
+    // Dynamics Propagation using RK4
+    // State x = [p, v], dot(x) = [v, a]
+    float3 k1_p = v;
+    float3 k1_v = u;
+
+    float3 k2_p = make_float3(v.x + 0.5f * params.dt * k1_v.x, v.y + 0.5f * params.dt * k1_v.y, v.z + 0.5f * params.dt * k1_v.z);
+    float3 k2_v = u; // Acceleration is constant over dt
+
+    float3 k3_p = make_float3(v.x + 0.5f * params.dt * k2_v.x, v.y + 0.5f * params.dt * k2_v.y, v.z + 0.5f * params.dt * k2_v.z);
+    float3 k3_v = u;
+
+    float3 k4_p = make_float3(v.x + params.dt * k3_v.x, v.y + params.dt * k3_v.y, v.z + params.dt * k3_v.z);
+    float3 k4_v = u;
+
+    p.x += (params.dt / 6.0f) * (k1_p.x + 2.0f * k2_p.x + 2.0f * k3_p.x + k4_p.x);
+    p.y += (params.dt / 6.0f) * (k1_p.y + 2.0f * k2_p.y + 2.0f * k3_p.y + k4_p.y);
+    p.z += (params.dt / 6.0f) * (k1_p.z + 2.0f * k2_p.z + 2.0f * k3_p.z + k4_p.z);
+
+    v.x += (params.dt / 6.0f) * (k1_v.x + 2.0f * k2_v.x + 2.0f * k3_v.x + k4_v.x);
+    v.y += (params.dt / 6.0f) * (k1_v.y + 2.0f * k2_v.y + 2.0f * k3_v.y + k4_v.y);
+    v.z += (params.dt / 6.0f) * (k1_v.z + 2.0f * k2_v.z + 2.0f * k3_v.z + k4_v.z);
+
+    // Cost calculation
+    float dp_x = p.x - ref_p.x;
+    float dp_y = p.y - ref_p.y;
+    float dp_z = p.z - ref_p.z;
+    float dv_x = v.x - ref_v.x;
+    float dv_y = v.y - ref_v.y;
+    float dv_z = v.z - ref_v.z;
+    float da_x = u.x - ref_a.x;
+    float da_y = u.y - ref_a.y;
+    float da_z = u.z - ref_a.z;
+
+    total_cost += params.Q_pos * (dp_x * dp_x + dp_y * dp_y + dp_z * dp_z);
+    total_cost += params.Q_vel * (dv_x * dv_x + dv_y * dv_y + dv_z * dv_z);
+    total_cost += params.R * (da_x * da_x + da_y * da_y + da_z * da_z);
+  }
+
+  costs[k] = total_cost;
+}
+
+void launch_mppi_kernel(
+    const float3* u_mean_host,
+    float3 curr_p, float3 curr_v,
+    float3 ref_p, float3 ref_v, float3 ref_a,
+    int K, int H, float dt, float sigma, float lambda,
+    float Q_pos, float Q_vel, float R, float w_obs,
+    float a_max, float tilt_max, float g,
+    float3* samples_u_host,
+    float* costs_host
+) {
+  MPPIParamsDevice params = {K, H, dt, sigma, lambda, Q_pos, Q_vel, R, w_obs, a_max, tilt_max, g};
+  
+  float3 *d_u_mean, *d_samples_u;
+  float *d_costs;
+
+  cudaMalloc(&d_u_mean, H * sizeof(float3));
+  cudaMalloc(&d_samples_u, K * H * sizeof(float3));
+  cudaMalloc(&d_costs, K * sizeof(float));
+
+  cudaMemcpy(d_u_mean, u_mean_host, H * sizeof(float3), cudaMemcpyHostToDevice);
+
+  int threadsPerBlock = 256;
+  int blocksPerGrid = (K + threadsPerBlock - 1) / threadsPerBlock;
+  
+  unsigned long seed = time(NULL);
+
+  mppi_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+      d_u_mean, curr_p, curr_v, ref_p, ref_v, ref_a, params, seed, d_samples_u, d_costs);
+
+  cudaMemcpy(samples_u_host, d_samples_u, K * H * sizeof(float3), cudaMemcpyDeviceToHost);
+  cudaMemcpy(costs_host, d_costs, K * sizeof(float), cudaMemcpyDeviceToHost);
+
+  cudaFree(d_u_mean);
+  cudaFree(d_samples_u);
+  cudaFree(d_costs);
+}
+
+} // extern "C"
