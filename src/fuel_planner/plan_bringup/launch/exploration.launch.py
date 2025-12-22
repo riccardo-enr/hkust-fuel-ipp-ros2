@@ -16,6 +16,15 @@ def generate_launch_description():
     waypoint_goal_topic = LaunchConfiguration("waypoint_goal_topic")
     waypoint_traj_trigger = LaunchConfiguration("waypoint_traj_trigger")
     waypoint_type = LaunchConfiguration("waypoint_type")
+    map_size_x = LaunchConfiguration("map_size_x")
+    map_size_y = LaunchConfiguration("map_size_y")
+    map_size_z = LaunchConfiguration("map_size_z")
+    box_min_x = LaunchConfiguration("box_min_x")
+    box_min_y = LaunchConfiguration("box_min_y")
+    box_min_z = LaunchConfiguration("box_min_z")
+    box_max_x = LaunchConfiguration("box_max_x")
+    box_max_y = LaunchConfiguration("box_max_y")
+    box_max_z = LaunchConfiguration("box_max_z")
     
     default_params = PathJoinSubstitution([
         FindPackageShare("exploration_manager"),
@@ -72,13 +81,45 @@ def generate_launch_description():
             default_value="point",
             description="Configures the waypoint_generator node behavior.",
         ),
+        DeclareLaunchArgument(
+            "map_size_x",
+            default_value="40.0",
+            description="Map size in X direction.",
+        ),
+        DeclareLaunchArgument(
+            "map_size_y",
+            default_value="20.0",
+            description="Map size in Y direction.",
+        ),
+        DeclareLaunchArgument(
+            "map_size_z",
+            default_value="5.0",
+            description="Map size in Z direction.",
+        ),
+        DeclareLaunchArgument("box_min_x", default_value="-20.0"),
+        DeclareLaunchArgument("box_min_y", default_value="-10.0"),
+        DeclareLaunchArgument("box_min_z", default_value="0.0"),
+        DeclareLaunchArgument("box_max_x", default_value="20.0"),
+        DeclareLaunchArgument("box_max_y", default_value="10.0"),
+        DeclareLaunchArgument("box_max_z", default_value="2.5"),
         Node(
             package="exploration_manager",
             executable="exploration_node",
             name="exploration_node",
             parameters=[
                 params_file,
-                {"exploration/tsp_dir": tsp_dir},
+                {
+                    "exploration/tsp_dir": tsp_dir,
+                    "sdf_map/map_size_x": map_size_x,
+                    "sdf_map/map_size_y": map_size_y,
+                    "sdf_map/map_size_z": map_size_z,
+                    "sdf_map/box_min_x": box_min_x,
+                    "sdf_map/box_min_y": box_min_y,
+                    "sdf_map/box_min_z": box_min_z,
+                    "sdf_map/box_max_x": box_max_x,
+                    "sdf_map/box_max_y": box_max_y,
+                    "sdf_map/box_max_z": box_max_z,
+                },
             ],
             remappings=[
                 ("/odom_world", odom_topic),

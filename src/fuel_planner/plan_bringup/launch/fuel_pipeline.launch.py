@@ -36,9 +36,26 @@ def generate_launch_description():
   init_z = LaunchConfiguration("init_z")
   exploration = LaunchConfiguration("exploration")
   controller_type = LaunchConfiguration("controller_type")
+  map_size_x = LaunchConfiguration("map_size_x")
+  map_size_y = LaunchConfiguration("map_size_y")
+  map_size_z = LaunchConfiguration("map_size_z")
 
   # Use 'world' if provided, otherwise 'map_type'
   final_map_type = PythonExpression(["'", world, "' if '", world, "' != '' else '", map_type, "'"])
+
+  # Dynamic defaults for map size
+  # Office is ~16x31x3. We use 20x35x5 to give some margin.
+  final_map_size_x = PythonExpression(["'20.0' if '", final_map_type, "' == 'office' else '", map_size_x, "'"])
+  final_map_size_y = PythonExpression(["'35.0' if '", final_map_type, "' == 'office' else '", map_size_y, "'"])
+  final_map_size_z = PythonExpression(["'5.0' if '", final_map_type, "' == 'office' else '", map_size_z, "'"])
+
+  # Derived bounding box (center at origin)
+  final_box_min_x = PythonExpression(["str(-float(", final_map_size_x, ") / 2.0)"])
+  final_box_min_y = PythonExpression(["str(-float(", final_map_size_y, ") / 2.0)"])
+  final_box_min_z = PythonExpression(["'0.0'"])
+  final_box_max_x = PythonExpression(["str(float(", final_map_size_x, ") / 2.0)"])
+  final_box_max_y = PythonExpression(["str(float(", final_map_size_y, ") / 2.0)"])
+  final_box_max_z = PythonExpression(["'2.5'"]) # Truncate visualization height
 
   plan_manage_dir = get_package_share_directory("plan_manage")
   exploration_manager_dir = get_package_share_directory("exploration_manager")
@@ -54,76 +71,97 @@ def generate_launch_description():
       "init_y": init_y,
       "init_z": init_z,
       "controller_type": controller_type,
+      "map_size_x": final_map_size_x,
+      "map_size_y": final_map_size_y,
+      "map_size_z": final_map_size_z,
     }.items(),
   )
 
   traj_server_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource(
-          os.path.join(plan_bringup_dir, "launch", "traj_server.launch.py")
-      ),
-      launch_arguments={
-          "odom_topic": odom_topic,
-          "command_topic": command_topic,
-          "use_backup": use_backup,
-          "init_x": init_x,
-          "init_y": init_y,
-          "init_z": init_z,
-      }.items(),
+    PythonLaunchDescriptionSource(
+      os.path.join(plan_bringup_dir, "launch", "traj_server.launch.py")
+    ),
+    launch_arguments={
+      "odom_topic": odom_topic,
+      "command_topic": command_topic,
+      "use_backup": use_backup,
+      "init_x": init_x,
+      "init_y": init_y,
+      "init_z": init_z,
+    }.items(),
   )
 
   fast_planner_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource(
-          os.path.join(plan_bringup_dir, "launch", "fast_planner.launch.py")
-      ),
-      launch_arguments={
-          "params_file": fast_planner_params_file,
-          "planner_mode": planner_mode,
-          "odom_topic": odom_topic,
-          "sensor_pose_topic": sensor_pose_topic,
-          "depth_topic": depth_topic,
-          "cloud_topic": cloud_topic,
-          "launch_waypoint_generator": launch_waypoint_generator,
-          "waypoint_goal_topic": waypoint_goal_topic,
-          "waypoint_traj_trigger": waypoint_traj_trigger,
-          "waypoint_type": waypoint_type,
-      }.items(),
-      condition=UnlessCondition(exploration)
+    PythonLaunchDescriptionSource(
+      os.path.join(plan_bringup_dir, "launch", "fast_planner.launch.py")
+    ),
+    launch_arguments={
+      "params_file": fast_planner_params_file,
+      "planner_mode": planner_mode,
+      "odom_topic": odom_topic,
+      "sensor_pose_topic": sensor_pose_topic,
+      "depth_topic": depth_topic,
+      "cloud_topic": cloud_topic,
+      "launch_waypoint_generator": launch_waypoint_generator,
+      "waypoint_goal_topic": waypoint_goal_topic,
+      "waypoint_traj_trigger": waypoint_traj_trigger,
+      "waypoint_type": waypoint_type,
+      "map_size_x": final_map_size_x,
+      "map_size_y": final_map_size_y,
+      "map_size_z": final_map_size_z,
+      "box_min_x": final_box_min_x,
+      "box_min_y": final_box_min_y,
+      "box_min_z": final_box_min_z,
+      "box_max_x": final_box_max_x,
+      "box_max_y": final_box_max_y,
+      "box_max_z": final_box_max_z,
+    }.items(),
+    condition=UnlessCondition(exploration)
   )
 
   exploration_launch = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource(
-          os.path.join(plan_bringup_dir, "launch", "exploration.launch.py")
-      ),
-      launch_arguments={
-          "params_file": exploration_params_file,
-          "odom_topic": odom_topic,
-          "sensor_pose_topic": sensor_pose_topic,
-          "depth_topic": depth_topic,
-          "cloud_topic": cloud_topic,
-          "launch_waypoint_generator": launch_waypoint_generator,
-          "waypoint_goal_topic": waypoint_goal_topic,
-          "waypoint_traj_trigger": waypoint_traj_trigger,
-          "waypoint_type": waypoint_type,
-      }.items(),
-      condition=IfCondition(exploration)
-  )
-
+    PythonLaunchDescriptionSource(
+      os.path.join(plan_bringup_dir, "launch", "exploration.launch.py")
+    ),
+    launch_arguments={
+      "params_file": exploration_params_file,
+      "odom_topic": odom_topic,
+      "sensor_pose_topic": sensor_pose_topic,
+      "depth_topic": depth_topic,
+      "cloud_topic": cloud_topic,
+      "launch_waypoint_generator": launch_waypoint_generator,
+      "waypoint_goal_topic": waypoint_goal_topic,
+      "waypoint_traj_trigger": waypoint_traj_trigger,
+      "waypoint_type": waypoint_type,
+      "map_size_x": final_map_size_x,
+      "map_size_y": final_map_size_y,
+      "map_size_z": final_map_size_z,
+      "box_min_x": final_box_min_x,
+      "box_min_y": final_box_min_y,
+      "box_min_z": final_box_min_z,
+      "box_max_x": final_box_max_x,
+      "box_max_y": final_box_max_y,
+      "box_max_z": final_box_max_z,
+        }.items(),
+        condition=IfCondition(exploration)
+      )
+    
   rviz_node = Node(
-      package="rviz2",
-      executable="rviz2",
-      name="rviz2",
-      condition=IfCondition(launch_rviz),
-      arguments=["-d", rviz_config],
-      output="screen",
+    package="rviz2",
+    executable="rviz2",
+    name="rviz2",
+    condition=IfCondition(launch_rviz),
+    arguments=["-d", rviz_config],
+    output="screen",
   )
 
   simulator_tf = Node(
-      package="tf2_ros",
-      executable="static_transform_publisher",
-      name="simulator_to_world_tf",
-      condition=IfCondition(publish_simulator_tf),
-      arguments=["0", "0", "0", "0", "0", "0", "1", "world", "simulator"],
-      output="screen",
+    package="tf2_ros",
+    executable="static_transform_publisher",
+    name="simulator_to_world_tf",
+    condition=IfCondition(publish_simulator_tf),
+    arguments=["0", "0", "0", "0", "0", "0", "1", "world", "simulator"],
+    output="screen",
   )
 
   return LaunchDescription(
@@ -252,6 +290,21 @@ def generate_launch_description():
               "exploration_threshold",
               default_value="75.0",
               description="Exploration percentage threshold to stop the simulation.",
+          ),
+          DeclareLaunchArgument(
+              "map_size_x",
+              default_value="40.0",
+              description="Map size in X direction.",
+          ),
+          DeclareLaunchArgument(
+              "map_size_y",
+              default_value="20.0",
+              description="Map size in Y direction.",
+          ),
+          DeclareLaunchArgument(
+              "map_size_z",
+              default_value="5.0",
+              description="Map size in Z direction.",
           ),
           simulator_launch,
           SetLaunchConfiguration("params_file", traj_server_params_file),
