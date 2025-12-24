@@ -263,12 +263,12 @@ def generate_launch_description():
           ),
           DeclareLaunchArgument(
               "init_x",
-              default_value="-19.99",
+              default_value="0.0",
               description="Initial x position",
           ),
           DeclareLaunchArgument(
               "init_y",
-              default_value="-1.0",
+              default_value="0.0",
               description="Initial y position",
           ),
           DeclareLaunchArgument(
@@ -278,12 +278,12 @@ def generate_launch_description():
           ),
           DeclareLaunchArgument(
               "exploration",
-              default_value="false",
+              default_value="true",
               description="Set true to run in autonomous exploration mode.",
           ),
           DeclareLaunchArgument(
               "controller_type",
-              default_value="so3",
+              default_value="mppi",
               description="Controller type: so3 or mppi",
           ),
           DeclareLaunchArgument(

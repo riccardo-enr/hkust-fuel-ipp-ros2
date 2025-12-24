@@ -9,6 +9,7 @@ fuel_planner/utils/lkh_tsp_solver/resource/*.txt
 
 GEMINI.md
 AGENTS.md
+CLAUDE.md
 docs/codex
 docs/plan
 
@@ -18,6 +19,9 @@ log/
 .ros/
 
 .devcontainer/.env
+
+# Local setup scripts
+claude_code_zai_env.sh
 
 # VSCode database files
 .vscode/*.db*
