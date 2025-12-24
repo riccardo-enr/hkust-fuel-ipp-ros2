@@ -15,10 +15,15 @@ namespace mppi_control {
 // CUDA Kernel Launcher Declaration
 extern "C" void launch_mppi_kernel(
     const float3* u_mean_host,
+    float3 u_prev,
     float3 curr_p, float3 curr_v,
     float3 ref_p, float3 ref_v, float3 ref_a,
     int K, int H, float dt, float sigma, float lambda,
-    float Q_pos, float Q_vel, float R, float w_obs,
+    float Q_pos_x, float Q_pos_y, float Q_pos_z,
+    float Q_vel_x, float Q_vel_y, float Q_vel_z,
+    float R_x, float R_y, float R_z,
+    float R_rate_x, float R_rate_y, float R_rate_z,
+    float w_obs,
     float a_max, float tilt_max, float g,
     float3* samples_u_host,
     float* costs_host,
@@ -31,12 +36,21 @@ struct MPPIParams {
   double dt;     // Time step
   double sigma;  // Noise standard deviation
   double lambda; // Temperature parameter for weighting
-  
-  double Q_pos;  // Position cost weight
-  double Q_vel;  // Velocity cost weight
-  double R;      // Control effort weight
-  double w_obs;  // Obstacle cost weight
-  
+
+  double Q_pos_x;  // Position cost weight (x)
+  double Q_pos_y;  // Position cost weight (y)
+  double Q_pos_z;  // Position cost weight (z)
+  double Q_vel_x;  // Velocity cost weight (x)
+  double Q_vel_y;  // Velocity cost weight (y)
+  double Q_vel_z;  // Velocity cost weight (z)
+  double R_x;      // Control effort weight (x)
+  double R_y;      // Control effort weight (y)
+  double R_z;      // Control effort weight (z)
+  double R_rate_x; // Control rate change weight (x)
+  double R_rate_y; // Control rate change weight (y)
+  double R_rate_z; // Control rate change weight (z)
+  double w_obs;    // Obstacle cost weight
+
   double a_max;       // Max acceleration
   double tilt_max;    // Max tilt angle in radians
   double g;           // Gravity
@@ -69,6 +83,7 @@ private:
 
   MPPIParams params_;
   std::vector<Eigen::Vector3d> u_mean_; // Mean control sequence
+  Eigen::Vector3d u_prev_;              // Previous control command (for rate penalty)
   uint32_t seed_{0};
   
   // SDFMap for obstacle costs

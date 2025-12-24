@@ -18,9 +18,18 @@ MPPIControlNode::MPPIControlNode(const rclcpp::NodeOptions& options)
   params_.sigma = this->declare_parameter("mppi/sigma", 1.0);
   params_.lambda = this->declare_parameter("mppi/lambda", 0.1);
   
-  params_.Q_pos = this->declare_parameter("mppi/Q_pos", 10.0);
-  params_.Q_vel = this->declare_parameter("mppi/Q_vel", 1.0);
-  params_.R = this->declare_parameter("mppi/R", 0.1);
+  params_.Q_pos_x = this->declare_parameter("mppi/Q_pos_x", 10.0);
+  params_.Q_pos_y = this->declare_parameter("mppi/Q_pos_y", 10.0);
+  params_.Q_pos_z = this->declare_parameter("mppi/Q_pos_z", 10.0);
+  params_.Q_vel_x = this->declare_parameter("mppi/Q_vel_x", 1.0);
+  params_.Q_vel_y = this->declare_parameter("mppi/Q_vel_y", 1.0);
+  params_.Q_vel_z = this->declare_parameter("mppi/Q_vel_z", 1.0);
+  params_.R_x = this->declare_parameter("mppi/R_x", 0.1);
+  params_.R_y = this->declare_parameter("mppi/R_y", 0.1);
+  params_.R_z = this->declare_parameter("mppi/R_z", 0.1);
+  params_.R_rate_x = this->declare_parameter("mppi/R_rate_x", 0.5);
+  params_.R_rate_y = this->declare_parameter("mppi/R_rate_y", 0.5);
+  params_.R_rate_z = this->declare_parameter("mppi/R_rate_z", 0.5);
   params_.w_obs = this->declare_parameter("mppi/w_obs", 100.0);
   
   params_.a_max = this->declare_parameter("mppi/a_max", 10.0);
@@ -98,11 +107,14 @@ void MPPIControlNode::controlLoop() {
     runMPPI();
     Eigen::Vector3d ref_acc(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
     des_acc = u_mean_[0] + ref_acc;
+    // Store previous control (delta from reference) for rate penalty
+    u_prev_ = u_mean_[0];
   } else {
     // Hover command if not ready
     des_acc.setZero();
     // Warm start with zero if not ready
     std::fill(u_mean_.begin(), u_mean_.end(), Eigen::Vector3d::Zero());
+    u_prev_.setZero();
   }
 
   Eigen::Vector3d force = mass_ * (des_acc + Eigen::Vector3d(0, 0, params_.g));
@@ -162,11 +174,16 @@ void MPPIControlNode::runMPPI() {
   float3 rp = make_float3(ref_cmd_.position.x, ref_cmd_.position.y, ref_cmd_.position.z);
   float3 rv = make_float3(ref_cmd_.velocity.x, ref_cmd_.velocity.y, ref_cmd_.velocity.z);
   float3 ra = make_float3(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
+  float3 up = make_float3(u_prev_.x(), u_prev_.y(), u_prev_.z());
 
   launch_mppi_kernel(
-      u_mean_f3.data(), cp, cv, rp, rv, ra,
+      u_mean_f3.data(), up, cp, cv, rp, rv, ra,
       params_.K, params_.H, params_.dt, params_.sigma, params_.lambda,
-      params_.Q_pos, params_.Q_vel, params_.R, params_.w_obs,
+      params_.Q_pos_x, params_.Q_pos_y, params_.Q_pos_z,
+      params_.Q_vel_x, params_.Q_vel_y, params_.Q_vel_z,
+      params_.R_x, params_.R_y, params_.R_z,
+      params_.R_rate_x, params_.R_rate_y, params_.R_rate_z,
+      params_.w_obs,
       params_.a_max, params_.tilt_max, params_.g,
       samples_u.data(), costs.data(), seed_++);
 

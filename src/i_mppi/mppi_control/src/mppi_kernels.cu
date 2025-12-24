@@ -10,9 +10,18 @@ struct MPPIParamsDevice {
   float dt;
   float sigma;
   float lambda;
-  float Q_pos;
-  float Q_vel;
-  float R;
+  float Q_pos_x;
+  float Q_pos_y;
+  float Q_pos_z;
+  float Q_vel_x;
+  float Q_vel_y;
+  float Q_vel_z;
+  float R_x;
+  float R_y;
+  float R_z;
+  float R_rate_x;
+  float R_rate_y;
+  float R_rate_z;
   float w_obs;
   float a_max;
   float tilt_max;
@@ -21,6 +30,7 @@ struct MPPIParamsDevice {
 
 __global__ void mppi_kernel(
     const float3* u_mean,
+    const float3 u_prev,
     const float3 curr_p,
     const float3 curr_v,
     const float3 ref_p_base,
@@ -40,6 +50,7 @@ __global__ void mppi_kernel(
   float3 p = curr_p;
   float3 v = curr_v;
   float total_cost = 0.0f;
+  float3 u_prev_timestep = u_prev; // Track previous control in this rollout
 
   for (int h = 0; h < params.H; ++h) {
     // Reference Trajectory Prediction (Constant Acceleration Model)
@@ -141,9 +152,27 @@ __global__ void mppi_kernel(
     float da_y = u.y - ref_a_base.y;
     float da_z = u.z - ref_a_base.z;
 
-    total_cost += params.Q_pos * (dp_x * dp_x + dp_y * dp_y + dp_z * dp_z);
-    total_cost += params.Q_vel * (dv_x * dv_x + dv_y * dv_y + dv_z * dv_z);
-    total_cost += params.R * (da_x * da_x + da_y * da_y + da_z * da_z);
+    total_cost += params.Q_pos_x * dp_x * dp_x;
+    total_cost += params.Q_pos_y * dp_y * dp_y;
+    total_cost += params.Q_pos_z * dp_z * dp_z;
+    total_cost += params.Q_vel_x * dv_x * dv_x;
+    total_cost += params.Q_vel_y * dv_y * dv_y;
+    total_cost += params.Q_vel_z * dv_z * dv_z;
+    total_cost += params.R_x * da_x * da_x;
+    total_cost += params.R_y * da_y * da_y;
+    total_cost += params.R_z * da_z * da_z;
+
+    // Control rate penalty: penalize change from previous control
+    float3 du_rate;
+    du_rate.x = u.x - u_prev_timestep.x;
+    du_rate.y = u.y - u_prev_timestep.y;
+    du_rate.z = u.z - u_prev_timestep.z;
+    total_cost += params.R_rate_x * du_rate.x * du_rate.x;
+    total_cost += params.R_rate_y * du_rate.y * du_rate.y;
+    total_cost += params.R_rate_z * du_rate.z * du_rate.z;
+
+    // Update previous control for next timestep
+    u_prev_timestep = u;
   }
 
   costs[k] = total_cost;
@@ -151,16 +180,28 @@ __global__ void mppi_kernel(
 
 void launch_mppi_kernel(
     const float3* u_mean_host,
+    float3 u_prev,
     float3 curr_p, float3 curr_v,
     float3 ref_p, float3 ref_v, float3 ref_a,
     int K, int H, float dt, float sigma, float lambda,
-    float Q_pos, float Q_vel, float R, float w_obs,
+    float Q_pos_x, float Q_pos_y, float Q_pos_z,
+    float Q_vel_x, float Q_vel_y, float Q_vel_z,
+    float R_x, float R_y, float R_z,
+    float R_rate_x, float R_rate_y, float R_rate_z,
+    float w_obs,
     float a_max, float tilt_max, float g,
     float3* samples_u_host,
     float* costs_host,
     unsigned int seed
 ) {
-  MPPIParamsDevice params = {K, H, dt, sigma, lambda, Q_pos, Q_vel, R, w_obs, a_max, tilt_max, g};
+  MPPIParamsDevice params = {
+    K, H, dt, sigma, lambda,
+    Q_pos_x, Q_pos_y, Q_pos_z,
+    Q_vel_x, Q_vel_y, Q_vel_z,
+    R_x, R_y, R_z,
+    R_rate_x, R_rate_y, R_rate_z,
+    w_obs, a_max, tilt_max, g
+  };
   
   float3 *d_u_mean, *d_samples_u;
   float *d_costs;
@@ -173,9 +214,9 @@ void launch_mppi_kernel(
 
   int threadsPerBlock = 256;
   int blocksPerGrid = (K + threadsPerBlock - 1) / threadsPerBlock;
-  
+
   mppi_kernel<<<blocksPerGrid, threadsPerBlock>>>(
-      d_u_mean, curr_p, curr_v, ref_p, ref_v, ref_a, params, seed, d_samples_u, d_costs);
+      d_u_mean, u_prev, curr_p, curr_v, ref_p, ref_v, ref_a, params, seed, d_samples_u, d_costs);
 
   cudaMemcpy(samples_u_host, d_samples_u, K * H * sizeof(float3), cudaMemcpyDeviceToHost);
   cudaMemcpy(costs_host, d_costs, K * sizeof(float), cudaMemcpyDeviceToHost);
