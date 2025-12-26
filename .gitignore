@@ -13,6 +13,7 @@ CLAUDE.md
 docs/codex
 docs/plan
 opencode.json
+.ignore
 
 build/
 install/
