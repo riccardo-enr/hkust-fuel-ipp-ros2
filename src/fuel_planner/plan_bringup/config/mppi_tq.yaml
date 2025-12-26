@@ -2,17 +2,17 @@ mppi_control:
   ros__parameters:
     mppi:
       # Common parameters
-      K: 9000
-      H: 50
-      dt: 0.02
-      lambda: 1.0
+      K: 1000
+      N: 1.0 # Horizon time in seconds
+      ctl_freq: 50.0 # Control frequency in Hz (dt = 1/ctl_freq)
+      lambda: 0.001
 
       # Thrust+Quaternion specific parameters
-      sigma_thrust: 0.05
+      sigma_thrust: 0.5
       sigma_quat: 0.02
-      Q_pos_x: 20.0
-      Q_pos_y: 20.0
-      Q_pos_z: 20.0
+      Q_pos_x: 50.0
+      Q_pos_y: 50.0
+      Q_pos_z: 50.0
       Q_vel_x: 5.0
       Q_vel_y: 5.0
       Q_vel_z: 5.0
@@ -27,6 +27,10 @@ mppi_control:
       # Constraints
       thrust_max: 20.0
       thrust_min: 1.0
-      w_obs: 20.0
+      w_obs: 0.0
       g: 9.81
+
+      # Low-pass filter (optional, for smoother control)
+      enable_lpf: false
+      lpf_cutoff: 5.0 # Cutoff frequency in Hz
     mass: 0.98

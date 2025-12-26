@@ -38,6 +38,7 @@ def generate_launch_description():
     
     plan_bringup_share = get_package_share_directory('plan_bringup')
     # Load both MPPI configs (acceleration and thrust+quaternion variants)
+    # Need to keep the 'mppi' nesting since parameters are declared with 'mppi/' prefix
     mppi_acc_config = load_yaml(os.path.join(plan_bringup_share, 'config', 'mppi_acc.yaml'))['mppi_control']['ros__parameters']
     mppi_tq_config = load_yaml(os.path.join(plan_bringup_share, 'config', 'mppi_tq.yaml'))['mppi_control']['ros__parameters']
 
