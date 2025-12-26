@@ -60,6 +60,7 @@ nav:
   - Reference:
       - CLI: wiki/reference/cli_reference.md
       - Messages: wiki/reference/message_schemas.md
+      - MPPI Controller: wiki/reference/mppi_controller.md
       - Parameters: wiki/reference/parameter_tables.md
   - Simulator:
       - Performance Tuning: wiki/simulator/performance_tuning.md
