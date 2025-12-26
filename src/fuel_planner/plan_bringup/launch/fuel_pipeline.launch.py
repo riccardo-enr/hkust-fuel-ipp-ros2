@@ -283,8 +283,8 @@ def generate_launch_description():
           ),
           DeclareLaunchArgument(
               "controller_type",
-              default_value="mppi",
-              description="Controller type: so3 or mppi",
+              default_value="mppi_acc",
+              description="Controller type: so3, mppi_acc, or mppi_tq",
           ),
           DeclareLaunchArgument(
               "exploration_threshold",

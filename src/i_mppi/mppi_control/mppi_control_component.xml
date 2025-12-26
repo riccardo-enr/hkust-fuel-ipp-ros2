@@ -1,7 +1,12 @@
 <library path="libmppi_control_component">
-  <class name="mppi_control::MPPIControlNode" type="mppi_control::MPPIControlNode" base_class_type="rclcpp::Node">
+  <class name="mppi_control::MPPIAccNode" type="mppi_control::MPPIAccNode" base_class_type="rclcpp::Node">
     <description>
-      MPPI Control Node for Quadrotor
+      MPPI Control Node for Quadrotor (Acceleration)
+    </description>
+  </class>
+  <class name="mppi_control::MPPITqNode" type="mppi_control::MPPITqNode" base_class_type="rclcpp::Node">
+    <description>
+      MPPI Control Node for Quadrotor (Thrust + Quaternion)
     </description>
   </class>
 </library>

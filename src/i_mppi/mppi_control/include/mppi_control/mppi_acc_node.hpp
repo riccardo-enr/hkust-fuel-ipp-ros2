@@ -1,5 +1,5 @@
-#ifndef MPPI_CONTROL__MPPI_CONTROL_NODE_HPP_
-#define MPPI_CONTROL__MPPI_CONTROL_NODE_HPP_
+#ifndef MPPI_CONTROL__MPPI_ACC_NODE_HPP_
+#define MPPI_CONTROL__MPPI_ACC_NODE_HPP_
 
 #include <Eigen/Eigen>
 #include <vector>
@@ -13,7 +13,7 @@
 namespace mppi_control {
 
 // CUDA Kernel Launcher Declaration
-extern "C" void launch_mppi_kernel(
+extern "C" void launch_mppi_acc_kernel(
     const float3* u_mean_host,
     float3 u_prev,
     float3 curr_p, float3 curr_v,
@@ -56,9 +56,9 @@ struct MPPIParams {
   double g;           // Gravity
 };
 
-class MPPIControlNode : public rclcpp::Node {
+class MPPIAccNode : public rclcpp::Node {
 public:
-  MPPIControlNode(const rclcpp::NodeOptions& options);
+  MPPIAccNode(const rclcpp::NodeOptions& options);
 
 private:
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
@@ -96,4 +96,4 @@ private:
 
 } // namespace mppi_control
 
-#endif // MPPI_CONTROL__MPPI_CONTROL_NODE_HPP_
+#endif // MPPI_CONTROL__MPPI_ACC_NODE_HPP_

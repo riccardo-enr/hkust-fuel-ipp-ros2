@@ -1,4 +1,4 @@
-#include "mppi_control/mppi_control_node.hpp"
+#include "mppi_control/mppi_acc_node.hpp"
 #include <rclcpp_components/register_node_macro.hpp>
 #include <tf2/utils.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -9,8 +9,8 @@
 namespace mppi_control
 {
 
-  MPPIControlNode::MPPIControlNode(const rclcpp::NodeOptions &options)
-      : Node("mppi_control_node", options)
+  MPPIAccNode::MPPIAccNode(const rclcpp::NodeOptions &options)
+      : Node("mppi_acc_node", options)
   {
 
     // Initialize Parameters
@@ -50,21 +50,21 @@ namespace mppi_control
 
     // Publishers and Subscribers
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "odom", 10, std::bind(&MPPIControlNode::odomCallback, this, std::placeholders::_1));
+        "odom", 10, std::bind(&MPPIAccNode::odomCallback, this, std::placeholders::_1));
 
     pos_cmd_sub_ = this->create_subscription<quadrotor_msgs::msg::PositionCommand>(
-        "planning/pos_cmd", 10, std::bind(&MPPIControlNode::posCmdCallback, this, std::placeholders::_1));
+        "planning/pos_cmd", 10, std::bind(&MPPIAccNode::posCmdCallback, this, std::placeholders::_1));
 
     so3_cmd_pub_ = this->create_publisher<quadrotor_msgs::msg::SO3Command>(
         "so3_cmd", 10);
 
     timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(10), std::bind(&MPPIControlNode::controlLoop, this));
+        std::chrono::milliseconds(10), std::bind(&MPPIAccNode::controlLoop, this));
 
-    RCLCPP_INFO(this->get_logger(), "MPPI Control Node Initialized");
+    RCLCPP_INFO(this->get_logger(), "MPPI Acc Node Initialized");
   }
 
-  void MPPIControlNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+  void MPPIAccNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
   {
     curr_p_ = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
     curr_v_ = Eigen::Vector3d(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
@@ -81,13 +81,13 @@ namespace mppi_control
     odom_received_ = true;
   }
 
-  void MPPIControlNode::posCmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg)
+  void MPPIAccNode::posCmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg)
   {
     ref_cmd_ = *msg;
     ref_received_ = true;
   }
 
-  void MPPIControlNode::controlLoop()
+  void MPPIAccNode::controlLoop()
   {
     if (!odom_received_)
       return;
@@ -175,7 +175,7 @@ namespace mppi_control
     }
   }
 
-  void MPPIControlNode::runMPPI()
+  void MPPIAccNode::runMPPI()
   {
     std::vector<float3> samples_u(params_.K * params_.H);
     std::vector<float> costs(params_.K);
@@ -193,7 +193,7 @@ namespace mppi_control
     float3 ra = make_float3(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
     float3 up = make_float3(u_prev_.x(), u_prev_.y(), u_prev_.z());
 
-    launch_mppi_kernel(
+    launch_mppi_acc_kernel(
         u_mean_f3.data(), up, cp, cv, rp, rv, ra,
         params_.K, params_.H, params_.dt, params_.sigma, params_.lambda,
         params_.Q_pos_x, params_.Q_pos_y, params_.Q_pos_z,
@@ -231,4 +231,4 @@ namespace mppi_control
 
 } // namespace mppi_control
 
-RCLCPP_COMPONENTS_REGISTER_NODE(mppi_control::MPPIControlNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(mppi_control::MPPIAccNode)

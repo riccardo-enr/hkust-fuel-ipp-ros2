@@ -34,8 +34,10 @@ include_directories(
 )
 
 add_library(mppi_control_component SHARED
-  src/mppi_control_node.cpp
-  src/mppi_kernels.cu
+  src/mppi_acc_node.cpp
+  src/mppi_acc_kernels.cu
+  src/mppi_tq_node.cpp
+  src/mppi_tq_kernels.cu
 )
 
 set_target_properties(mppi_control_component PROPERTIES
@@ -65,8 +67,13 @@ target_compile_definitions(mppi_control_component
   PRIVATE "MPPI_CONTROL_CPP_BUILDING_DLL")
 
 rclcpp_components_register_node(mppi_control_component
-  PLUGIN "mppi_control::MPPIControlNode"
-  EXECUTABLE mppi_control_node
+  PLUGIN "mppi_control::MPPIAccNode"
+  EXECUTABLE mppi_acc_node
+)
+
+rclcpp_components_register_node(mppi_control_component
+  PLUGIN "mppi_control::MPPITqNode"
+  EXECUTABLE mppi_tq_node
 )
 
 # Install

@@ -178,7 +178,7 @@ __global__ void mppi_kernel(
   costs[k] = total_cost;
 }
 
-void launch_mppi_kernel(
+void launch_mppi_acc_kernel(
     const float3* u_mean_host,
     float3 u_prev,
     float3 curr_p, float3 curr_v,

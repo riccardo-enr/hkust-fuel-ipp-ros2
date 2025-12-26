@@ -92,12 +92,22 @@
       "problemMatcher": []
     },
     {
-      "label": "Run: Fuel Exploration (MPPI)",
+      "label": "Run: Fuel Exploration (MPPI_ACC)",
       "type": "shell",
       "command": "bash",
       "args": [
         "-lc",
-        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi"
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi_acc"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Fuel Exploration (MPPI_TQ)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi_tq"
       ],
       "problemMatcher": []
     },
@@ -112,12 +122,22 @@
       "problemMatcher": []
     },
     {
-      "label": "Run: Fuel Manual (MPPI)",
+      "label": "Run: Fuel Manual (MPPI_ACC)",
       "type": "shell",
       "command": "bash",
       "args": [
         "-lc",
-        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi"
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi_acc"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Fuel Manual (MPPI_TQ)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi_tq"
       ],
       "problemMatcher": []
     },
@@ -132,12 +152,22 @@
       "problemMatcher": []
     },
     {
-      "label": "Run: Office Exploration (MPPI)",
+      "label": "Run: Office Exploration (MPPI_ACC)",
       "type": "shell",
       "command": "bash",
       "args": [
         "-lc",
-        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi_acc world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Office Exploration (MPPI_TQ)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=true controller_type:=mppi_tq world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
       ],
       "problemMatcher": []
     },
@@ -152,12 +182,22 @@
       "problemMatcher": []
     },
     {
-      "label": "Run: Office Manual (MPPI)",
+      "label": "Run: Office Manual (MPPI_ACC)",
       "type": "shell",
       "command": "bash",
       "args": [
         "-lc",
-        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi_acc world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Office Manual (MPPI_TQ)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi_tq world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
       ],
       "problemMatcher": []
     }

@@ -52,7 +52,7 @@ def generate_launch_description():
         DeclareLaunchArgument('map_size_z', default_value='5.0'),
         DeclareLaunchArgument('odometry_topic', default_value='/state_ukf/odom'),
         DeclareLaunchArgument('map_type', default_value='random_forest', description='Map generator type: random_forest, empty_world, office, office2, office3, or pillar'),
-        DeclareLaunchArgument('controller_type', default_value='so3', description='Controller type: so3 or mppi'),
+        DeclareLaunchArgument('controller_type', default_value='so3', description='Controller type: so3, mppi_acc, or mppi_tq'),
         
         # Map Generator (PCD)
         Node(
@@ -147,17 +147,54 @@ def generate_launch_description():
             ]
         ),
 
-        # MPPI Control (Composable Node) - only launched if controller_type == 'mppi'
+        # MPPI Acceleration Control (Composable Node)
         ComposableNodeContainer(
             name='mppi_control_container',
             namespace='',
             package='rclcpp_components',
             executable='component_container',
-            condition=IfCondition(PythonExpression(["'", controller_type, "' == 'mppi'"])),
+            condition=IfCondition(PythonExpression(["'", controller_type, "' == 'mppi_acc'"])),
             composable_node_descriptions=[
                 ComposableNode(
                     package='mppi_control',
-                    plugin='mppi_control::MPPIControlNode',
+                    plugin='mppi_control::MPPIAccNode',
+                    name='mppi_control',
+                    parameters=[
+                        fast_planner_config,
+                        gains_config,
+                        mppi_config
+                    ],
+                    remappings=[
+                        ('odom', '/state_ukf/odom'),
+                        ('planning/pos_cmd', '/planning/pos_cmd'),
+                        ('so3_cmd', 'so3_cmd'),
+                        ('/sdf_map/occupancy_all', '/mppi_control/sdf_map/occupancy_all'),
+                        ('/sdf_map/occupancy_local', '/mppi_control/sdf_map/occupancy_local'),
+                        ('/sdf_map/free_all', '/mppi_control/sdf_map/free_all'),
+                        ('/sdf_map/free_local', '/mppi_control/sdf_map/free_local'),
+                        ('/sdf_map/occupancy_local_inflate', '/mppi_control/sdf_map/occupancy_local_inflate'),
+                        ('/sdf_map/unknown', '/mppi_control/sdf_map/unknown'),
+                        ('/sdf_map/esdf', '/mppi_control/sdf_map/esdf'),
+                        ('/sdf_map/update_range', '/mppi_control/sdf_map/update_range'),
+                        ('/sdf_map/depth_cloud', '/mppi_control/sdf_map/depth_cloud'),
+                        ('/sdf_map/explored_volume', '/mppi_control/sdf_map/explored_volume'),
+                    ]
+                )
+            ],
+            output='screen',
+        ),
+
+        # MPPI Thrust+Quaternion Control (Composable Node)
+        ComposableNodeContainer(
+            name='mppi_control_container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            condition=IfCondition(PythonExpression(["'", controller_type, "' == 'mppi_tq'"])),
+            composable_node_descriptions=[
+                ComposableNode(
+                    package='mppi_control',
+                    plugin='mppi_control::MPPITqNode',
                     name='mppi_control',
                     parameters=[
                         fast_planner_config,
