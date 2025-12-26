@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Global Map1/Autocompute Value Bounds1
         - /TF1
         - /Robot1
         - /Robot Pose1
@@ -12,7 +13,7 @@ Panels:
         - /Command1
         - /Command Pose1
       Splitter Ratio: 0.5
-    Tree Height: 267
+    Tree Height: 256
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -30,7 +31,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Global Map
 Visualization Manager:
   Class: ""
   Displays:
@@ -72,13 +73,16 @@ Visualization Manager:
       Min Intensity: 0
       Name: Global Map
       Position Transformer: XYZ
-      Queue Size: 10
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /map_generator/global_cloud
-      Unreliable: false
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_generator/global_cloud
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -102,13 +106,16 @@ Visualization Manager:
       Min Intensity: 0
       Name: Explored Map
       Position Transformer: XYZ
-      Queue Size: 10
       Selectable: true
       Size (Pixels): 2
-      Size (m): 0.1
+      Size (m): 0.10000000149011612
       Style: Flat Squares
-      Topic: /sdf_map/occupancy_all
-      Unreliable: false
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sdf_map/occupancy_all
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -119,13 +126,19 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        simulator:
+          Value: true
+        world:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          simulator:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/Marker
@@ -199,7 +212,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /visual_slam/odom
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Command
@@ -234,12 +247,25 @@ Visualization Manager:
         Value: /odom_visualization/cmd_pose
       Value: false
     - Alpha: 1
+      Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 0; 0; 255
       Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
       Line Width: 0.029999999329447746
       Name: Robot Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -249,12 +275,25 @@ Visualization Manager:
         Value: /odom_visualization/path
       Value: true
     - Alpha: 1
+      Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 255; 0; 0
       Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
       Line Width: 0.029999999329447746
       Name: Command Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -267,7 +306,7 @@ Visualization Manager:
       Enabled: true
       Name: FOV
       Namespaces:
-        {}
+        current_pose: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -321,41 +360,41 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 66.3204345703125
+      Distance: 15.81118392944336
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -18
-        Y: -1
-        Z: 0
+        X: -3.049144744873047
+        Y: -2.834064483642578
+        Z: 9.5367431640625e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: -0.02999962493777275
+      Pitch: 0.6399999856948853
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 1.4849992990493774
+      Yaw: 2.525000810623169
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
-  Height: 1043
-  Hide Left Dock: false
+    collapsed: true
+  Height: 1011
+  Hide Left Dock: true
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd000000010000000000000253000003bdfc0200000005fb000000100044006900730070006c006100790073010000003b00000146000000c700fffffffb0000001200530065006c0065006300740069006f006e01000001870000009e0000005c00fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000022b0000009e0000005c00fffffffb0000000a0056006900650077007301000002cf000000d9000000a000fffffffb0000000800540069006d006501000003ae0000004a0000003700ffffff00000527000003bd00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002530000039dfc0200000005fb000000100044006900730070006c006100790073000000003b0000013b000000c700fffffffb0000001200530065006c0065006300740069006f006e000000017c000000980000005c00fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000021a000000990000005c00fffffffb0000000a0056006900650077007300000002b9000000d2000000a000fffffffb0000000800540069006d00650000000391000000470000003700ffffff000007800000039d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
-    collapsed: false
+    collapsed: true
   Time:
-    collapsed: false
+    collapsed: true
   Tool Properties:
-    collapsed: false
+    collapsed: true
   Views:
-    collapsed: false
+    collapsed: true
   Width: 1920
-  X: 1920
-  Y: 0
+  X: 0
+  Y: 32
