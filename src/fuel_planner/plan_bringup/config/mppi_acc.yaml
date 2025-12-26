@@ -5,7 +5,7 @@ mppi_control:
       H: 50
       dt: 0.02
       sigma: 0.05
-      lambda: 0.5
+      lambda: 1.0
       Q_pos_x: 20.0
       Q_pos_y: 20.0
       Q_pos_z: 20.0
@@ -15,9 +15,9 @@ mppi_control:
       R_x: 0.5
       R_y: 0.5
       R_z: 0.5
-      R_rate_x: 15.0
-      R_rate_y: 15.0
-      R_rate_z: 15.0
+      R_rate_x: 30.0
+      R_rate_y: 30.0
+      R_rate_z: 30.0
       w_obs: 20.0
       a_max: 10.0
       tilt_max: 0.6
