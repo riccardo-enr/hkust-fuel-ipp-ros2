@@ -37,7 +37,9 @@ def generate_launch_description():
     fast_planner_config = load_yaml(os.path.join(plan_manage_share, 'config', 'fast_planner.yaml'))['fast_planner_node']['ros__parameters']
     
     plan_bringup_share = get_package_share_directory('plan_bringup')
-    mppi_config = load_yaml(os.path.join(plan_bringup_share, 'config', 'mppi.yaml'))['mppi_control']['ros__parameters']
+    # Load both MPPI configs (acceleration and thrust+quaternion variants)
+    mppi_acc_config = load_yaml(os.path.join(plan_bringup_share, 'config', 'mppi_acc.yaml'))['mppi_control']['ros__parameters']
+    mppi_tq_config = load_yaml(os.path.join(plan_bringup_share, 'config', 'mppi_tq.yaml'))['mppi_control']['ros__parameters']
 
     # Controller remappings logic
     # If MPPI: so3_control node is bypassed (but simulator still needs so3_cmd)
@@ -162,7 +164,7 @@ def generate_launch_description():
                     parameters=[
                         fast_planner_config,
                         gains_config,
-                        mppi_config
+                        mppi_acc_config
                     ],
                     remappings=[
                         ('odom', '/state_ukf/odom'),
@@ -199,7 +201,7 @@ def generate_launch_description():
                     parameters=[
                         fast_planner_config,
                         gains_config,
-                        mppi_config
+                        mppi_tq_config
                     ],
                     remappings=[
                         ('odom', '/state_ukf/odom'),

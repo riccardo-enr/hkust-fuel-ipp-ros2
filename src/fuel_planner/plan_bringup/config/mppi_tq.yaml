@@ -1,0 +1,30 @@
+mppi_control:
+  ros__parameters:
+    mppi:
+      # Common parameters
+      K: 9000
+      H: 50
+      dt: 0.02
+      lambda: 0.1
+
+      # Thrust+Quaternion specific parameters
+      sigma_thrust: 0.05
+      sigma_quat: 0.02
+      Q_pos_x: 20.0
+      Q_pos_y: 20.0
+      Q_pos_z: 20.0
+      Q_vel_x: 5.0
+      Q_vel_y: 5.0
+      Q_vel_z: 5.0
+      Q_thrust: 0.5
+      R_thrust: 0.5
+      Q_quat: 10.0
+      R_quat: 0.5
+      Q_omega: 5.0
+
+      # Constraints
+      thrust_max: 20.0
+      thrust_min: 1.0
+      w_obs: 20.0
+      g: 9.81
+    mass: 0.98

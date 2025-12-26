@@ -1,0 +1,25 @@
+mppi_control:
+  ros__parameters:
+    mppi:
+      K: 9000
+      H: 50
+      dt: 0.02
+      sigma: 0.05
+      lambda: 0.1
+      Q_pos_x: 20.0
+      Q_pos_y: 20.0
+      Q_pos_z: 20.0
+      Q_vel_x: 5.0
+      Q_vel_y: 5.0
+      Q_vel_z: 5.0
+      R_x: 0.5
+      R_y: 0.5
+      R_z: 0.5
+      R_rate_x: 15.0
+      R_rate_y: 15.0
+      R_rate_z: 15.0
+      w_obs: 20.0
+      a_max: 10.0
+      tilt_max: 0.6
+      g: 9.81
+    mass: 0.98
