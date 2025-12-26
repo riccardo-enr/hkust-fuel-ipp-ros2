@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>MPPI Controller - FUEL ROS 2 Port</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "MPPI Controller";
+        var mkdocs_page_input_path = "wiki/reference/mppi_controller.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/yaml.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> FUEL ROS 2 Port
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Overview</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/">Introduction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/architecture/">Architecture</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/project_overview/">Project Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/roadmap/">Roadmap</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Setup</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/">Getting Started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/dev_container/">Dev Container</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/env_configuration/">Environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/simulator_launch/">Simulator</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Development</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../development/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../development/exploration_metrics/">Exploration Metrics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../development/mppi_test_plan/">MPPI Test Plan</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Migration</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/">Porting Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/api_changes/">API Changes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/porting_playbook/">Porting Playbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/ros1_to_ros2_checklist/">Checklist</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../cli_reference/">CLI</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../message_schemas/">Messages</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">MPPI Controller</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#controller-variants">Controller Variants</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-mppi-acceleration-mppi_acc_node">1. MPPI Acceleration (mppi_acc_node)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-mppi-thrustquaternion-mppi_tq_node">2. MPPI Thrust+Quaternion (mppi_tq_node)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#parameters">Parameters</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#common-parameters">Common Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cost-weights-acceleration-variant">Cost Weights (Acceleration Variant)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cost-weights-thrustquaternion-variant">Cost Weights (Thrust+Quaternion Variant)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#control-constraints">Control Constraints</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#launch-with-mppi-controller">Launch with MPPI Controller</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#configuration-file">Configuration File</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#topics">Topics</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#subscribed-topics">Subscribed Topics</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#published-topics">Published Topics</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#algorithm-details">Algorithm Details</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dynamics-model">Dynamics Model</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cost-function">Cost Function</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sampling-strategy">Sampling Strategy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#weighted-update">Weighted Update</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#comparison-with-so3-controller">Comparison with SO3 Controller</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#hardware-requirements">Hardware Requirements</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tuning-guidelines">Tuning Guidelines</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-files">Implementation Files</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#references">References</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../parameter_tables/">Parameters</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Simulator</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../simulator/performance_tuning/">Performance Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../simulator/visualization/">Visualization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../simulator/worlds/">Worlds</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Troubleshooting</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/common_issues/">Common Issues</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/debugging/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Templates</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../templates/runbook_template/">Runbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../templates/wiki_page_template/">Wiki Page</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../porting/PORTING_PROGRESS/">Porting Progress</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">FUEL ROS 2 Port</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">MPPI Controller</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+    <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Breadcrumb Navigation">
+        <a href="../message_schemas/" class="btn btn-neutral float-left" title="Messages"><span class="icon icon-circle-arrow-left" aria-hidden="true"></span> Previous</a>
+        <a href="../parameter_tables/" class="btn btn-neutral float-right" title="Parameters">Next <span class="icon icon-circle-arrow-right" aria-hidden="true"></span></a>
+    </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="mppi-controller">MPPI Controller</h1>
+<p>The MPPI (Model Predictive Path Integral) controller is a sampling-based Model Predictive Control (MPC) algorithm that uses GPU acceleration for real-time trajectory tracking. FUEL includes two MPPI variants optimized for different control representations.</p>
+<h2 id="overview">Overview</h2>
+<p>MPPI solves optimal control problems by:
+1. Sampling thousands of control trajectories (K samples over H horizon steps)
+2. Rolling out dynamics predictions for each trajectory on GPU
+3. Computing costs based on tracking error, control effort, and obstacles
+4. Computing exponentially-weighted average of samples based on costs
+5. Applying first control command, shifting horizon, and repeating</p>
+<p>The algorithm is highly parallelizable on GPU, making it suitable for real-time control at ~100Hz.</p>
+<h2 id="controller-variants">Controller Variants</h2>
+<h3 id="1-mppi-acceleration-mppi_acc_node">1. MPPI Acceleration (<code>mppi_acc_node</code>)</h3>
+<p>Optimizes <strong>acceleration deltas</strong> (3 DOF: x, y, z) and converts to force/orientation.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Control Space</td>
+<td>3 DOF (acceleration vector)</td>
+</tr>
+<tr>
+<td>Output Mapping</td>
+<td>Acceleration → Force vector → Orientation (from force direction)</td>
+</tr>
+<tr>
+<td>Use Case</td>
+<td>When trajectory planner provides acceleration commands</td>
+</tr>
+<tr>
+<td>Source</td>
+<td><code>src/i_mppi/mppi_control/include/mppi_control/mppi_acc_node.hpp</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Control Flow:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Optimize: [ax, ay, az] → Force = mass * (a + g) → SO3Command
+</code></pre></div></p>
+<h3 id="2-mppi-thrustquaternion-mppi_tq_node">2. MPPI Thrust+Quaternion (<code>mppi_tq_node</code>)</h3>
+<p>Optimizes <strong>thrust magnitude</strong> (1 DOF) and <strong>orientation quaternion</strong> (4 DOF) = 5 DOF total.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Control Space</td>
+<td>5 DOF (thrust + quaternion)</td>
+</tr>
+<tr>
+<td>Output Mapping</td>
+<td>Direct thrust+quaternion → SO3Command</td>
+</tr>
+<tr>
+<td>Use Case</td>
+<td>Direct control over attitude, explicit orientation constraints</td>
+</tr>
+<tr>
+<td>Source</td>
+<td><code>src/i_mppi/mppi_control/include/mppi_control/mppi_tq_node.hpp</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Control Flow:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Optimize: [thrust, qx, qy, qz, qw] → SO3Command (direct mapping)
+</code></pre></div></p>
+<p><strong>Key Differences:</strong>
+- Explicit orientation control (full attitude, not just yaw)
+- Thrust constraints more natural than acceleration bounds
+- Proper manifold handling for quaternions (tangent space noise)
+- Higher dimensionality requires more samples for same coverage</p>
+<h2 id="parameters">Parameters</h2>
+<h3 id="common-parameters">Common Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>K</code></td>
+<td>9000</td>
+<td>Number of control samples (higher = better exploration, more compute)</td>
+</tr>
+<tr>
+<td><code>H</code></td>
+<td>20-50</td>
+<td>Horizon length in steps (longer = better foresight, more compute)</td>
+</tr>
+<tr>
+<td><code>dt</code></td>
+<td>0.02-0.05</td>
+<td>Time step per horizon step (seconds)</td>
+</tr>
+<tr>
+<td><code>lambda</code></td>
+<td>0.01-0.1</td>
+<td>Temperature parameter (lower = more exploitation, higher = exploration)</td>
+</tr>
+<tr>
+<td><code>g</code></td>
+<td>9.81</td>
+<td>Gravity acceleration (m/s²)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cost-weights-acceleration-variant">Cost Weights (Acceleration Variant)</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Q_pos_x/y/z</code></td>
+<td>50.0</td>
+<td>Position tracking cost weight</td>
+</tr>
+<tr>
+<td><code>Q_vel_x/y/z</code></td>
+<td>2.0</td>
+<td>Velocity tracking cost weight</td>
+</tr>
+<tr>
+<td><code>R_x/y/z</code></td>
+<td>0.1</td>
+<td>Control effort regularization weight</td>
+</tr>
+<tr>
+<td><code>R_rate_x/y/z</code></td>
+<td>10.0</td>
+<td>Control rate change penalty (smoothness)</td>
+</tr>
+<tr>
+<td><code>w_obs</code></td>
+<td>20.0</td>
+<td>Obstacle avoidance cost weight</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cost-weights-thrustquaternion-variant">Cost Weights (Thrust+Quaternion Variant)</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Q_pos_x/y/z</code></td>
+<td>10.0</td>
+<td>Position tracking cost weight</td>
+</tr>
+<tr>
+<td><code>Q_vel_x/y/z</code></td>
+<td>1.0</td>
+<td>Velocity tracking cost weight</td>
+</tr>
+<tr>
+<td><code>Q_thrust</code></td>
+<td>0.1</td>
+<td>Thrust tracking cost weight</td>
+</tr>
+<tr>
+<td><code>R_thrust</code></td>
+<td>0.0</td>
+<td>Thrust effort regularization (future use)</td>
+</tr>
+<tr>
+<td><code>Q_quat</code></td>
+<td>10.0</td>
+<td>Orientation tracking cost weight</td>
+</tr>
+<tr>
+<td><code>R_quat</code></td>
+<td>0.0</td>
+<td>Quaternion effort regularization (future use)</td>
+</tr>
+<tr>
+<td><code>Q_omega</code></td>
+<td>0.5</td>
+<td>Angular velocity smoothing penalty</td>
+</tr>
+<tr>
+<td><code>w_obs</code></td>
+<td>100.0</td>
+<td>Obstacle avoidance cost weight</td>
+</tr>
+</tbody>
+</table>
+<h3 id="control-constraints">Control Constraints</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Acc Variant</th>
+<th>TQ Variant</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a_max</code></td>
+<td>10.0</td>
+<td>N/A</td>
+<td>Maximum acceleration magnitude (m/s²)</td>
+</tr>
+<tr>
+<td><code>tilt_max</code></td>
+<td>0.6</td>
+<td>N/A</td>
+<td>Maximum tilt angle (radians, ~34°)</td>
+</tr>
+<tr>
+<td><code>thrust_max</code></td>
+<td>N/A</td>
+<td>20.0</td>
+<td>Maximum thrust (N, ~2g for 1kg drone)</td>
+</tr>
+<tr>
+<td><code>thrust_min</code></td>
+<td>N/A</td>
+<td>1.0</td>
+<td>Minimum thrust (N, prevents singularities)</td>
+</tr>
+<tr>
+<td><code>sigma</code></td>
+<td>0.2</td>
+<td>N/A</td>
+<td>Noise standard deviation (acceleration)</td>
+</tr>
+<tr>
+<td><code>sigma_thrust</code></td>
+<td>N/A</td>
+<td>1.0</td>
+<td>Noise standard deviation (thrust)</td>
+</tr>
+<tr>
+<td><code>sigma_quat</code></td>
+<td>N/A</td>
+<td>0.1</td>
+<td>Noise standard deviation (quaternion tangent space)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="usage">Usage</h2>
+<h3 id="launch-with-mppi-controller">Launch with MPPI Controller</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Thrust+Quaternion variant (recommended)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>ros2<span class="w"> </span>launch<span class="w"> </span>plan_bringup<span class="w"> </span>fuel_pipeline.launch.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>controller_type:<span class="o">=</span>mppi<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>world:<span class="o">=</span>office<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span>exploration:<span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Acceleration variant</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>ros2<span class="w"> </span>launch<span class="w"> </span>plan_bringup<span class="w"> </span>fuel_pipeline.launch.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span>controller_type:<span class="o">=</span>mppi_acc<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span>world:<span class="o">=</span>office<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span>exploration:<span class="o">=</span><span class="nb">true</span>
+</code></pre></div>
+<h3 id="configuration-file">Configuration File</h3>
+<p>Located at <code>src/fuel_planner/plan_bringup/config/mppi.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">mppi_control</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">ros__parameters</span><span class="p">:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">mppi</span><span class="p">:</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">K</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">9000</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">H</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">dt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="nt">sigma</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="nt">lambda</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">Q_pos_x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="nt">Q_pos_y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">      </span><span class="nt">Q_pos_z</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50.0</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">      </span><span class="nt">Q_vel_x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">      </span><span class="nt">Q_vel_y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">      </span><span class="nt">Q_vel_z</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">      </span><span class="nt">R_x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">      </span><span class="nt">R_y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">      </span><span class="nt">R_z</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">      </span><span class="nt">R_rate_x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">      </span><span class="nt">R_rate_y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">      </span><span class="nt">R_rate_z</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">      </span><span class="nt">w_obs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20.0</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">      </span><span class="nt">a_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">      </span><span class="nt">tilt_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.6</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">      </span><span class="nt">g</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">9.81</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">    </span><span class="nt">mass</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.98</span>
+</code></pre></div>
+<h2 id="topics">Topics</h2>
+<h3 id="subscribed-topics">Subscribed Topics</h3>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>odom</code></td>
+<td><code>nav_msgs/msg/Odometry</code></td>
+<td>Current UAV state (position, velocity, orientation)</td>
+</tr>
+<tr>
+<td><code>planning/pos_cmd</code></td>
+<td><code>quadrotor_msgs/msg/PositionCommand</code></td>
+<td>Reference trajectory (position, velocity, acceleration, yaw)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="published-topics">Published Topics</h3>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>so3_cmd</code></td>
+<td><code>quadrotor_msgs/msg/SO3Command</code></td>
+<td>Control command (force + orientation + gains)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="algorithm-details">Algorithm Details</h2>
+<h3 id="dynamics-model">Dynamics Model</h3>
+<p>Both variants use double-integrator dynamics with RK4 integration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>position:    p_dot = v
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>velocity:    v_dot = a - g
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>control:     u = [accel] or [thrust, quat]
+</code></pre></div>
+<p>For thrust+quaternion variant, acceleration is computed as:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>F_body = [0, 0, thrust]
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>F_world = R * F_body
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>a = F_world / mass - g
+</code></pre></div>
+<h3 id="cost-function">Cost Function</h3>
+<p>Total cost per trajectory sample:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>J = Σ [Q_pos * ||p - p_ref||² + Q_vel * ||v - v_ref||²
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>      + R * ||u||² + R_rate * ||u - u_prev||²
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>      + w_obs * obstacle_cost]
+</code></pre></div>
+<p>For thrust+quaternion variant:
+- <code>R_thrust * thrust²</code> for thrust regularization
+- <code>Q_quat * geodesic_distance(q, q_ref)²</code> for orientation tracking
+- <code>Q_omega * ||omega||²</code> for angular velocity smoothing</p>
+<h3 id="sampling-strategy">Sampling Strategy</h3>
+<p><strong>Acceleration variant:</strong> Gaussian noise on each axis
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>u_sample = u_mean + noise,  noise ~ N(0, sigma)
+</code></pre></div></p>
+<p><strong>Thrust+Quaternion variant:</strong>
+- Thrust: Gaussian noise
+- Quaternion: Tangent space noise → exponential map → quaternion composition</p>
+<h3 id="weighted-update">Weighted Update</h3>
+<p>Exponential weighting based on costs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>weight_k = exp(-(J_k - min_J) / lambda)
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>u_new = Σ weight_k * u_k / Σ weight_k
+</code></pre></div>
+<p>For quaternions, antipodal handling is applied (flip sign if dot product &lt; 0).</p>
+<h2 id="comparison-with-so3-controller">Comparison with SO3 Controller</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>SO3 Control</th>
+<th>MPPI Control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Type</td>
+<td>Geometric tracking controller</td>
+<td>Sampling-based MPC</td>
+</tr>
+<tr>
+<td>Model-free</td>
+<td>Yes (feedback only)</td>
+<td>No (requires dynamics model)</td>
+</tr>
+<tr>
+<td>Obstacle avoidance</td>
+<td>No</td>
+<td>Yes (via SDF map)</td>
+</tr>
+<tr>
+<td>Preview capability</td>
+<td>No</td>
+<td>Yes (receding horizon)</td>
+</tr>
+<tr>
+<td>Computation</td>
+<td>Low (CPU)</td>
+<td>High (GPU required)</td>
+</tr>
+<tr>
+<td>Tuning complexity</td>
+<td>Low (gains only)</td>
+<td>High (cost weights, sampling params)</td>
+</tr>
+<tr>
+<td>Robustness to model errors</td>
+<td>High</td>
+<td>Moderate</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hardware-requirements">Hardware Requirements</h2>
+<ul>
+<li><strong>GPU:</strong> NVIDIA CUDA-capable GPU (compute capability 7.0+ recommended)</li>
+<li><strong>Memory:</strong> ~500MB GPU memory for K=9000, H=50</li>
+<li><strong>Compute:</strong> ~5-10ms per MPPI update on RTX 3060</li>
+</ul>
+<h2 id="tuning-guidelines">Tuning Guidelines</h2>
+<ol>
+<li><strong>Increase K</strong> if tracking is erratic (more samples)</li>
+<li><strong>Increase H</strong> if preview is insufficient (longer horizon)</li>
+<li><strong>Decrease lambda</strong> if controller is too conservative</li>
+<li><strong>Increase Q_pos</strong> for tighter position tracking</li>
+<li><strong>Increase R_rate</strong> for smoother control (less aggressive changes)</li>
+<li><strong>Adjust w_obs</strong> for obstacle avoidance aggressiveness</li>
+</ol>
+<h2 id="implementation-files">Implementation Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>include/mppi_control/mppi_acc_node.hpp</code></td>
+<td>Acceleration variant header</td>
+</tr>
+<tr>
+<td><code>include/mppi_control/mppi_tq_node.hpp</code></td>
+<td>Thrust+Quaternion variant header</td>
+</tr>
+<tr>
+<td><code>src/mppi_acc_node.cpp</code></td>
+<td>Acceleration variant CPU code</td>
+</tr>
+<tr>
+<td><code>src/mppi_tq_node.cpp</code></td>
+<td>Thrust+Quaternion variant CPU code</td>
+</tr>
+<tr>
+<td><code>src/mppi_acc_kernels.cu</code></td>
+<td>Acceleration variant GPU kernels</td>
+</tr>
+<tr>
+<td><code>src/mppi_tq_kernels.cu</code></td>
+<td>Thrust+Quaternion variant GPU kernels</td>
+</tr>
+</tbody>
+</table>
+<h2 id="references">References</h2>
+<ul>
+<li>Williams et al. "Model Predictive Path Integral Control: From Theory to Parallel Computation" (2017)</li>
+<li><code>docs/plan/mppi_so3.md</code> - Design document for thrust+quaternion variant</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../message_schemas/" class="btn btn-neutral float-left" title="Messages"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../parameter_tables/" class="btn btn-neutral float-right" title="Parameters">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../message_schemas/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../parameter_tables/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../javascripts/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

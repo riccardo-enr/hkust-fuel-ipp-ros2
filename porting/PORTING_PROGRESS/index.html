@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Porting Progress - FUEL ROS 2 Port</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Porting Progress";
+        var mkdocs_page_input_path = "porting/PORTING_PROGRESS.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/yaml.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> FUEL ROS 2 Port
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Overview</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/overview/">Introduction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/overview/architecture/">Architecture</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/overview/project_overview/">Project Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/overview/roadmap/">Roadmap</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Setup</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/setup/">Getting Started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/setup/dev_container/">Dev Container</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/setup/env_configuration/">Environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/setup/simulator_launch/">Simulator</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Development</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/development/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/development/exploration_metrics/">Exploration Metrics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/development/mppi_test_plan/">MPPI Test Plan</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Migration</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/migration/">Porting Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/migration/api_changes/">API Changes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/migration/porting_playbook/">Porting Playbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/migration/ros1_to_ros2_checklist/">Checklist</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/reference/cli_reference/">CLI</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/reference/message_schemas/">Messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/reference/mppi_controller/">MPPI Controller</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/reference/parameter_tables/">Parameters</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Simulator</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/simulator/performance_tuning/">Performance Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/simulator/visualization/">Visualization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/simulator/worlds/">Worlds</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Troubleshooting</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/troubleshooting/common_issues/">Common Issues</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/troubleshooting/debugging/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Templates</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/templates/runbook_template/">Runbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wiki/templates/wiki_page_template/">Wiki Page</a>
+                  </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Porting Progress</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#1-executive-summary">1. Executive Summary</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#2-build-pipeline-status">2. Build Pipeline Status</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-detailed-status">3. Detailed Status</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#fully-migrated-packages-build-source">✅ Fully Migrated Packages (Build &amp; Source)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#build-system-ready-source-pending">🔄 Build System Ready (Source Pending)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#in-progress-planned-improvements">🛠️ In-Progress / Planned Improvements</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-migration-guide-patterns">3. Migration Guide &amp; Patterns</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#4-step-by-step-plan">4. Step-by-Step Plan</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#step-1-simple-utility-packages-priority-1">Step 1: Simple Utility Packages (Priority 1)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-2-core-planning-libraries-priority-2">Step 2: Core Planning Libraries (Priority 2)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-3-planning-management-priority-3">Step 3: Planning Management (Priority 3)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-4-simulator-components-priority-4">Step 4: Simulator Components (Priority 4)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-5-finalization">Step 5: Finalization</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">FUEL ROS 2 Port</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Porting Progress</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+    <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Breadcrumb Navigation">
+        <a href="../../wiki/templates/wiki_page_template/" class="btn btn-neutral float-left" title="Wiki Page"><span class="icon icon-circle-arrow-left" aria-hidden="true"></span> Previous</a>
+    </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="ros-1-to-ros-2-porting-progress">ROS 1 to ROS 2 Porting Progress</h1>
+<p><strong>Last Updated:</strong> Wednesday, December 17, 2025</p>
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p><strong>Project:</strong> FUEL - Fast UAV Exploration
+<strong>Goal:</strong> Port entire codebase from ROS 1 (Noetic) to ROS 2 (Jazzy).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Metric</th>
+<th style="text-align: left;">Status</th>
+<th style="text-align: left;">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Packages</strong></td>
+<td style="text-align: left;">25/25</td>
+<td style="text-align: left;">All packages now use package format 3; the duplicate ROS 1 <code>multi_map_server/quadrotor_msgs</code> copy has been removed.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Build System</strong></td>
+<td style="text-align: left;">25/25</td>
+<td style="text-align: left;">All packages including <code>rviz_plugins</code> now use ament_cmake.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Source Code</strong></td>
+<td style="text-align: left;">Complete</td>
+<td style="text-align: left;">All runtime nodes, benchmarks, and developer utilities now use <code>rclcpp</code>/<code>message_filters</code> as of Dec 16, 2025; remaining work is launch/test coverage plus the <code>rviz_plugins</code> build migration.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Launch Files</strong></td>
+<td style="text-align: left;">Pending</td>
+<td style="text-align: left;">To be addressed after source code migration.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-build-pipeline-status">2. Build Pipeline Status</h2>
+<p>Reflecting the build tasks defined in <code>.vscode/tasks.json</code>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Task</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Status</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Step 1</strong></td>
+<td style="text-align: left;">Utilities (<code>poscmd_2_odom</code>, <code>waypoint_generator</code>, etc.)</td>
+<td style="text-align: left;">✅ <strong>Success</strong></td>
+<td style="text-align: left;">Built Dec 16, 2025. Fixed <code>waypoint_generator</code> compilation &amp; <code>odom_visualization</code> deps, and added <code>swarmtal_msgs</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Step 2</strong></td>
+<td style="text-align: left;">Core Planning (<code>bspline</code>, <code>poly_traj</code>, <code>plan_env</code>, etc.)</td>
+<td style="text-align: left;">✅ <strong>Success</strong></td>
+<td style="text-align: left;">Built Dec 16, 2025. Resolved <code>bspline_opt</code> dependency on <code>active_perception</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Step 3</strong></td>
+<td style="text-align: left;">Planning Management (<code>plan_manage</code>, <code>exploration_manager</code>)</td>
+<td style="text-align: left;">✅ <strong>Success</strong></td>
+<td style="text-align: left;">Built Dec 17, 2025.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Step 4</strong></td>
+<td style="text-align: left;">Simulator &amp; Rendering (<code>so3_control</code>, <code>local_sensing</code>)</td>
+<td style="text-align: left;">✅ <strong>Success</strong></td>
+<td style="text-align: left;">Built Dec 17, 2025. Fixed <code>local_sensing_node</code> missing dependencies.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Step 5</strong></td>
+<td style="text-align: left;">Full Workspace Integration</td>
+<td style="text-align: left;">✅ <strong>Success</strong></td>
+<td style="text-align: left;">Built Dec 17, 2025. Full workspace builds successfully (excluding <code>rviz_plugins</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-detailed-status">3. Detailed Status</h2>
+<h3 id="fully-migrated-packages-build-source">✅ Fully Migrated Packages (Build &amp; Source)</h3>
+<p>The following packages build and run on ROS 2 without ROS 1 dependencies:</p>
+<p><strong>Core Utilities &amp; Messages:</strong>
+1.  <code>poscmd_2_odom</code>
+2.  <code>waypoint_generator</code>
+3.  <code>quadrotor_msgs</code> <em>(primary copy under <code>src/uav_simulator/Utils/quadrotor_msgs</code>)</em>
+4.  <code>pose_utils</code>
+5.  <code>uav_utils</code>
+6.  <code>cmake_utils</code>
+7.  <code>odom_visualization</code>
+8.  <code>swarmtal_msgs</code></p>
+<p><strong>Simulation &amp; Control:</strong></p>
+<ol>
+<li><code>so3_control</code></li>
+<li><code>so3_disturbance_generator</code></li>
+<li><code>map_generator</code></li>
+<li><code>plan_env</code></li>
+<li><code>path_searching</code></li>
+<li><code>poly_traj</code> <em>(traj_generator node + ROS 2 launch/test harness)</em></li>
+<li><code>plan_manage</code> <em>(FSM entry point + traj_server ROS 2 nodes; benchmarking/test helpers now ROS 2 as of Dec 16, 2025)</em></li>
+<li><code>active_perception</code></li>
+<li><code>exploration_manager</code></li>
+<li><code>so3_quadrotor_simulator</code></li>
+<li><code>local_sensing</code><ul>
+<li>[x] <code>pointcloud_render_node.cpp</code></li>
+<li>[x] <code>depth_render_node.cpp</code></li>
+<li>[x] <code>pcl_render_node.cpp</code> <em>(CUDA path, optional via <code>ENABLE_CUDA</code> build)</em></li>
+<li>[x] <code>euroc.cpp</code> <em>(benchmark tool rebuilt on <code>rclcpp</code> + <code>message_filters</code> with CUDA depth rendering)</em></li>
+</ul>
+</li>
+<li><code>multi_map_server</code> <em>(Map2D/Map3D libraries and visualization node now rclcpp/tf2-only)</em></li>
+<li><code>rviz_plugins</code></li>
+<li><code>mppi_control</code> <em>(CUDA-based MPPI controller for aggressive flight)</em></li>
+</ol>
+<h3 id="build-system-ready-source-pending">🔄 Build System Ready (Source Pending)</h3>
+<p>No additional packages require ROS 1 source rewrites; only the <code>rviz_plugins</code> build migration remains on the Catkin → ament list.</p>
+<h3 id="in-progress-planned-improvements">🛠️ In-Progress / Planned Improvements</h3>
+<ul>
+<li>[ ] <strong>MPPI Control:</strong> Integrate reference acceleration (<code>ref_cmd_.acceleration</code>) as feed-forward in the MPPI optimization to improve tracking of dynamic trajectories.</li>
+</ul>
+<hr />
+<h2 id="3-migration-guide-patterns">3. Migration Guide &amp; Patterns</h2>
+<p><strong>Reference for converting C++ source code.</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Concept</th>
+<th style="text-align: left;">ROS 1</th>
+<th style="text-align: left;">ROS 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Headers</strong></td>
+<td style="text-align: left;"><code>#include &lt;ros/ros.h&gt;</code></td>
+<td style="text-align: left;"><code>#include &lt;rclcpp/rclcpp.hpp&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Messages</strong></td>
+<td style="text-align: left;"><code>#include &lt;pkg/Msg.h&gt;</code></td>
+<td style="text-align: left;"><code>#include &lt;pkg/msg/msg.hpp&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Node</strong></td>
+<td style="text-align: left;"><code>ros::NodeHandle nh;</code></td>
+<td style="text-align: left;">Inherit <code>rclcpp::Node</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Logging</strong></td>
+<td style="text-align: left;"><code>ROS_INFO(...)</code></td>
+<td style="text-align: left;"><code>RCLCPP_INFO(this-&gt;get_logger(), ...)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Time</strong></td>
+<td style="text-align: left;"><code>ros::Time::now()</code></td>
+<td style="text-align: left;"><code>this-&gt;now()</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Params</strong></td>
+<td style="text-align: left;"><code>nh.param("key", val, def)</code></td>
+<td style="text-align: left;"><code>val = this-&gt;declare_parameter("key", def);</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Rate</strong></td>
+<td style="text-align: left;"><code>ros::Rate r(10); r.sleep();</code></td>
+<td style="text-align: left;"><code>create_wall_timer(100ms, callback);</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Pub</strong></td>
+<td style="text-align: left;"><code>pub.publish(msg)</code></td>
+<td style="text-align: left;"><code>pub-&gt;publish(msg)</code> (Use SharedPtr)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Sub</strong></td>
+<td style="text-align: left;"><code>ConstPtr</code> in callback</td>
+<td style="text-align: left;"><code>SharedPtr</code> in callback</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Rules:</strong>
+1.  <strong>Class-based Nodes:</strong> Avoid global state. Wrap logic in a class inheriting from <code>rclcpp::Node</code>.
+2.  <strong>Timers:</strong> Replace <code>while(ros::ok())</code> loops with wall timers.
+3.  <strong>TF2:</strong> Replace <code>tf</code> with <code>tf2</code> and <code>tf2_ros</code>. Use <code>tf2::toMsg</code> and <code>tf2::fromMsg</code>.
+4.  <strong>Parameters:</strong> Always declare parameters before getting them.</p>
+<hr />
+<h2 id="4-step-by-step-plan">4. Step-by-Step Plan</h2>
+<h3 id="step-1-simple-utility-packages-priority-1">Step 1: Simple Utility Packages (Priority 1)</h3>
+<p><em>Goal: Migrate independent utilities to establish patterns.</em></p>
+<ul>
+<li>[x] <strong>1.1 poscmd_2_odom</strong><ul>
+<li>[x] <code>poscmd_2_odom.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>1.2 waypoint_generator</strong><ul>
+<li>[x] <code>waypoint_generator.cpp</code></li>
+<li>[x] <code>sample_waypoints.h</code></li>
+</ul>
+</li>
+<li>[x] <strong>1.3 odom_visualization</strong><ul>
+<li>[x] <code>odom_visualization.cpp</code> (Complex TF &amp; Visualization)</li>
+</ul>
+</li>
+<li>[x] <strong>1.4 map_generator</strong><ul>
+<li>[x] <code>map_recorder.cpp</code></li>
+<li>[x] <code>map_publisher.cpp</code></li>
+<li>[x] <code>click_map.cpp</code></li>
+<li>[x] <code>random_forest_sensing.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>1.5 so3_disturbance_generator</strong><ul>
+<li>[x] <code>so3_disturbance_generator.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>1.6 swarmtal_msgs</strong></li>
+</ul>
+<h3 id="step-2-core-planning-libraries-priority-2">Step 2: Core Planning Libraries (Priority 2)</h3>
+<p><em>Goal: Migrate computational cores. Minimal ROS dependency.</em></p>
+<ul>
+<li>[x] <strong>2.1 bspline</strong><ul>
+<li>[x] <code>non_uniform_bspline.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>2.2 poly_traj</strong><ul>
+<li>[x] <code>polynomial_traj.cpp</code></li>
+<li>[x] <code>traj_generator.cpp</code> <em>(ROS 2 node + launch + CI test harness)</em></li>
+</ul>
+</li>
+<li>[x] <strong>2.3 path_searching</strong><ul>
+<li>[x] <code>astar.cpp</code></li>
+<li>[x] <code>kinodynamic_astar.cpp</code></li>
+<li>[x] <code>topo_prm.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>2.4 bspline_opt</strong><ul>
+<li>[x] <code>bspline_optimizer.cpp</code></li>
+<li>[x] NLopt <code>find_package</code> + link/export chain fixed so downstream planners pull in <code>libnlopt</code> automatically (Dec 16, 2025).</li>
+</ul>
+</li>
+<li>[x] <strong>2.5 plan_env</strong><ul>
+<li>[x] <code>sdf_map.cpp</code></li>
+<li>[x] <code>obj_predictor.cpp</code></li>
+<li>[x] <code>edt_environment.cpp</code></li>
+<li>[x] <code>map_ros.cpp</code> (Complex)</li>
+</ul>
+</li>
+<li>[x] <strong>2.6 traj_utils</strong><ul>
+<li>[x] <code>planning_visualization.cpp</code></li>
+<li>[x] <code>process_msg.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>2.7 active_perception</strong><ul>
+<li>[x] <code>frontier_finder.cpp</code></li>
+<li>[x] <code>perception_utils.cpp</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="step-3-planning-management-priority-3">Step 3: Planning Management (Priority 3)</h3>
+<p><em>Goal: Migrate the high-level Logic and FSMs.</em></p>
+<ul>
+<li>[x] <strong>3.1 plan_manage</strong><ul>
+<li>[x] <code>fast_planner_node.cpp</code> (Entry point)</li>
+<li>[x] <code>kino_replan_fsm.cpp</code></li>
+<li>[x] <code>topo_replan_fsm.cpp</code></li>
+<li>[x] <code>planner_manager.cpp</code></li>
+<li>[x] <code>traj_server.cpp</code> &amp; <code>traj_server_backup.cpp</code> (ROS 2 nodes + launch/config)</li>
+<li>[x] ROS 2 runtime artifacts landed (<code>config/traj_server.yaml</code>, <code>config/fast_planner.yaml</code>, <code>launch/traj_server.launch.py</code>, <code>launch/fast_planner.launch.py</code>), plus dependency fixes so <code>colcon build --packages-select plan_manage</code> succeeds as of Dec 16, 2025.</li>
+<li>[x] Legacy benchmarking/test tools under <code>test/</code> (<code>process_msg*</code>, <code>rotation</code>, etc.) migrated to standalone ROS 2 nodes (Dec 16, 2025). <em>Note:</em> <code>compare_topo</code>, <code>opti_node</code>, and <code>test_collision_cost</code> now run in self-contained benchmarking modes that no longer rely on the old ROS 1 Fast Planner harness.</li>
+</ul>
+</li>
+<li>[x] <strong>3.2 exploration_manager</strong><ul>
+<li>[x] <code>exploration_node.cpp</code> (Entry point)</li>
+<li>[x] <code>fast_exploration_fsm.cpp</code></li>
+<li>[x] <code>fast_exploration_manager.cpp</code></li>
+<li>[x] <code>expl_data.cpp</code></li>
+<li>[x] LKH solver globals isolated + exported to stop duplicate symbol errors when linking <code>exploration_node</code> (Dec 16, 2025).</li>
+<li>[x] Full dependency chain rebuilt after exporting NLopt through <code>bspline_opt</code>, so <code>colcon build --packages-select exploration_manager</code> now succeeds end-to-end (Dec 16, 2025).</li>
+</ul>
+</li>
+</ul>
+<h3 id="step-4-simulator-components-priority-4">Step 4: Simulator Components (Priority 4)</h3>
+<p><em>Goal: Physics and Rendering.</em></p>
+<ul>
+<li>[x] <strong>4.1 so3_control</strong><ul>
+<li>[x] <code>so3_control_component.cpp</code></li>
+<li>[x] <code>SO3Control.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>4.2 so3_quadrotor_simulator</strong><ul>
+<li>[x] <code>quadrotor_simulator_so3.cpp</code></li>
+</ul>
+</li>
+<li>[x] <strong>4.3 local_sensing</strong><ul>
+<li>[x] <code>pointcloud_render_node.cpp</code></li>
+<li>[x] <code>depth_render_node.cpp</code></li>
+<li>[x] <code>pcl_render_node.cpp</code> (CUDA path, ROS 2 w/ optional ENABLE_CUDA build)</li>
+<li>[x] <code>euroc.cpp</code> (benchmark node rebuilt on ROS 2 with CUDA depth render path)</li>
+</ul>
+</li>
+</ul>
+<h3 id="step-5-finalization">Step 5: Finalization</h3>
+<ul>
+<li>[x] <strong>5.1 Launch Files:</strong> Convert all ROS 1 XML launches to ROS 2 Python and collect them in the new <code>plan_bringup</code> ament_python package so any bringup script can be invoked from the single package namespace.<ul>
+<li><code>fast_planner.launch.py</code> (Planner)</li>
+<li><code>simulator.launch.py</code> (Simulation Stack: Simulator, Control, Sensing, Map Gen) - <strong>NEW</strong></li>
+</ul>
+</li>
+<li>[x] <strong>5.2 Integration Test:</strong> Build the full workspace and run the simulation stack end-to-end.</li>
+<li>Step 1 (Utilities) builds successfully as of Dec 16, 2025.</li>
+<li>Full workspace builds successfully as of Dec 17, 2025.</li>
+<li>Simulation stack (<code>simulator.launch.py</code>) launches and runs successfully (verified Dec 17, 2025).</li>
+<li><strong>Full Fuel Pipeline Verified (Dec 21, 2025):</strong> Confirmed CUDA renderer (<code>pcl_render_node</code>), trajectory server, and fast planner integration. Manual goal planning functional after config fix.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../wiki/templates/wiki_page_template/" class="btn btn-neutral float-left" title="Wiki Page"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../wiki/templates/wiki_page_template/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../javascripts/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Templates - FUEL ROS 2 Port</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Templates";
+        var mkdocs_page_input_path = "wiki/templates/README.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/yaml.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> FUEL ROS 2 Port
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Overview</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Introduction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/architecture/">Architecture</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/project_overview/">Project Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/roadmap/">Roadmap</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Setup</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../setup/">Getting Started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../setup/dev_container/">Dev Container</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../setup/env_configuration/">Environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../setup/simulator_launch/">Simulator</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Development</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../development/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../development/exploration_metrics/">Exploration Metrics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../development/mppi_test_plan/">MPPI Test Plan</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Migration</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../migration/">Porting Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../migration/api_changes/">API Changes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../migration/porting_playbook/">Porting Playbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../migration/ros1_to_ros2_checklist/">Checklist</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../reference/cli_reference/">CLI</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reference/message_schemas/">Messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reference/mppi_controller/">MPPI Controller</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reference/parameter_tables/">Parameters</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Simulator</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../simulator/performance_tuning/">Performance Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../simulator/visualization/">Visualization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../simulator/worlds/">Worlds</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Troubleshooting</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../troubleshooting/common_issues/">Common Issues</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../troubleshooting/debugging/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Templates</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="runbook_template/">Runbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="wiki_page_template/">Wiki Page</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../porting/PORTING_PROGRESS/">Porting Progress</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">FUEL ROS 2 Port</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Templates</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="templates">Templates</h1>
+<p>Drop reusable Markdown templates here so contributors can bootstrap new pages quickly.</p>
+<h2 id="current-templates">Current Templates</h2>
+<ul>
+<li><code>wiki_page_template.md</code> – general-purpose page skeleton.</li>
+<li><code>runbook_template.md</code> – incident/runbook structure for operations tasks.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../javascripts/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

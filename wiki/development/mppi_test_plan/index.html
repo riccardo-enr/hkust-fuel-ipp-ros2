@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>MPPI Test Plan - FUEL ROS 2 Port</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "MPPI Test Plan";
+        var mkdocs_page_input_path = "wiki/development/mppi_test_plan.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/yaml.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> FUEL ROS 2 Port
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Overview</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/">Introduction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/architecture/">Architecture</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/project_overview/">Project Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../overview/roadmap/">Roadmap</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Setup</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/">Getting Started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/dev_container/">Dev Container</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/env_configuration/">Environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../setup/simulator_launch/">Simulator</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Development</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../exploration_metrics/">Exploration Metrics</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">MPPI Test Plan</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#phase-1-baseline-verification-so3_control">Phase 1: Baseline Verification (so3_control)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-launch-simulator">1. Launch Simulator</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-visualize-rviz2">2. Visualize (RViz2)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#phase-2-mppi-integration-strategy">Phase 2: MPPI Integration Strategy</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#1-create-mppi-launch-configuration">1. Create MPPI Launch Configuration</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#2-manual-testing-loop">2. Manual Testing Loop</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#phase-3-advanced-visualization-metrics">Phase 3: Advanced Visualization &amp; Metrics</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Migration</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/">Porting Guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/api_changes/">API Changes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/porting_playbook/">Porting Playbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../migration/ros1_to_ros2_checklist/">Checklist</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/cli_reference/">CLI</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/message_schemas/">Messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/mppi_controller/">MPPI Controller</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reference/parameter_tables/">Parameters</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Simulator</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../simulator/performance_tuning/">Performance Tuning</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../simulator/visualization/">Visualization</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../simulator/worlds/">Worlds</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Troubleshooting</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/common_issues/">Common Issues</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/debugging/">Debugging</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Templates</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../templates/runbook_template/">Runbook</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../templates/wiki_page_template/">Wiki Page</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../porting/PORTING_PROGRESS/">Porting Progress</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">FUEL ROS 2 Port</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Development</li>
+      <li class="breadcrumb-item active">MPPI Test Plan</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+    <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="Breadcrumb Navigation">
+        <a href="../exploration_metrics/" class="btn btn-neutral float-left" title="Exploration Metrics"><span class="icon icon-circle-arrow-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../migration/" class="btn btn-neutral float-right" title="Porting Guide">Next <span class="icon icon-circle-arrow-right" aria-hidden="true"></span></a>
+    </div>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="mppi-controller-test-plan">MPPI Controller Test Plan</h1>
+<p><strong>Objective</strong>: Validate the integration of the MPPI (Model Predictive Path Integral) controller using the existing UAV simulator and visualization tools.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><strong>Simulator Build</strong>: Ensure the simulator packages (<code>so3_quadrotor_simulator</code>, <code>so3_control</code>, <code>map_generator</code>, etc.) are built and sourced.
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>colcon<span class="w"> </span>build<span class="w"> </span>--packages-select<span class="w"> </span>so3_quadrotor_simulator<span class="w"> </span>so3_control<span class="w"> </span>map_generator<span class="w"> </span>odom_visualization<span class="w"> </span>local_sensing_node<span class="w"> </span>plan_bringup<span class="w"> </span>plan_manage
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">source</span><span class="w"> </span>install/setup.bash
+</code></pre></div></li>
+<li><strong>MPPI Package</strong>: The MPPI controller package must be built (or stubbed/mocked if in early dev).</li>
+</ul>
+<h2 id="phase-1-baseline-verification-so3_control">Phase 1: Baseline Verification (<code>so3_control</code>)</h2>
+<p>Before testing MPPI, confirm the simulator environment is functional with the default <code>so3_control</code>.</p>
+<h3 id="1-launch-simulator">1. Launch Simulator</h3>
+<p>Run the existing simulator launch file which brings up the physics, map, and default controller.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ros2<span class="w"> </span>launch<span class="w"> </span>plan_bringup<span class="w"> </span>simulator.launch.py
+</code></pre></div>
+<strong>Verification Results (2025-12-18)</strong>:
+- <strong>Status</strong>: Verified.
+- <strong>Outcome</strong>: Simulator nodes (<code>quadrotor_simulator_so3</code>, <code>so3_control</code>, <code>map_generator</code>) launch successfully. Drone responds to <code>PositionCommand</code> messages on <code>/planning/pos_cmd</code> by moving as expected.</p>
+<h3 id="2-visualize-rviz2">2. Visualize (RViz2)</h3>
+<p>Launch RViz2 with the existing configuration to see the drone and map.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ros2<span class="w"> </span>run<span class="w"> </span>rviz2<span class="w"> </span>rviz2<span class="w"> </span>-d<span class="w"> </span>src/fuel_planner/plan_manage/config/traj.rviz
+</code></pre></div>
+<strong>Verification Results (2025-12-18)</strong>:
+- <strong>Status</strong>: Verified.
+- <strong>Outcome</strong>: RViz2 configuration <code>traj.rviz</code> has been updated to ROS 2 (using <code>rviz_default_plugins</code>). Plugins load correctly and subscribe to topics.</p>
+<h2 id="phase-2-mppi-integration-strategy">Phase 2: MPPI Integration Strategy</h2>
+<p>To test MPPI, we will replace the <code>so3_control</code> component in the launch loop.</p>
+<h3 id="1-create-mppi-launch-configuration">1. Create MPPI Launch Configuration</h3>
+<p>Create a new launch file (e.g., <code>mppi_simulator.launch.py</code>) or modify <code>simulator.launch.py</code> to accept a <code>controller</code> argument.</p>
+<p><strong>Proposed Change (<code>simulator.launch.py</code>):</strong>
+Add a launch argument to select the controller.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">DeclareLaunchArgument</span><span class="p">(</span><span class="s1">&#39;controller_type&#39;</span><span class="p">,</span> <span class="n">default_value</span><span class="o">=</span><span class="s1">&#39;so3&#39;</span><span class="p">)</span> <span class="c1"># Options: &#39;so3&#39;, &#39;mppi&#39;</span>
+</code></pre></div>
+Condition the <code>ComposableNode</code> for the controller based on this argument.</p>
+<p><strong>MPPI Node Spec</strong>:
+- <strong>Package</strong>: <code>mppi_control</code> (placeholder name)
+- <strong>Plugin/Executable</strong>: <code>mppi_control::MPPIControlComponent</code> or standalone node.
+- <strong>Inputs</strong>: 
+  - <code>/state_ukf/odom</code> (Odometry)
+  - <code>/planning/pos_cmd</code> (Target/Reference)
+- <strong>Outputs</strong>:
+  - <code>motors</code> (Motor speeds) or <code>so3_cmd</code> (Attitude/Thrust) depending on MPPI output level.</p>
+<h3 id="2-manual-testing-loop">2. Manual Testing Loop</h3>
+<ol>
+<li>
+<p><strong>Launch with MPPI</strong>:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ros2<span class="w"> </span>launch<span class="w"> </span>plan_bringup<span class="w"> </span>simulator.launch.py<span class="w"> </span>controller_type:<span class="o">=</span>mppi
+</code></pre></div>
+   <em>(Or modify the launch file manually to load the MPPI node instead of <code>so3_control</code>)</em>.</p>
+</li>
+<li>
+<p><strong>Send Commands</strong>:
+   Publish a dummy target pose to <code>/planning/pos_cmd</code> to trigger the controller.
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ros2<span class="w"> </span>topic<span class="w"> </span>pub<span class="w"> </span>--once<span class="w"> </span>/planning/pos_cmd<span class="w"> </span>quadrotor_msgs/msg/PositionCommand<span class="w"> </span><span class="s2">&quot;{...}&quot;</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Monitor</strong>:</p>
+</li>
+<li>Check <code>ros2 topic echo /motors</code> or <code>/so3_cmd</code>.</li>
+<li>Watch RViz for stability/trajectory tracking.</li>
+</ol>
+<h2 id="phase-3-advanced-visualization-metrics">Phase 3: Advanced Visualization &amp; Metrics</h2>
+<ul>
+<li><strong>Visualization</strong>: Use <code>rviz_plugins</code> to visualize the predicted paths (rollouts) of the MPPI controller.</li>
+<li>Topic: <code>/mppi/rollouts</code> (MarkerArray or Path)</li>
+<li><strong>Metrics</strong>: Measure tracking error and computation time.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../exploration_metrics/" class="btn btn-neutral float-left" title="Exploration Metrics"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../migration/" class="btn btn-neutral float-right" title="Porting Guide">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../exploration_metrics/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../migration/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../javascripts/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
