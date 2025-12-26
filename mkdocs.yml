@@ -1,26 +1,41 @@
 site_name: FUEL ROS 2 Port
+
+# Material theme (original)
+# theme:
+#   name: material
+#   palette:
+#     - scheme: default
+#       primary: indigo
+#       accent: indigo
+#       toggle:
+#         icon: material/brightness-7
+#         name: Switch to dark mode
+#     - scheme: slate
+#       primary: indigo
+#       accent: indigo
+#       toggle:
+#         icon: material/brightness-4
+#         name: Switch to light mode
+#   features:
+#     - navigation.tabs
+#     - navigation.sections
+#     - navigation.top
+#     - search.suggest
+#     - search.highlight
+#     - content.code.copy
+
+# Read the Docs theme
 theme:
-  name: material
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.top
-    - search.suggest
-    - search.highlight
-    - content.code.copy
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - bash
+    - cpp
+    - python
+    - yaml
+  navigation_depth: 4
+  prev_next_buttons_location: both
+  titles_only: false
 
 markdown_extensions:
   - pymdownx.highlight:
