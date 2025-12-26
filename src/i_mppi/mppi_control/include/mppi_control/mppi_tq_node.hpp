@@ -45,8 +45,10 @@ extern "C" void launch_mppi_tq_kernel(
 
 struct MPPITqParams {
   int K;
-  int H;
-  double dt;
+  int H;              // Horizon steps (computed from N and ctl_freq)
+  double N;           // Horizon time in seconds
+  double ctl_freq;    // Control frequency in Hz (dt = 1/ctl_freq)
+  double dt;          // Time step (computed as 1/ctl_freq)
   double lambda;
 
   double sigma_thrust;
@@ -66,6 +68,11 @@ struct MPPITqParams {
   double thrust_max;
   double thrust_min;
   double g;
+
+  // Low-pass filter parameters
+  bool enable_lpf;    // Enable low-pass filtering
+  double lpf_cutoff;  // LPF cutoff frequency (Hz)
+  double lpf_alpha;   // LPF smoothing factor (computed from cutoff and dt)
 };
 
 class MPPITqNode : public rclcpp::Node {
@@ -77,6 +84,7 @@ private:
   void posCmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg);
   void controlLoop();
   void runMPPI();
+  void validateAndLogParameters();
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr pos_cmd_sub_;
@@ -96,6 +104,16 @@ private:
   uint32_t seed_{0};
   
   std::shared_ptr<fast_planner::SDFMap> sdf_map_;
+
+  // Low-pass filter state
+  ControlInput control_filtered_; // Filtered control output
+  bool lpf_initialized_;           // Whether LPF has been initialized
+
+  // Timing monitor for failsafe
+  rclcpp::Time last_control_time_;
+  bool timing_warning_logged_;
+  int consecutive_slow_cycles_;
+  rclcpp::Clock::SharedPtr clock_;
 
   double mass_;
   double kR_[3], kOm_[3];

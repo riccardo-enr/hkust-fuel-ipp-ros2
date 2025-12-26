@@ -23,34 +23,56 @@ namespace mppi_control
       : Node("mppi_tq_node", options)
   {
     // Initialize Parameters
-    params_.K = this->declare_parameter("mppi/K", 9000);
-    params_.H = this->declare_parameter("mppi/H", 20);
-    params_.dt = this->declare_parameter("mppi/dt", 0.05);
-    params_.lambda = this->declare_parameter("mppi/lambda", 0.1);
+    params_.K = this->declare_parameter("mppi.K", 9000);
+    params_.N = this->declare_parameter("mppi.N", 2.0);
+    params_.ctl_freq = this->declare_parameter("mppi.ctl_freq", 100.0);
+    // Compute dt and H from N and ctl_freq
+    params_.dt = 1.0 / params_.ctl_freq;
+    params_.H = static_cast<int>(std::round(params_.N * params_.ctl_freq));
+    params_.lambda = this->declare_parameter("mppi.lambda", 0.1);
 
-    params_.sigma_thrust = this->declare_parameter("mppi/sigma_thrust", 1.0);
-    params_.sigma_quat = this->declare_parameter("mppi/sigma_quat", 0.1);
+    params_.sigma_thrust = this->declare_parameter("mppi.sigma_thrust", 1.0);
+    params_.sigma_quat = this->declare_parameter("mppi.sigma_quat", 0.1);
 
-    params_.Q_pos_x = this->declare_parameter("mppi/Q_pos_x", 10.0);
-    params_.Q_pos_y = this->declare_parameter("mppi/Q_pos_y", 10.0);
-    params_.Q_pos_z = this->declare_parameter("mppi/Q_pos_z", 10.0);
-    params_.Q_vel_x = this->declare_parameter("mppi/Q_vel_x", 1.0);
-    params_.Q_vel_y = this->declare_parameter("mppi/Q_vel_y", 1.0);
-    params_.Q_vel_z = this->declare_parameter("mppi/Q_vel_z", 1.0);
+    params_.Q_pos_x = this->declare_parameter("mppi.Q_pos_x", 10.0);
+    params_.Q_pos_y = this->declare_parameter("mppi.Q_pos_y", 10.0);
+    params_.Q_pos_z = this->declare_parameter("mppi.Q_pos_z", 10.0);
+    params_.Q_vel_x = this->declare_parameter("mppi.Q_vel_x", 1.0);
+    params_.Q_vel_y = this->declare_parameter("mppi.Q_vel_y", 1.0);
+    params_.Q_vel_z = this->declare_parameter("mppi.Q_vel_z", 1.0);
     
-    params_.Q_thrust = this->declare_parameter("mppi/Q_thrust", 0.1);
-    params_.R_thrust = this->declare_parameter("mppi/R_thrust", 0.0); // Not used yet in kernel, but good to have
-    params_.R_rate_thrust = this->declare_parameter("mppi/R_rate_thrust", 5.0);
-    params_.Q_quat = this->declare_parameter("mppi/Q_quat", 10.0);
-    params_.R_quat = this->declare_parameter("mppi/R_quat", 0.0);
-    params_.R_rate_quat = this->declare_parameter("mppi/R_rate_quat", 5.0);
-    params_.Q_omega = this->declare_parameter("mppi/Q_omega", 0.5);
+    params_.Q_thrust = this->declare_parameter("mppi.Q_thrust", 0.1);
+    params_.R_thrust = this->declare_parameter("mppi.R_thrust", 0.0); // Not used yet in kernel, but good to have
+    params_.R_rate_thrust = this->declare_parameter("mppi.R_rate_thrust", 5.0);
+    params_.Q_quat = this->declare_parameter("mppi.Q_quat", 10.0);
+    params_.R_quat = this->declare_parameter("mppi.R_quat", 0.0);
+    params_.R_rate_quat = this->declare_parameter("mppi.R_rate_quat", 5.0);
+    params_.Q_omega = this->declare_parameter("mppi.Q_omega", 0.5);
     
-    params_.w_obs = this->declare_parameter("mppi/w_obs", 100.0);
+    params_.w_obs = this->declare_parameter("mppi.w_obs", 100.0);
 
-    params_.thrust_max = this->declare_parameter("mppi/thrust_max", 20.0); // Approx 2g
-    params_.thrust_min = this->declare_parameter("mppi/thrust_min", 1.0);
-    params_.g = this->declare_parameter("mppi/g", 9.81);
+    params_.thrust_max = this->declare_parameter("mppi.thrust_max", 20.0); // Approx 2g
+    params_.thrust_min = this->declare_parameter("mppi.thrust_min", 1.0);
+    params_.g = this->declare_parameter("mppi.g", 9.81);
+
+    // Low-pass filter parameters
+    params_.enable_lpf = this->declare_parameter("mppi.enable_lpf", false);
+    params_.lpf_cutoff = this->declare_parameter("mppi.lpf_cutoff", 5.0); // 5 Hz default
+
+    // Compute LPF alpha from cutoff frequency
+    // alpha = 2 * pi * fc * dt / (1 + 2 * pi * fc * dt)
+    double omega = 2.0 * M_PI * params_.lpf_cutoff;
+    params_.lpf_alpha = omega * params_.dt / (1.0 + omega * params_.dt);
+
+    lpf_initialized_ = false;
+    control_filtered_.thrust = params_.g;
+    control_filtered_.quat = make_float4(0, 0, 0, 1);
+
+    // Initialize timing monitor
+    clock_ = std::make_shared<rclcpp::Clock>(RCL_STEADY_TIME);
+    last_control_time_ = clock_->now();
+    timing_warning_logged_ = false;
+    consecutive_slow_cycles_ = 0;
 
     mass_ = this->declare_parameter("mass", 0.98);
     kR_[0] = this->declare_parameter("gains/rot/x", 1.5);
@@ -79,10 +101,98 @@ namespace mppi_control
     so3_cmd_pub_ = this->create_publisher<quadrotor_msgs::msg::SO3Command>(
         "so3_cmd", 10);
 
+    // Create timer with period based on ctl_freq
+    double control_period_s = 1.0 / params_.ctl_freq;
+    auto control_period = std::chrono::duration<double>(control_period_s);
+    auto control_period_ms = std::chrono::duration_cast<std::chrono::milliseconds>(control_period);
     timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(10), std::bind(&MPPITqNode::controlLoop, this));
+        control_period_ms, std::bind(&MPPITqNode::controlLoop, this));
+
+    // Validate and log parameters
+    validateAndLogParameters();
 
     RCLCPP_INFO(this->get_logger(), "MPPI Tq Node Initialized");
+  }
+
+  void MPPITqNode::validateAndLogParameters()
+  {
+    bool params_valid = true;
+    std::string error_msg;
+
+    // Log critical parameters
+    RCLCPP_INFO(this->get_logger(), "=== MPPI TQ Configuration ===");
+    RCLCPP_INFO(this->get_logger(), "  K (samples): %d", params_.K);
+    RCLCPP_INFO(this->get_logger(), "  N (horizon): %.2f s", params_.N);
+    RCLCPP_INFO(this->get_logger(), "  ctl_freq: %.1f Hz", params_.ctl_freq);
+    RCLCPP_INFO(this->get_logger(), "  dt: %.4f s", params_.dt);
+    RCLCPP_INFO(this->get_logger(), "  H (steps): %d", params_.H);
+    RCLCPP_INFO(this->get_logger(), "  sigma_thrust: %.3f", params_.sigma_thrust);
+    RCLCPP_INFO(this->get_logger(), "  sigma_quat: %.3f", params_.sigma_quat);
+    RCLCPP_INFO(this->get_logger(), "  lambda: %.2f", params_.lambda);
+    RCLCPP_INFO(this->get_logger(), "  Q_pos: [%.1f, %.1f, %.1f]",
+                params_.Q_pos_x, params_.Q_pos_y, params_.Q_pos_z);
+    RCLCPP_INFO(this->get_logger(), "  Q_vel: [%.1f, %.1f, %.1f]",
+                params_.Q_vel_x, params_.Q_vel_y, params_.Q_vel_z);
+    RCLCPP_INFO(this->get_logger(), "  Q_thrust: %.1f, R_rate_thrust: %.1f",
+                params_.Q_thrust, params_.R_rate_thrust);
+    RCLCPP_INFO(this->get_logger(), "  Q_quat: %.1f, R_rate_quat: %.1f",
+                params_.Q_quat, params_.R_rate_quat);
+    RCLCPP_INFO(this->get_logger(), "  Q_omega: %.1f", params_.Q_omega);
+    RCLCPP_INFO(this->get_logger(), "  enable_lpf: %s", params_.enable_lpf ? "true" : "false");
+    if (params_.enable_lpf)
+    {
+      RCLCPP_INFO(this->get_logger(), "  lpf_cutoff: %.1f Hz (alpha: %.3f)",
+                  params_.lpf_cutoff, params_.lpf_alpha);
+    }
+    RCLCPP_INFO(this->get_logger(), "==============================");
+
+    // Validate critical parameters
+    if (params_.K <= 0)
+    {
+      error_msg += "K must be > 0; ";
+      params_valid = false;
+    }
+    if (params_.N <= 0.1 || params_.N > 10.0)
+    {
+      error_msg += "N (horizon) must be in [0.1, 10.0] s; ";
+      params_valid = false;
+    }
+    if (params_.ctl_freq < 10.0 || params_.ctl_freq > 500.0)
+    {
+      error_msg += "ctl_freq must be in [10, 500] Hz; ";
+      params_valid = false;
+    }
+    if (params_.sigma_thrust < 0.0 || params_.sigma_quat < 0.0)
+    {
+      error_msg += "sigma must be >= 0; ";
+      params_valid = false;
+    }
+    if (params_.lambda <= 0.0)
+    {
+      error_msg += "lambda must be > 0; ";
+      params_valid = false;
+    }
+    if (params_.H < 10)
+    {
+      error_msg += "H (computed) too small, check N and ctl_freq; ";
+      params_valid = false;
+    }
+    if (params_.H > 500)
+    {
+      error_msg += "H (computed) too large (>500), may cause performance issues; ";
+      params_valid = false;
+    }
+
+    if (!params_valid)
+    {
+      RCLCPP_ERROR(this->get_logger(), "INVALID PARAMETERS: %s", error_msg.c_str());
+      RCLCPP_ERROR(this->get_logger(), "Controller may not function correctly! Check YAML configuration.");
+      // Note: We don't throw here to allow the node to start, but control may be degraded
+    }
+    else
+    {
+      RCLCPP_INFO(this->get_logger(), "Parameters validated successfully.");
+    }
   }
 
   void MPPITqNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -119,6 +229,38 @@ namespace mppi_control
     if (!odom_received_)
       return;
 
+    // Timing monitor - check if control loop is running slower than expected
+    rclcpp::Time current_time = clock_->now();
+    double time_since_last = (current_time - last_control_time_).seconds();
+    double expected_period = 1.0 / params_.ctl_freq;
+    double tolerance = 1.5 * expected_period; // Allow 50% overhead before warning
+
+    if (time_since_last > tolerance)
+    {
+      consecutive_slow_cycles_++;
+      if (!timing_warning_logged_)
+      {
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *clock_, 1000,
+          "Control loop running slow! Actual: %.3fs, Expected: %.3fs (freq: %.1f Hz). "
+          "This may cause instability.",
+          time_since_last, expected_period, params_.ctl_freq);
+        timing_warning_logged_ = true;
+      }
+
+      // Failsafe: if too many consecutive slow cycles, switch to hover mode
+      if (consecutive_slow_cycles_ > 10)
+      {
+        RCLCPP_ERROR_THROTTLE(this->get_logger(), *clock_, 1000,
+          "Control loop severely degraded! Switching to failsafe hover mode.");
+      }
+    }
+    else
+    {
+      consecutive_slow_cycles_ = 0;
+      timing_warning_logged_ = false;
+    }
+    last_control_time_ = current_time;
+
     if (!sdf_map_)
     {
       sdf_map_.reset(new fast_planner::SDFMap);
@@ -126,6 +268,12 @@ namespace mppi_control
     }
 
     bool ready = ref_received_;
+
+    // Failsafe: if control loop is severely degraded, force hover mode
+    if (consecutive_slow_cycles_ > 10)
+    {
+      ready = false;
+    }
     if (ready && ref_cmd_.position.x == 0 && ref_cmd_.position.y == 0 && ref_cmd_.position.z == 0)
     {
       if (curr_p_.norm() > 1.0) ready = false;
@@ -144,7 +292,7 @@ namespace mppi_control
       // Hover
       current_control.thrust = params_.g; // Acceleration magnitude
       current_control.quat = make_float4(0, 0, 0, 1); // Identity (upright if world frame Z is up)
-      
+
       // Reset mean
       for(int i=0; i<params_.H; ++i) {
           u_mean_[i].thrust = params_.g;
@@ -153,21 +301,59 @@ namespace mppi_control
       u_prev_ = current_control;
     }
 
+    // Apply low-pass filter to control output
+    if (params_.enable_lpf)
+    {
+      if (!lpf_initialized_)
+      {
+        // Initialize filter with first value
+        control_filtered_ = current_control;
+        lpf_initialized_ = true;
+      }
+      else
+      {
+        // Filter thrust: exponential moving average
+        control_filtered_.thrust = params_.lpf_alpha * current_control.thrust +
+                                    (1.0 - params_.lpf_alpha) * control_filtered_.thrust;
+
+        // Filter quaternion: spherical linear interpolation approximation
+        // For small angles, we can filter the quaternion components directly
+        // and then re-normalize
+        Eigen::Quaterniond q_current = toEigen(current_control.quat);
+        Eigen::Quaterniond q_filtered = toEigen(control_filtered_.quat);
+
+        // Ensure shortest path (handle antipodal quaternions)
+        if (q_current.dot(q_filtered) < 0)
+        {
+          q_current.coeffs() = -q_current.coeffs();
+        }
+
+        // Linear interpolation in quaternion space and normalize
+        Eigen::Quaterniond q_result = q_current.slerp(params_.lpf_alpha, q_filtered);
+
+        control_filtered_.quat = toFloat4(q_result);
+      }
+    }
+    else
+    {
+      control_filtered_ = current_control;
+    }
+
     // Convert to SO3Command
-    // current_control.thrust is acceleration magnitude. Force = mass * acc.
+    // control_filtered_.thrust is acceleration magnitude. Force = mass * acc.
     // The force vector is F = R * [0, 0, force_mag].
     // But simulator takes force in world frame.
     // So we compute F_world = mass * acc_mag * (q * z_hat).
-    
-    // Actually, in the kernel I assumed F_world = R * [0, 0, thrust]. 
+
+    // Actually, in the kernel I assumed F_world = R * [0, 0, thrust].
     // If thrust is acceleration magnitude, then F_world = mass * R * [0, 0, thrust].
     // And we need to subtract gravity for simulator?
     // In MPPIControlNode (Acc version): force = mass * (des_acc + g).
     // Here we optimize total thrust acceleration directly (including gravity support).
     // So thrust ~ |a + g|.
-    
-    Eigen::Quaterniond q_cmd = toEigen(current_control.quat);
-    Eigen::Vector3d f_body(0, 0, current_control.thrust * mass_);
+
+    Eigen::Quaterniond q_cmd = toEigen(control_filtered_.quat);
+    Eigen::Vector3d f_body(0, 0, control_filtered_.thrust * mass_);
     Eigen::Vector3d f_world = q_cmd * f_body; 
 
     // Important: Simulator `quadrotor_simulator_so3` expects:
