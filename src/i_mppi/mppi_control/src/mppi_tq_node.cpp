@@ -40,8 +40,10 @@ namespace mppi_control
     
     params_.Q_thrust = this->declare_parameter("mppi/Q_thrust", 0.1);
     params_.R_thrust = this->declare_parameter("mppi/R_thrust", 0.0); // Not used yet in kernel, but good to have
+    params_.R_rate_thrust = this->declare_parameter("mppi/R_rate_thrust", 5.0);
     params_.Q_quat = this->declare_parameter("mppi/Q_quat", 10.0);
     params_.R_quat = this->declare_parameter("mppi/R_quat", 0.0);
+    params_.R_rate_quat = this->declare_parameter("mppi/R_rate_quat", 5.0);
     params_.Q_omega = this->declare_parameter("mppi/Q_omega", 0.5);
     
     params_.w_obs = this->declare_parameter("mppi/w_obs", 100.0);
@@ -249,8 +251,8 @@ namespace mppi_control
         params_.sigma_thrust, params_.sigma_quat,
         params_.Q_pos_x, params_.Q_pos_y, params_.Q_pos_z,
         params_.Q_vel_x, params_.Q_vel_y, params_.Q_vel_z,
-        params_.Q_thrust, params_.R_thrust,
-        params_.Q_quat, params_.R_quat,
+        params_.Q_thrust, params_.R_thrust, params_.R_rate_thrust,
+        params_.Q_quat, params_.R_quat, params_.R_rate_quat,
         params_.Q_omega,
         params_.w_obs,
         params_.thrust_max, params_.thrust_min, params_.g,

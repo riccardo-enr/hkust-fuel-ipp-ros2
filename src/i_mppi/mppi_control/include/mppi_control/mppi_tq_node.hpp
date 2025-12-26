@@ -33,8 +33,8 @@ extern "C" void launch_mppi_tq_kernel(
     float sigma_thrust, float sigma_quat,
     float Q_pos_x, float Q_pos_y, float Q_pos_z,
     float Q_vel_x, float Q_vel_y, float Q_vel_z,
-    float Q_thrust, float R_thrust,
-    float Q_quat, float R_quat,
+    float Q_thrust, float R_thrust, float R_rate_thrust,
+    float Q_quat, float R_quat, float R_rate_quat,
     float Q_omega,
     float w_obs,
     float thrust_max, float thrust_min, float g,
@@ -56,8 +56,10 @@ struct MPPITqParams {
   double Q_vel_x, Q_vel_y, Q_vel_z;
   double Q_thrust;
   double R_thrust;
+  double R_rate_thrust;
   double Q_quat;
   double R_quat;
+  double R_rate_quat;
   double Q_omega;
   double w_obs;
 

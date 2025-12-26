@@ -18,8 +18,10 @@ mppi_control:
       Q_vel_z: 5.0
       Q_thrust: 0.5
       R_thrust: 0.5
+      R_rate_thrust: 10.0
       Q_quat: 10.0
       R_quat: 0.5
+      R_rate_quat: 10.0
       Q_omega: 5.0
 
       # Constraints
