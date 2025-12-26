@@ -207,12 +207,9 @@ namespace mppi_control
       {
         u_mean_[i] = u_mean_[i + 1];
       }
-      // Initialize last step with hover/reference
+      // Initialize last step with hover condition
       u_mean_[params_.H - 1].thrust = params_.g;
-      
-      // Use reference yaw for the new last step if available, else copy last
-      // For now just copy last quaternion
-      u_mean_[params_.H - 1].quat = u_mean_[params_.H - 2].quat;
+      u_mean_[params_.H - 1].quat = make_float4(0, 0, 0, 1); // Identity quaternion (hover)
     }
   }
 

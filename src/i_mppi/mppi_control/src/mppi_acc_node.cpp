@@ -171,6 +171,7 @@ namespace mppi_control
       {
         u_mean_[i] = u_mean_[i + 1];
       }
+      // Initialize last step to hover (zero delta from reference)
       u_mean_[params_.H - 1].setZero();
     }
   }
