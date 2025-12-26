@@ -32,8 +32,10 @@ extern "C" void launch_mppi_acc_kernel(
 
 struct MPPIParams {
   int K;         // Number of samples
-  int H;         // Horizon steps
-  double dt;     // Time step
+  int H;         // Horizon steps (computed from N and ctl_freq)
+  double N;      // Horizon time in seconds
+  double ctl_freq;  // Control frequency in Hz (dt = 1/ctl_freq)
+  double dt;     // Time step (computed as 1/ctl_freq)
   double sigma;  // Noise standard deviation
   double lambda; // Temperature parameter for weighting
 
@@ -54,6 +56,11 @@ struct MPPIParams {
   double a_max;       // Max acceleration
   double tilt_max;    // Max tilt angle in radians
   double g;           // Gravity
+
+  // Low-pass filter parameters
+  bool enable_lpf;    // Enable low-pass filtering
+  double lpf_cutoff;  // LPF cutoff frequency (Hz)
+  double lpf_alpha;   // LPF smoothing factor (computed from cutoff and dt)
 };
 
 class MPPIAccNode : public rclcpp::Node {
@@ -64,6 +71,7 @@ private:
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
   void posCmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg);
   void controlLoop();
+  void validateAndLogParameters();
 
   // MPPI Core Functions
   void runMPPI();
@@ -88,6 +96,16 @@ private:
   
   // SDFMap for obstacle costs
   std::shared_ptr<fast_planner::SDFMap> sdf_map_;
+
+  // Low-pass filter state
+  Eigen::Vector3d acc_filtered_; // Filtered acceleration output
+  bool lpf_initialized_;          // Whether LPF has been initialized
+
+  // Timing monitor for failsafe
+  rclcpp::Time last_control_time_;
+  bool timing_warning_logged_;
+  int consecutive_slow_cycles_;
+  rclcpp::Clock::SharedPtr clock_;
 
   // SO3 Output Params
   double mass_;

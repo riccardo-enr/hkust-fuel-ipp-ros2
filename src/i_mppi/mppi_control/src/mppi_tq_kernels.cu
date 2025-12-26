@@ -21,8 +21,10 @@ extern "C"
     float Q_vel_z;
     float Q_thrust;
     float R_thrust;
+    float R_rate_thrust;
     float Q_quat;
     float R_quat;
+    float R_rate_quat;
     float Q_omega;
     float w_obs;
     float thrust_max;
@@ -41,6 +43,28 @@ extern "C"
     float thrust;
     float4 quat;
   };
+
+  // Helper device function to compute quaternion difference: q_diff = q_a * q_b_inv
+  __device__ float4 quat_diff(const float4 q_a, const float4 q_b)
+  {
+    // Compute inverse of q_b (for unit quaternion, inverse is conjugate)
+    float4 q_b_inv = make_float4(-q_b.x, -q_b.y, -q_b.z, q_b.w);
+
+    // Compute q_a * q_b_inv
+    float4 result;
+    result.x = q_a.w * q_b_inv.x + q_a.x * q_b_inv.w + q_a.y * q_b_inv.z - q_a.z * q_b_inv.y;
+    result.y = q_a.w * q_b_inv.y - q_a.x * q_b_inv.z + q_a.y * q_b_inv.w + q_a.z * q_b_inv.x;
+    result.z = q_a.w * q_b_inv.z + q_a.x * q_b_inv.y - q_a.y * q_b_inv.x + q_a.z * q_b_inv.w;
+    result.w = q_a.w * q_b_inv.w - q_a.x * q_b_inv.x - q_a.y * q_b_inv.y - q_a.z * q_b_inv.z;
+
+    return result;
+  }
+
+  // Helper device function to compute squared magnitude of quaternion vector part
+  __device__ float quat_vec_norm_sq(const float4 q)
+  {
+    return q.x * q.x + q.y * q.y + q.z * q.z;
+  }
 
   __global__ void mppi_tq_kernel(
       const ControlInput *u_mean,
@@ -68,6 +92,7 @@ extern "C"
     float3 p = curr_p;
     float3 v = curr_v;
     float4 prev_quat = u_prev.quat; // For angular velocity calculation
+    float prev_thrust = u_prev.thrust; // For thrust rate penalty
     float total_cost = 0.0f;
 
     for (int h = 0; h < params.H; ++h)
@@ -258,19 +283,19 @@ extern "C"
       total_cost += params.Q_quat * dist;
 
       // Angular velocity penalty (Smoothness)
-      // Approximate omega from q_sample and prev_quat
-      // q_diff = q_sample * prev_quat_inv
-      float4 q_prev_inv = make_float4(-prev_quat.x, -prev_quat.y, -prev_quat.z, prev_quat.w);
-      float4 q_diff;
-      q_diff.x = q_sample.w * q_prev_inv.x + q_sample.x * q_prev_inv.w + q_sample.y * q_prev_inv.z - q_sample.z * q_prev_inv.y;
-      q_diff.y = q_sample.w * q_prev_inv.y - q_sample.x * q_prev_inv.z + q_sample.y * q_prev_inv.w + q_sample.z * q_prev_inv.x;
-      q_diff.z = q_sample.w * q_prev_inv.z + q_sample.x * q_prev_inv.y - q_sample.y * q_prev_inv.x + q_sample.z * q_prev_inv.w;
-      q_diff.w = q_sample.w * q_prev_inv.w - q_sample.x * q_prev_inv.x - q_sample.y * q_prev_inv.y - q_sample.z * q_prev_inv.z;
+      // Approximate omega from q_sample and prev_quat using quaternion difference
+      float4 q_omega_diff = quat_diff(q_sample, prev_quat);
+      total_cost += params.Q_omega * quat_vec_norm_sq(q_omega_diff);
 
-      // omega approx 2 * vec(q_diff) / dt (if w near 1)
-      // We just punish magnitude of vec(q_diff)
-      total_cost += params.Q_omega * (q_diff.x * q_diff.x + q_diff.y * q_diff.y + q_diff.z * q_diff.z);
+      // Thrust rate penalty: penalize change from previous thrust
+      float d_thrust_rate = thrust - prev_thrust;
+      total_cost += params.R_rate_thrust * d_thrust_rate * d_thrust_rate;
 
+      // Quaternion rate penalty: penalize change from previous quaternion
+      float4 q_rate_diff = quat_diff(q_sample, prev_quat);
+      total_cost += params.R_rate_quat * quat_vec_norm_sq(q_rate_diff);
+
+      prev_thrust = thrust;
       prev_quat = q_sample;
     }
 
@@ -287,8 +312,8 @@ extern "C"
       float sigma_thrust, float sigma_quat,
       float Q_pos_x, float Q_pos_y, float Q_pos_z,
       float Q_vel_x, float Q_vel_y, float Q_vel_z,
-      float Q_thrust, float R_thrust,
-      float Q_quat, float R_quat,
+      float Q_thrust, float R_thrust, float R_rate_thrust,
+      float Q_quat, float R_quat, float R_rate_quat,
       float Q_omega,
       float w_obs,
       float thrust_max, float thrust_min, float g,
@@ -301,8 +326,8 @@ extern "C"
         sigma_thrust, sigma_quat,
         Q_pos_x, Q_pos_y, Q_pos_z,
         Q_vel_x, Q_vel_y, Q_vel_z,
-        Q_thrust, R_thrust,
-        Q_quat, R_quat,
+        Q_thrust, R_thrust, R_rate_thrust,
+        Q_quat, R_quat, R_rate_quat,
         Q_omega,
         w_obs,
         thrust_max, thrust_min, g};
