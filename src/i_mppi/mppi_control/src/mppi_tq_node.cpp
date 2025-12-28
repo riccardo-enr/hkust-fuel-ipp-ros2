@@ -203,8 +203,7 @@ namespace mppi_control
         tq_params_.sigma_thrust, tq_params_.sigma_quat,
         tq_params_.Q_pos_x, tq_params_.Q_pos_y, tq_params_.Q_pos_z,
         tq_params_.Q_vel_x, tq_params_.Q_vel_y, tq_params_.Q_vel_z,
-        tq_params_.Q_thrust, tq_params_.R_thrust, tq_params_.R_rate_thrust,
-        tq_params_.Q_quat, tq_params_.R_quat, tq_params_.R_rate_quat,
+        tq_params_.R_rate_thrust, tq_params_.R_rate_quat,
         common_params_.w_obs, tq_params_.thrust_max, tq_params_.thrust_min, common_params_.g,
         samples_u.data(), costs.data(), seed_++);
 

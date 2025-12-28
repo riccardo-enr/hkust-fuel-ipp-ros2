@@ -19,11 +19,7 @@ extern "C"
     float Q_vel_x;
     float Q_vel_y;
     float Q_vel_z;
-    float Q_thrust;
-    float R_thrust;
     float R_rate_thrust;
-    float Q_quat;
-    float R_quat;
     float R_rate_quat;
     float w_obs;
     float thrust_max;
@@ -96,38 +92,23 @@ extern "C"
 
     for (int h = 0; h < params.H; ++h)
     {
-      // Reference Trajectory Prediction (Constant Acceleration Model for position/velocity)
-      // Note: For full tracking, we might want ref_p/v/a/q/thrust at each step,
-      // but here we simplify using base + time evolution or just constant reference for some parts.
-      // For simplicity, let's assume reference is moving as predicted by base state (like in Acc kernel)
-      float t = (h + 1) * params.dt;
-      float3 ref_p, ref_v;
-      ref_p.x = ref_p_base.x + ref_v_base.x * t + 0.5f * ref_a_base.x * t * t;
-      ref_p.y = ref_p_base.y + ref_v_base.y * t + 0.5f * ref_a_base.y * t * t;
-      ref_p.z = ref_p_base.z + ref_v_base.z * t + 0.5f * ref_a_base.z * t * t;
+      // Constant reference (goal position, zero velocity)
+      float3 ref_p = ref_p_base;
+      float3 ref_v = make_float3(0.0f, 0.0f, 0.0f);
 
-      ref_v.x = ref_v_base.x + ref_a_base.x * t;
-      ref_v.y = ref_v_base.y + ref_a_base.y * t;
-      ref_v.z = ref_v_base.z + ref_a_base.z * t;
-
-      // Assume reference orientation and thrust are constant or updated externally.
-      // Ideally, they should be arrays passed in if they change over H.
-      // Using base values for now (approximation).
+      // Assume constant reference orientation/thrust (approximation)
       float4 ref_quat = ref_quat_base;
       float ref_thrust = ref_thrust_base;
 
-      // --- Noise Generation ---
-
-      // Thrust noise (1D)
+      // Noise generation
       float thrust_noise = curand_normal(&state) * params.sigma_thrust;
 
-      // Quaternion noise (3D tangent space)
+      // Quaternion noise (3D tangent space -> exponential map)
       float3 quat_noise;
       quat_noise.x = curand_normal(&state) * params.sigma_quat;
       quat_noise.y = curand_normal(&state) * params.sigma_quat;
       quat_noise.z = curand_normal(&state) * params.sigma_quat;
 
-      // Map tangent space noise to quaternion using exponential map
       float omega_norm = sqrtf(quat_noise.x * quat_noise.x + quat_noise.y * quat_noise.y + quat_noise.z * quat_noise.z);
       float4 quat_delta;
       if (omega_norm < 1e-6f)
@@ -143,17 +124,10 @@ extern "C"
         quat_delta.w = cosf(omega_norm / 2.0f);
       }
 
-      // Compose with mean quaternion: q_sample = q_delta * q_mean
-      // Note: Order of multiplication matters. Local perturbation: q_new = q_mean * q_delta (body frame) or q_delta * q_mean (world frame)?
-      // Usually noise is applied in body frame or tangent space. Let's assume tangent space at identity, rotated by mean.
-      // If q_mean maps body to world, and we want to perturb in body frame: q_sample = q_mean * q_delta.
-      // If we want to perturb in world frame: q_sample = q_delta * q_mean.
-      // Standard MPPI often adds noise directly to control. For quaternions, it's composition.
-      // Let's use q_sample = q_mean * q_delta (Body frame perturbation is standard for aircraft)
+      // Compose: q_sample = q_mean * q_delta (body frame perturbation)
 
       float4 q_mean = u_mean[h].quat;
       float4 q_sample;
-      // q_mean * q_delta
       q_sample.x = q_mean.w * quat_delta.x + q_mean.x * quat_delta.w + q_mean.y * quat_delta.z - q_mean.z * quat_delta.y;
       q_sample.y = q_mean.w * quat_delta.y - q_mean.x * quat_delta.z + q_mean.y * quat_delta.w + q_mean.z * quat_delta.x;
       q_sample.z = q_mean.w * quat_delta.z + q_mean.x * quat_delta.y - q_mean.y * quat_delta.x + q_mean.z * quat_delta.w;
@@ -178,60 +152,19 @@ extern "C"
       samples_u[k * params.H + h].quat = q_sample;
 
       // --- Dynamics ---
-      // F_world = R * [0, 0, thrust]
-      // Rotate vector [0, 0, thrust] by q_sample
-      // v' = q * v * q_inv
-      // For v = [0, 0, T], this simplifies.
-      // Fx = 2(xz - yw)T
-      // Fy = 2(yz + xw)T
-      // Fz = (1 - 2(x^2 + y^2))T
-
-      // float3 F_body = make_float3(0, 0, thrust);
-      // Standard rotation formula R(q) * v:
-      // x = (1 - 2y^2 - 2z^2)vx + (2xy - 2zw)vy + (2xz + 2yw)vz
-      // y = (2xy + 2zw)vx + (1 - 2x^2 - 2z^2)vy + (2yz - 2xw)vz
-      // z = (2xz - 2yw)vx + (2yz + 2xw)vy + (1 - 2x^2 - 2y^2)vz
-
-      // With vx=0, vy=0, vz=thrust:
+      // Rotate thrust vector by quaternion: F_world = R(q) * [0, 0, thrust]
       float3 F_world;
       F_world.x = (2.0f * q_sample.x * q_sample.z + 2.0f * q_sample.y * q_sample.w) * thrust;
       F_world.y = (2.0f * q_sample.y * q_sample.z - 2.0f * q_sample.x * q_sample.w) * thrust;
       F_world.z = (1.0f - 2.0f * q_sample.x * q_sample.x - 2.0f * q_sample.y * q_sample.y) * thrust;
 
-      // Acceleration = F/m - g
-      // Assuming mass is handled such that 'thrust' is force.
-      // Wait, the plan says: F_world = R * [0, 0, thrust] - mass * g.
-      // But `thrust` in control usually means force magnitude. Acceleration = Force / mass.
-      // We can optimize 'thrust_acc' (acceleration magnitude) or 'thrust_force'.
-      // The plan says: "F_world = R * [0, 0, thrust] - mass * g".
-      // This implies 'thrust' is Force Magnitude.
-      // So acc = F_world / mass. BUT, mass is a parameter.
-      // The kernel doesn't have mass passed in.
-      // However, acc version optimized `u` which was acceleration.
-      // If we want to be consistent, `thrust` here should be "Acceleration Magnitude along Z-axis".
-      // Or we assume `thrust` is force and we divide by mass.
-      // Let's check `params`. No mass in params.
-      // Let's assume `thrust` is "Thrust Acceleration" (F/m) for simplicity in kernel,
-      // or passing mass is needed.
-      // In `mppi_control_node.cpp`, `force = mass_ * (des_acc + g)`.
-      // The kernel in `mppi_kernels.cu` uses `total_acc = ... + g`.
-      // Let's assume `thrust` here represents the thrust ACCELERATION (T/m).
-      // The user plan says "Thrust magnitude (1 DOF) ... F_world = R * [0, 0, thrust] - mass * g".
-      // This is slightly ambiguous on whether `thrust` is force or acc.
-      // But since we add `- mass * g` to get force, wait. Gravity is usually `mg`.
-      // Net force = Thrust_vec + Gravity_vec.
-      // F_net = F_thrust - m*g*z_hat.
-      // a = F_net / m = (F_thrust / m) - g*z_hat.
-      // So if `thrust` variable is `|F_thrust| / m`, then:
-      // a = R * [0, 0, thrust] - [0, 0, g].
-
+      // Acceleration (thrust is acceleration magnitude T/m)
       float3 acc;
-      acc.x = F_world.x; // Here F_world is actually Thrust_acc_vector
+      acc.x = F_world.x;
       acc.y = F_world.y;
       acc.z = F_world.z - params.g;
 
-      // RK4 Integration
-      // State x = [p, v]
+      // RK4 integration
       float3 k1_p = v;
       float3 k1_v = acc;
 
@@ -267,25 +200,11 @@ extern "C"
       total_cost += params.Q_vel_y * dv_y * dv_y;
       total_cost += params.Q_vel_z * dv_z * dv_z;
 
-      // Thrust regularization
-      float dthrust = thrust - ref_thrust;
-      total_cost += params.Q_thrust * dthrust * dthrust; // Deviation from reference
-      // Optional: Minimize absolute thrust? usually we want to stay near hover or ref.
-
-      // Quaternion tracking cost
-      // Distance = 1 - (q . q_ref)^2 (standard mapping distance)
-      // or 2*acos(|q . q_ref|)
-      // Let's use 1 - |q . q_ref| which is approx theta^2/8 for small angles.
-      // Or just 1 - (q.q_ref)^2 for antipodal symmetry.
-      float dot = q_sample.x * ref_quat.x + q_sample.y * ref_quat.y + q_sample.z * ref_quat.z + q_sample.w * ref_quat.w;
-      float dist = 1.0f - dot * dot;
-      total_cost += params.Q_quat * dist;
-
-      // Thrust rate penalty: penalize change from previous thrust
+      // Thrust rate penalty
       float d_thrust_rate = thrust - prev_thrust;
       total_cost += params.R_rate_thrust * d_thrust_rate * d_thrust_rate;
 
-      // Quaternion rate penalty: penalize change from previous quaternion
+      // Quaternion rate penalty
       float4 q_rate_diff = quat_diff(q_sample, prev_quat);
       total_cost += params.R_rate_quat * quat_vec_norm_sq(q_rate_diff);
 
@@ -306,8 +225,7 @@ extern "C"
       float sigma_thrust, float sigma_quat,
       float Q_pos_x, float Q_pos_y, float Q_pos_z,
       float Q_vel_x, float Q_vel_y, float Q_vel_z,
-      float Q_thrust, float R_thrust, float R_rate_thrust,
-      float Q_quat, float R_quat, float R_rate_quat,
+      float R_rate_thrust, float R_rate_quat,
       float w_obs, float thrust_max, float thrust_min, float g,
       ControlSample *samples_u_host,
       float *costs_host,
@@ -318,8 +236,7 @@ extern "C"
         sigma_thrust, sigma_quat,
         Q_pos_x, Q_pos_y, Q_pos_z,
         Q_vel_x, Q_vel_y, Q_vel_z,
-        Q_thrust, R_thrust, R_rate_thrust,
-        Q_quat, R_quat, R_rate_quat,
+        R_rate_thrust, R_rate_quat,
         w_obs,
         thrust_max, thrust_min, g};
 
