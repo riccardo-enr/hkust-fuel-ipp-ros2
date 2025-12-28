@@ -82,9 +82,11 @@ Optimize: [thrust, qx, qy, qz, qw] → SO3Command (direct mapping)
 | `Q_pos_x/y/z` | 10.0 | Position tracking cost weight |
 | `Q_vel_x/y/z` | 1.0 | Velocity tracking cost weight |
 | `Q_thrust` | 0.1 | Thrust tracking cost weight |
-| `R_thrust` | 0.0 | Thrust effort regularization (future use) |
+| `R_thrust` | 0.0 | Thrust effort regularization |
+| `R_rate_thrust` | 0.1 | Thrust rate change penalty |
 | `Q_quat` | 10.0 | Orientation tracking cost weight |
-| `R_quat` | 0.0 | Quaternion effort regularization (future use) |
+| `R_quat` | 0.0 | Quaternion effort regularization |
+| `R_rate_quat` | 0.1 | Quaternion rate change penalty |
 | `Q_omega` | 0.5 | Angular velocity smoothing penalty |
 | `w_obs` | 100.0 | Obstacle avoidance cost weight |
 
@@ -169,58 +171,90 @@ mppi_control:
 
 ### Dynamics Model
 
-Both variants use double-integrator dynamics with RK4 integration:
+The MPPI controller uses a predictive model to simulate the quadrotor's future state. The state vector is defined as $x = [p, v]^T \in \mathbb{R}^6$, where $p$ is position and $v$ is velocity.
 
-```
-position:    p_dot = v
-velocity:    v_dot = a - g
-control:     u = [accel] or [thrust, quat]
-```
+**Continuous Dynamics:**
 
-For thrust+quaternion variant, acceleration is computed as:
+$$  \
+\begin{aligned}
+\dot{p} &= v \\
+\dot{v} &= a - g \mathbf{e}_3
+\end{aligned}
+$$  
 
-```
-F_body = [0, 0, thrust]
-F_world = R * F_body
-a = F_world / mass - g
-```
+where $g$ is gravity and $\mathbf{e}_3 = [0, 0, 1]^T$.
+
+**Discrete Integration (RK4):**
+
+To ensure accuracy over the horizon step $dt$, we use 4th-order Runge-Kutta integration:
+
+$$  \
+\begin{aligned}
+k_1 &= f(x_t, u_t) \\
+k_2 &= f(x_t + \frac{dt}{2}k_1, u_t) \\
+k_3 &= f(x_t + \frac{dt}{2}k_2, u_t) \\
+k_4 &= f(x_t + dt k_3, u_t) \\
+x_{t+1} &= x_t + \frac{dt}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+\end{aligned}
+$$  
 
 ### Cost Function
 
-Total cost per trajectory sample:
+The objective is to minimize the expected cost over a finite horizon $H$. The trajectory cost $S(\tau)$ for a sample sequence $\tau = \{u_0, \dots, u_{H-1}\}$ is:
 
-```
-J = Σ [Q_pos * ||p - p_ref||² + Q_vel * ||v - v_ref||²
-      + R * ||u||² + R_rate * ||u - u_prev||²
-      + w_obs * obstacle_cost]
-```
+$$  \
+S(\tau) = \sum_{t=0}^{H-1} \left( q(x_t, u_t) \right) + \phi(x_H)
+$$  
 
-For thrust+quaternion variant:
-- `R_thrust * thrust²` for thrust regularization
-- `Q_quat * geodesic_distance(q, q_ref)²` for orientation tracking
-- `Q_omega * ||omega||²` for angular velocity smoothing
+#### 1. Acceleration Variant Costs
+For the `mppi_acc` controller, the stage cost $q(x, u)$ includes:
 
-### Sampling Strategy
+$$  \
+q(x, u) = \underbrace{Q_p \|p - p_{ref}\|^2}_{\text{Position}} + \underbrace{Q_v \|v - v_{ref}\|^2}_{\text{Velocity}} + \underbrace{R_a \|a - a_{ref}\|^2}_{\text{Control Effort}} + \underbrace{w_{obs} C_{map}(p)}_{\text{Obstacle}}
+$$  
 
-**Acceleration variant:** Gaussian noise on each axis
-```
-u_sample = u_mean + noise,  noise ~ N(0, sigma)
-```
+#### 2. Thrust-Quaternion Variant Costs
+For the `mppi_tq` controller, the control inputs are thrust $T$ and orientation $q$. The cost function includes tracking and regularization terms:
 
-**Thrust+Quaternion variant:**
-- Thrust: Gaussian noise
-- Quaternion: Tangent space noise → exponential map → quaternion composition
+$$  \
+q(x, u) = \underbrace{Q_p \|p - p_{ref}\|^2 + Q_v \|v - v_{ref}\|^2}_{\text{Tracking}} + \underbrace{Q_T (T - T_{ref})^2 + Q_q \Psi(q, q_{ref})}_{\text{Control Tracking}} + \underbrace{R_T T^2 + R_q \Psi(q, \mathbf{I})}_{\text{Control Effort}} + \dots
+$$  
 
-### Weighted Update
+*   **Orientation Error** $\Psi(q, q_{ref})$: Approximates the geodesic distance on the unit sphere:
 
-Exponential weighting based on costs:
+$$  \
+\Psi(q, q_{ref}) = 1 - |q \cdot q_{ref}|^2
+$$  
 
-```
-weight_k = exp(-(J_k - min_J) / lambda)
-u_new = Σ weight_k * u_k / Σ weight_k
-```
+*   **Angular Rate** $\omega$: Estimated from discrete quaternion differences, penalized with $Q_{\omega}$.
 
-For quaternions, antipodal handling is applied (flip sign if dot product < 0).
+### MPPI Update Law
+
+MPPI computes the optimal control sequence $u^*$ as the separate probability-weighted average of $K$ sampled trajectories.
+
+1.  **Calculate Weights:**
+    For each sample $k \in [1, K]$, compute the importance weight $w_k$ based on its total cost $S_k$:
+
+$$  \
+w_k = \exp\left( -\frac{1}{\lambda} (S_k - \min_{j} S_j) \right)
+$$  
+
+    where $\lambda$ is the temperature parameter.
+
+2.  **Update Control Mean:**
+
+$$  \
+u^*_t = \frac{\sum_{k=1}^K w_k u_{k,t}}{\sum_{k=1}^K w_k}
+$$  
+
+    *Note: For quaternions, a weighted SLERP or renormalization is performed instead of simple arithmetic averaging.*
+
+3.  **Explore:**
+    New samples are generated around the updated mean:
+
+$$  \
+u_{k,t} \sim \mathcal{N}(u^*_t, \Sigma)
+$$  
 
 ## Comparison with SO3 Controller
 
@@ -263,4 +297,3 @@ For quaternions, antipodal handling is applied (flip sign if dot product < 0).
 ## References
 
 - Williams et al. "Model Predictive Path Integral Control: From Theory to Parallel Computation" (2017)
-- `docs/plan/mppi_so3.md` - Design document for thrust+quaternion variant

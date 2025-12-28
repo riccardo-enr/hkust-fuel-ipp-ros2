@@ -56,6 +56,7 @@ nav:
   - Overview:
       - Introduction: wiki/overview/README.md
       - Architecture: wiki/overview/architecture.md
+      - MPPI Architecture: wiki/overview/mppi_architecture.md
       - Project Overview: wiki/overview/project_overview.md
       - Roadmap: wiki/overview/roadmap.md
   - Setup:
@@ -72,10 +73,11 @@ nav:
       - API Changes: wiki/migration/api_changes.md
       - Porting Playbook: wiki/migration/porting_playbook.md
       - Checklist: wiki/migration/ros1_to_ros2_checklist.md
+  - Controllers:
+      - MPPI Controller: wiki/reference/mppi_controller.md
   - Reference:
       - CLI: wiki/reference/cli_reference.md
       - Messages: wiki/reference/message_schemas.md
-      - MPPI Controller: wiki/reference/mppi_controller.md
       - Parameters: wiki/reference/parameter_tables.md
   - Simulator:
       - Performance Tuning: wiki/simulator/performance_tuning.md
