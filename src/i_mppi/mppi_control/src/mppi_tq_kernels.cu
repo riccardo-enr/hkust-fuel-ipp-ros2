@@ -25,7 +25,6 @@ extern "C"
     float Q_quat;
     float R_quat;
     float R_rate_quat;
-    float Q_omega;
     float w_obs;
     float thrust_max;
     float thrust_min;
@@ -282,11 +281,6 @@ extern "C"
       float dist = 1.0f - dot * dot;
       total_cost += params.Q_quat * dist;
 
-      // Angular velocity penalty (Smoothness)
-      // Approximate omega from q_sample and prev_quat using quaternion difference
-      float4 q_omega_diff = quat_diff(q_sample, prev_quat);
-      total_cost += params.Q_omega * quat_vec_norm_sq(q_omega_diff);
-
       // Thrust rate penalty: penalize change from previous thrust
       float d_thrust_rate = thrust - prev_thrust;
       total_cost += params.R_rate_thrust * d_thrust_rate * d_thrust_rate;
@@ -313,10 +307,8 @@ extern "C"
       float Q_pos_x, float Q_pos_y, float Q_pos_z,
       float Q_vel_x, float Q_vel_y, float Q_vel_z,
       float Q_thrust, float R_thrust, float R_rate_thrust,
-      float Q_quat, float R_quat, float R_rate_quat,
-      float Q_omega,
-      float w_obs,
-      float thrust_max, float thrust_min, float g,
+          float Q_quat, float R_quat, float R_rate_quat,
+          float w_obs,      float thrust_max, float thrust_min, float g,
       ControlSample *samples_u_host,
       float *costs_host,
       unsigned int seed)
@@ -328,7 +320,6 @@ extern "C"
         Q_vel_x, Q_vel_y, Q_vel_z,
         Q_thrust, R_thrust, R_rate_thrust,
         Q_quat, R_quat, R_rate_quat,
-        Q_omega,
         w_obs,
         thrust_max, thrust_min, g};
 
