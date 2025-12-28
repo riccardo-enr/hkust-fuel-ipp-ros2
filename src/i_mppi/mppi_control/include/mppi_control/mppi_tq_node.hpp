@@ -1,13 +1,7 @@
 #ifndef MPPI_CONTROL__MPPI_TQ_NODE_HPP_
 #define MPPI_CONTROL__MPPI_TQ_NODE_HPP_
 
-#include <Eigen/Eigen>
-#include <vector>
-#include <rclcpp/rclcpp.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <quadrotor_msgs/msg/position_command.hpp>
-#include <quadrotor_msgs/msg/so3_command.hpp>
-#include <plan_env/sdf_map.h>
+#include "mppi_control/mppi_node_base.hpp"
 #include <cuda_runtime.h>
 
 namespace mppi_control {
@@ -43,16 +37,8 @@ extern "C" void launch_mppi_tq_kernel(
 );
 
 struct MPPITqParams {
-  int K;
-  int H;              // Horizon steps (computed from N and ctl_freq)
-  double N;           // Horizon time in seconds
-  double ctl_freq;    // Control frequency in Hz (dt = 1/ctl_freq)
-  double dt;          // Time step (computed as 1/ctl_freq)
-  double lambda;
-
   double sigma_thrust;
   double sigma_quat;
-
   double Q_pos_x, Q_pos_y, Q_pos_z;
   double Q_vel_x, Q_vel_y, Q_vel_z;
   double Q_thrust;
@@ -61,60 +47,27 @@ struct MPPITqParams {
   double Q_quat;
   double R_quat;
   double R_rate_quat;
-  double w_obs;
-
   double thrust_max;
   double thrust_min;
-  double g;
-
-  // Low-pass filter parameters
-  bool enable_lpf;    // Enable low-pass filtering
-  double lpf_cutoff;  // LPF cutoff frequency (Hz)
-  double lpf_alpha;   // LPF smoothing factor (computed from cutoff and dt)
 };
 
-class MPPITqNode : public rclcpp::Node {
+class MPPITqNode : public MPPINodeBase {
 public:
   MPPITqNode(const rclcpp::NodeOptions& options);
 
 private:
-  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
-  void posCmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg);
-  void controlLoop();
+  void controlLoop() override;
   void runMPPI();
   void validateAndLogParameters();
 
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr pos_cmd_sub_;
-  rclcpp::Publisher<quadrotor_msgs::msg::SO3Command>::SharedPtr so3_cmd_pub_;
-  rclcpp::TimerBase::SharedPtr timer_;
-
-  Eigen::Vector3d curr_p_, curr_v_;
-  Eigen::Quaterniond curr_q_;
-  double current_yaw_;
-  quadrotor_msgs::msg::PositionCommand ref_cmd_;
-  bool odom_received_{false};
-  bool ref_received_{false};
-
-  MPPITqParams params_;
+  MPPITqParams tq_params_;
   std::vector<ControlInput> u_mean_; 
   ControlInput u_prev_;
   uint32_t seed_{0};
   
-  std::shared_ptr<fast_planner::SDFMap> sdf_map_;
-
   // Low-pass filter state
-  ControlInput control_filtered_; // Filtered control output
-  bool lpf_initialized_;           // Whether LPF has been initialized
-
-  // Timing monitor for failsafe
-  rclcpp::Time last_control_time_;
-  bool timing_warning_logged_;
-  int consecutive_slow_cycles_;
-  rclcpp::Clock::SharedPtr clock_;
-
-  double mass_;
-  double kR_[3], kOm_[3];
+  ControlInput control_filtered_; 
+  bool lpf_initialized_;
 };
 
 } // namespace mppi_control
