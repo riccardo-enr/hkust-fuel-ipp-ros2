@@ -9,7 +9,7 @@ mppi_control:
 
       # Thrust+Quaternion specific parameters
       sigma_thrust: 0.5
-      sigma_quat: 0.02
+      sigma_quat: 0.01
       Q_pos_x: 50.0
       Q_pos_y: 50.0
       Q_pos_z: 50.0
@@ -21,7 +21,7 @@ mppi_control:
       R_rate_thrust: 10.0
       Q_quat: 10.0
       R_quat: 0.5
-      R_rate_quat: 10.0
+      R_rate_quat: 30.0
       Q_omega: 5.0
 
       # Constraints
