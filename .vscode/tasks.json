@@ -200,6 +200,26 @@
         "source install/setup.bash && ros2 launch plan_bringup fuel_pipeline.launch.py exploration:=false controller_type:=mppi_tq world:=office init_x:=0.0 init_y:=0.0 init_z:=1.0"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "Tools: Launch PlotJuggler",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 run plotjuggler plotjuggler -n"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Tools: Launch PlotJuggler (MPPI Layout)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 run plotjuggler plotjuggler -n -l src/fuel_planner/plan_bringup/config/plotjuggler_mppi.xml"
+      ],
+      "problemMatcher": []
     }
   ]
 }

@@ -90,7 +90,7 @@ extern "C"
 
     float3 p = curr_p;
     float3 v = curr_v;
-    float4 prev_quat = u_prev.quat; // For angular velocity calculation
+    float4 prev_quat = u_prev.quat;    // For angular velocity calculation
     float prev_thrust = u_prev.thrust; // For thrust rate penalty
     float total_cost = 0.0f;
 
@@ -307,8 +307,8 @@ extern "C"
       float Q_pos_x, float Q_pos_y, float Q_pos_z,
       float Q_vel_x, float Q_vel_y, float Q_vel_z,
       float Q_thrust, float R_thrust, float R_rate_thrust,
-          float Q_quat, float R_quat, float R_rate_quat,
-          float w_obs,      float thrust_max, float thrust_min, float g,
+      float Q_quat, float R_quat, float R_rate_quat,
+      float w_obs, float thrust_max, float thrust_min, float g,
       ControlSample *samples_u_host,
       float *costs_host,
       unsigned int seed)

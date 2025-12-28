@@ -18,7 +18,7 @@ namespace mppi_control
     common_params_.H = static_cast<int>(std::round(common_params_.N * common_params_.ctl_freq));
     common_params_.lambda = this->declare_parameter("mppi.lambda", 0.1);
     common_params_.w_obs = this->declare_parameter("mppi.w_obs", 10.0); // Tq had 10.0 default vs 100.0 in Acc
-    
+
     // Low-pass filter common params
     common_params_.enable_lpf = this->declare_parameter("mppi.enable_lpf", false);
     common_params_.lpf_cutoff = this->declare_parameter("mppi.lpf_cutoff", 5.0);
@@ -42,8 +42,8 @@ namespace mppi_control
     tq_params_.Q_quat = this->declare_parameter("mppi.Q_quat", 10.0);
     tq_params_.R_quat = this->declare_parameter("mppi.R_quat", 0.0);
     tq_params_.R_rate_quat = this->declare_parameter("mppi.R_rate_quat", 5.0);
-    
-    tq_params_.thrust_max = this->declare_parameter("mppi.thrust_max", 20.0); 
+
+    tq_params_.thrust_max = this->declare_parameter("mppi.thrust_max", 20.0);
     tq_params_.thrust_min = this->declare_parameter("mppi.thrust_min", 1.0);
     common_params_.g = this->declare_parameter("mppi.g", 9.81);
 
@@ -63,8 +63,8 @@ namespace mppi_control
     u_mean_.resize(common_params_.H);
     for (int i = 0; i < common_params_.H; ++i)
     {
-      u_mean_[i].thrust = common_params_.g;             
-      u_mean_[i].quat = make_float4(0, 0, 0, 1); 
+      u_mean_[i].thrust = common_params_.g;
+      u_mean_[i].quat = make_float4(0, 0, 0, 1);
     }
     u_prev_.thrust = common_params_.g;
     u_prev_.quat = make_float4(0, 0, 0, 1);
@@ -79,19 +79,20 @@ namespace mppi_control
   void MPPITqNode::validateAndLogParameters()
   {
     validateCommonParameters(common_params_);
-    
+
     RCLCPP_INFO(this->get_logger(), "=== MPPI TQ Configuration ===");
     RCLCPP_INFO(this->get_logger(), "  sigma_thrust: %.3f", tq_params_.sigma_thrust);
-    
+
     if (tq_params_.sigma_thrust < 0.0 || tq_params_.sigma_quat < 0.0)
     {
-       RCLCPP_ERROR(this->get_logger(), "sigma must be >= 0");
+      RCLCPP_ERROR(this->get_logger(), "sigma must be >= 0");
     }
   }
 
   void MPPITqNode::controlLoop()
   {
-    if (!odom_received_) return;
+    if (!odom_received_)
+      return;
 
     checkTiming();
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -137,7 +138,8 @@ namespace mppi_control
         Eigen::Quaterniond q_current = toEigen(current_control.quat);
         Eigen::Quaterniond q_filtered = toEigen(control_filtered_.quat);
 
-        if (q_current.dot(q_filtered) < 0) q_current.coeffs() = -q_current.coeffs();
+        if (q_current.dot(q_filtered) < 0)
+          q_current.coeffs() = -q_current.coeffs();
 
         Eigen::Quaterniond q_result = q_current.slerp(common_params_.lpf_alpha, q_filtered);
         control_filtered_.quat = toFloat4(q_result);
@@ -157,7 +159,7 @@ namespace mppi_control
     if (ready)
     {
       publish_execution_time(comp_time_pub_, start_time);
-      
+
       for (int i = 0; i < common_params_.H - 1; ++i)
       {
         u_mean_[i] = u_mean_[i + 1];
@@ -184,7 +186,8 @@ namespace mppi_control
 
     Eigen::Vector3d b1d(cos(ref_cmd_.yaw), sin(ref_cmd_.yaw), 0);
     Eigen::Vector3d b3c = ref_force_vec.normalized();
-    if (ref_thrust < 1e-3) b3c = Eigen::Vector3d(0, 0, 1);
+    if (ref_thrust < 1e-3)
+      b3c = Eigen::Vector3d(0, 0, 1);
 
     Eigen::Vector3d b2c = b3c.cross(b1d).normalized();
     Eigen::Vector3d b1c = b2c.cross(b3c).normalized();
@@ -237,7 +240,8 @@ namespace mppi_control
           ControlSample &s = samples_u[k * common_params_.H + h];
           Eigen::Quaterniond q_k = toEigen(s.quat);
 
-          if (q_mean.dot(q_k) < 0) q_k.coeffs() *= -1.0;
+          if (q_mean.dot(q_k) < 0)
+            q_k.coeffs() *= -1.0;
 
           Eigen::Quaterniond q_rel = q_mean.conjugate() * q_k;
           Eigen::AngleAxisd aa(q_rel);
