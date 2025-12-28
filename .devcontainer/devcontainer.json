@@ -36,6 +36,5 @@
       }
     }
   },
-  "remoteUser": "ubuntu",
-  "postCreateCommand": "bash ${workspaceFolder}/claude_code_zai_env.sh || echo 'Claude Code setup skipped or failed'"
+  "remoteUser": "ubuntu"
 }
