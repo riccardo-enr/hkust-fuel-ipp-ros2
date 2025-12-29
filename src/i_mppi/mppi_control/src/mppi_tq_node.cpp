@@ -36,11 +36,9 @@ namespace mppi_control
     tq_params_.Q_vel_y = this->declare_parameter("mppi.Q_vel_y", 1.0);
     tq_params_.Q_vel_z = this->declare_parameter("mppi.Q_vel_z", 1.0);
 
-    tq_params_.Q_thrust = this->declare_parameter("mppi.Q_thrust", 0.1);
     tq_params_.R_thrust = this->declare_parameter("mppi.R_thrust", 0.0);
-    tq_params_.R_rate_thrust = this->declare_parameter("mppi.R_rate_thrust", 5.0);
-    tq_params_.Q_quat = this->declare_parameter("mppi.Q_quat", 10.0);
     tq_params_.R_quat = this->declare_parameter("mppi.R_quat", 0.0);
+    tq_params_.R_rate_thrust = this->declare_parameter("mppi.R_rate_thrust", 5.0);
     tq_params_.R_rate_quat = this->declare_parameter("mppi.R_rate_quat", 5.0);
 
     tq_params_.thrust_max = this->declare_parameter("mppi.thrust_max", 20.0);
@@ -203,6 +201,7 @@ namespace mppi_control
         tq_params_.sigma_thrust, tq_params_.sigma_quat,
         tq_params_.Q_pos_x, tq_params_.Q_pos_y, tq_params_.Q_pos_z,
         tq_params_.Q_vel_x, tq_params_.Q_vel_y, tq_params_.Q_vel_z,
+        tq_params_.R_thrust, tq_params_.R_quat,
         tq_params_.R_rate_thrust, tq_params_.R_rate_quat,
         common_params_.w_obs, tq_params_.thrust_max, tq_params_.thrust_min, common_params_.g,
         samples_u.data(), costs.data(), seed_++);
