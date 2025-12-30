@@ -16,7 +16,8 @@
         "ms-python.python",
         "Ranch-Hand-Robotics.rde-pack",
         "dotjoshjohnson.xml",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
