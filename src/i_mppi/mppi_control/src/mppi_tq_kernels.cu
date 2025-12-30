@@ -51,8 +51,6 @@ extern "C"
       const float3 ref_p_base,
       const float3 ref_v_base,
       const float3 ref_a_base,
-      const float4 ref_quat_base,
-      const float ref_thrust_base,
       const MPPIParamsDeviceTq params,
       unsigned int seed,
       ControlSample *samples_u, // Out: [K * H]
@@ -77,10 +75,6 @@ extern "C"
       // Constant reference (goal position, zero velocity)
       float3 ref_p = ref_p_base;
       float3 ref_v = make_float3(0.0f, 0.0f, 0.0f);
-
-      // Assume constant reference orientation/thrust (approximation)
-      float4 ref_quat = ref_quat_base;
-      float ref_thrust = ref_thrust_base;
 
       // Noise generation
       float thrust_noise = curand_normal(&state) * params.sigma_thrust;
@@ -209,7 +203,6 @@ extern "C"
       ControlInput u_prev,
       float3 curr_p, float3 curr_v,
       float3 ref_p_base, float3 ref_v_base, float3 ref_a_base,
-      float4 ref_quat_base, float ref_thrust_base,
       int K, int H, float dt, float lambda,
       float sigma_thrust, float sigma_quat,
       float Q_pos_x, float Q_pos_y, float Q_pos_z,
@@ -246,7 +239,7 @@ extern "C"
 
     mppi_tq_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         d_u_mean, u_prev, curr_p, curr_v,
-        ref_p_base, ref_v_base, ref_a_base, ref_quat_base, ref_thrust_base,
+        ref_p_base, ref_v_base, ref_a_base,
         params, seed, d_samples_u, d_costs);
 
     cudaMemcpy(samples_u_host, d_samples_u, K * H * sizeof(ControlSample), cudaMemcpyDeviceToHost);

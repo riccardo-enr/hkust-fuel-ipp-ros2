@@ -22,7 +22,6 @@ extern "C" void launch_mppi_tq_kernel(
     ControlInput u_prev,
     float3 curr_p, float3 curr_v,
     float3 ref_p, float3 ref_v, float3 ref_a,
-    float4 ref_quat, float ref_thrust,
     int K, int H, float dt, float lambda,
     float sigma_thrust, float sigma_quat,
     float Q_pos_x, float Q_pos_y, float Q_pos_z,

@@ -178,25 +178,8 @@ namespace mppi_control
     float3 rv = make_float3(ref_cmd_.velocity.x, ref_cmd_.velocity.y, ref_cmd_.velocity.z);
     float3 ra = make_float3(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
 
-    Eigen::Vector3d ref_acc_vec(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
-    Eigen::Vector3d ref_force_vec = (ref_acc_vec + Eigen::Vector3d(0, 0, common_params_.g));
-    float ref_thrust = ref_force_vec.norm();
-
-    Eigen::Vector3d b1d(cos(ref_cmd_.yaw), sin(ref_cmd_.yaw), 0);
-    Eigen::Vector3d b3c = ref_force_vec.normalized();
-    if (ref_thrust < 1e-3)
-      b3c = Eigen::Vector3d(0, 0, 1);
-
-    Eigen::Vector3d b2c = b3c.cross(b1d).normalized();
-    Eigen::Vector3d b1c = b2c.cross(b3c).normalized();
-    Eigen::Matrix3d R_ref;
-    R_ref << b1c, b2c, b3c;
-    Eigen::Quaterniond ref_q(R_ref);
-    float4 ref_quat = toFloat4(ref_q);
-
     launch_mppi_tq_kernel(
         u_mean_.data(), u_prev_, cp, cv, rp, rv, ra,
-        ref_quat, ref_thrust,
         common_params_.K, common_params_.H, common_params_.dt, common_params_.lambda,
         tq_params_.sigma_thrust, tq_params_.sigma_quat,
         tq_params_.Q_pos_x, tq_params_.Q_pos_y, tq_params_.Q_pos_z,
