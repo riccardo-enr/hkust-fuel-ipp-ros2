@@ -18,7 +18,7 @@ mppi_control:
       R_rate_x: 30.0
       R_rate_y: 30.0
       R_rate_z: 30.0
-      w_obs: 0.0
+      w_obs: 10.0
       a_max: 10.0
       tilt_max: 0.6
       g: 9.81
