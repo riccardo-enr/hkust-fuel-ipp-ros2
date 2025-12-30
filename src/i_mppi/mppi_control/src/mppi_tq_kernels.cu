@@ -1,6 +1,11 @@
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <device_launch_parameters.h>
+
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "mppi_control/mppi_utils.cuh"
 
 extern "C"
