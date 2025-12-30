@@ -82,11 +82,8 @@ extern "C"
       Eigen::Vector3f u(u_mean[h].x, u_mean[h].y, u_mean[h].z);
       u += noise;
 
-      // Use ref_a_base as feed-forward
-      Eigen::Vector3f total_u = u + ref_a_base_v;
-
       // Constraints (Simplified for GPU kernel)
-      Eigen::Vector3f total_acc = total_u + Eigen::Vector3f(0.0f, 0.0f, params.g);
+      Eigen::Vector3f total_acc = u + Eigen::Vector3f(0.0f, 0.0f, params.g);
       float thrust = total_acc.norm();
 
       if (thrust > params.a_max + params.g)
@@ -110,12 +107,11 @@ extern "C"
         total_acc.z() = target_z;
       }
 
-      total_u = total_acc - Eigen::Vector3f(0.0f, 0.0f, params.g);
+      // Constrained acceleration (total_u is acceleration in world frame minus gravity)
+      Eigen::Vector3f total_u = total_acc - Eigen::Vector3f(0.0f, 0.0f, params.g);
 
-      // Control to be stored and used in cost is the delta from reference
-      u = total_u - ref_a_base_v;
-
-      // Store sample (the delta u)
+      // Store sample (the total u)
+      u = total_u;
       samples_u[k * params.H + h] = make_float3(u.x(), u.y(), u.z());
 
       // Dynamics Propagation using RK4 with total_u
@@ -138,7 +134,7 @@ extern "C"
       // Cost calculation
       Eigen::Vector3f dp = p - ref_p;
       Eigen::Vector3f dv = v - ref_v;
-      Eigen::Vector3f da = u - ref_a_base_v;
+      Eigen::Vector3f da = u;
 
       total_cost += params.Q_pos_x * dp.x() * dp.x();
       total_cost += params.Q_pos_y * dp.y() * dp.y();
