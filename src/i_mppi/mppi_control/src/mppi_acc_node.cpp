@@ -94,8 +94,7 @@ namespace mppi_control
     if (ready)
     {
       runMPPI();
-      Eigen::Vector3d ref_acc(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
-      des_acc = u_mean_[0] + ref_acc;
+      des_acc = u_mean_[0];
       u_prev_ = u_mean_[0];
     }
     else
