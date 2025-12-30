@@ -16,6 +16,7 @@ enable_language(CUDA)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(quadrotor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -34,6 +35,7 @@ include_directories(
 )
 
 add_library(mppi_control_component SHARED
+  src/mppi_node_base.cpp
   src/mppi_acc_node.cpp
   src/mppi_acc_kernels.cu
   src/mppi_tq_node.cpp
@@ -48,6 +50,7 @@ set_target_properties(mppi_control_component PROPERTIES
 ament_target_dependencies(mppi_control_component
   rclcpp
   rclcpp_components
+  std_msgs
   nav_msgs
   quadrotor_msgs
   tf2

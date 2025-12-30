@@ -1,7 +1,5 @@
 #include "mppi_control/mppi_acc_node.hpp"
 #include <rclcpp_components/register_node_macro.hpp>
-#include <tf2/utils.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <random>
 #include <algorithm>
 #include <ctime>
@@ -10,33 +8,44 @@ namespace mppi_control
 {
 
   MPPIAccNode::MPPIAccNode(const rclcpp::NodeOptions &options)
-      : Node("mppi_acc_node", options)
+      : MPPINodeBase("mppi_acc_node", options)
   {
+    // Initialize Common Parameters
+    common_params_.K = this->declare_parameter("mppi.K", 9000);
+    common_params_.N = this->declare_parameter("mppi.N", 2.0);
+    common_params_.ctl_freq = this->declare_parameter("mppi.ctl_freq", 100.0);
+    common_params_.dt = 1.0 / common_params_.ctl_freq;
+    common_params_.H = static_cast<int>(std::round(common_params_.N * common_params_.ctl_freq));
+    common_params_.lambda = this->declare_parameter("mppi.lambda", 0.1);
+    common_params_.w_obs = this->declare_parameter("mppi.w_obs", 100.0);
+    common_params_.g = this->declare_parameter("mppi.g", 9.81);
 
-    // Initialize Parameters
-    params_.K = this->declare_parameter("mppi/K", 9000);
-    params_.H = this->declare_parameter("mppi/H", 20);
-    params_.dt = this->declare_parameter("mppi/dt", 0.05);
-    params_.sigma = this->declare_parameter("mppi/sigma", 1.0);
-    params_.lambda = this->declare_parameter("mppi/lambda", 0.1);
+    // Low-pass filter common params
+    common_params_.enable_lpf = this->declare_parameter("mppi.enable_lpf", false);
+    common_params_.lpf_cutoff = this->declare_parameter("mppi.lpf_cutoff", 5.0);
+    double omega = 2.0 * M_PI * common_params_.lpf_cutoff;
+    common_params_.lpf_alpha = omega * common_params_.dt / (1.0 + omega * common_params_.dt);
 
-    params_.Q_pos_x = this->declare_parameter("mppi/Q_pos_x", 10.0);
-    params_.Q_pos_y = this->declare_parameter("mppi/Q_pos_y", 10.0);
-    params_.Q_pos_z = this->declare_parameter("mppi/Q_pos_z", 10.0);
-    params_.Q_vel_x = this->declare_parameter("mppi/Q_vel_x", 1.0);
-    params_.Q_vel_y = this->declare_parameter("mppi/Q_vel_y", 1.0);
-    params_.Q_vel_z = this->declare_parameter("mppi/Q_vel_z", 1.0);
-    params_.R_x = this->declare_parameter("mppi/R_x", 0.1);
-    params_.R_y = this->declare_parameter("mppi/R_y", 0.1);
-    params_.R_z = this->declare_parameter("mppi/R_z", 0.1);
-    params_.R_rate_x = this->declare_parameter("mppi/R_rate_x", 0.5);
-    params_.R_rate_y = this->declare_parameter("mppi/R_rate_y", 0.5);
-    params_.R_rate_z = this->declare_parameter("mppi/R_rate_z", 0.5);
-    params_.w_obs = this->declare_parameter("mppi/w_obs", 100.0);
+    // Acc Specific Parameters
+    acc_params_.sigma = this->declare_parameter("mppi.sigma", 1.0);
+    acc_params_.Q_pos_x = this->declare_parameter("mppi.Q_pos_x", 10.0);
+    acc_params_.Q_pos_y = this->declare_parameter("mppi.Q_pos_y", 10.0);
+    acc_params_.Q_pos_z = this->declare_parameter("mppi.Q_pos_z", 10.0);
+    acc_params_.Q_vel_x = this->declare_parameter("mppi.Q_vel_x", 1.0);
+    acc_params_.Q_vel_y = this->declare_parameter("mppi.Q_vel_y", 1.0);
+    acc_params_.Q_vel_z = this->declare_parameter("mppi.Q_vel_z", 1.0);
+    acc_params_.R_x = this->declare_parameter("mppi.R_x", 0.1);
+    acc_params_.R_y = this->declare_parameter("mppi.R_y", 0.1);
+    acc_params_.R_z = this->declare_parameter("mppi.R_z", 0.1);
+    acc_params_.R_rate_x = this->declare_parameter("mppi.R_rate_x", 0.5);
+    acc_params_.R_rate_y = this->declare_parameter("mppi.R_rate_y", 0.5);
+    acc_params_.R_rate_z = this->declare_parameter("mppi.R_rate_z", 0.5);
 
-    params_.a_max = this->declare_parameter("mppi/a_max", 10.0);
-    params_.tilt_max = this->declare_parameter("mppi/tilt_max", 0.6); // ~34 deg
-    params_.g = this->declare_parameter("mppi/g", 9.81);
+    acc_params_.a_max = this->declare_parameter("mppi.a_max", 10.0);
+    acc_params_.tilt_max = this->declare_parameter("mppi.tilt_max", 0.6);
+
+    lpf_initialized_ = false;
+    acc_filtered_.setZero();
 
     mass_ = this->declare_parameter("mass", 0.98);
     kR_[0] = this->declare_parameter("gains/rot/x", 1.5);
@@ -46,45 +55,29 @@ namespace mppi_control
     kOm_[1] = this->declare_parameter("gains/ang/y", 0.13);
     kOm_[2] = this->declare_parameter("gains/ang/z", 0.1);
 
-    u_mean_.resize(params_.H, Eigen::Vector3d::Zero());
+    u_mean_.resize(common_params_.H, Eigen::Vector3d::Zero());
 
-    // Publishers and Subscribers
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "odom", 10, std::bind(&MPPIAccNode::odomCallback, this, std::placeholders::_1));
+    // Initialize Base (Subscribers/Publishers/Timer)
+    initBase();
 
-    pos_cmd_sub_ = this->create_subscription<quadrotor_msgs::msg::PositionCommand>(
-        "planning/pos_cmd", 10, std::bind(&MPPIAccNode::posCmdCallback, this, std::placeholders::_1));
-
-    so3_cmd_pub_ = this->create_publisher<quadrotor_msgs::msg::SO3Command>(
-        "so3_cmd", 10);
-
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(10), std::bind(&MPPIAccNode::controlLoop, this));
+    // Validate
+    validateAndLogParameters();
 
     RCLCPP_INFO(this->get_logger(), "MPPI Acc Node Initialized");
   }
 
-  void MPPIAccNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+  void MPPIAccNode::validateAndLogParameters()
   {
-    curr_p_ = Eigen::Vector3d(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
-    curr_v_ = Eigen::Vector3d(msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.linear.z);
+    validateCommonParameters(common_params_);
 
-    tf2::Quaternion q(
-        msg->pose.pose.orientation.x,
-        msg->pose.pose.orientation.y,
-        msg->pose.pose.orientation.z,
-        msg->pose.pose.orientation.w);
-    tf2::Matrix3x3 m(q);
-    double roll, pitch;
-    m.getRPY(roll, pitch, current_yaw_);
+    // Log Specifics
+    RCLCPP_INFO(this->get_logger(), "=== MPPI ACC Configuration ===");
+    RCLCPP_INFO(this->get_logger(), "  sigma: %.3f", acc_params_.sigma);
+    RCLCPP_INFO(this->get_logger(), "  Q_pos: [%.1f, %.1f, %.1f]",
+                acc_params_.Q_pos_x, acc_params_.Q_pos_y, acc_params_.Q_pos_z);
 
-    odom_received_ = true;
-  }
-
-  void MPPIAccNode::posCmdCallback(const quadrotor_msgs::msg::PositionCommand::SharedPtr msg)
-  {
-    ref_cmd_ = *msg;
-    ref_received_ = true;
+    if (acc_params_.sigma < 0.0)
+      RCLCPP_ERROR(this->get_logger(), "sigma must be >= 0");
   }
 
   void MPPIAccNode::controlLoop()
@@ -92,137 +85,116 @@ namespace mppi_control
     if (!odom_received_)
       return;
 
-    // Deferred initialization of SDFMap
-    if (!sdf_map_)
-    {
-      sdf_map_.reset(new fast_planner::SDFMap);
-      sdf_map_->initMap(this->shared_from_this());
-    }
+    checkTiming();
+    auto start_time = std::chrono::high_resolution_clock::now();
 
-    bool ready = ref_received_;
-
-    // Safety: If reference is at origin and drone is not, it's likely an uninitialized reference
-    if (ready && ref_cmd_.position.x == 0 && ref_cmd_.position.y == 0 && ref_cmd_.position.z == 0)
-    {
-      if (curr_p_.norm() > 1.0)
-      {
-        ready = false;
-      }
-    }
+    ensureSDFMap();
+    bool ready = isDataReady();
 
     Eigen::Vector3d des_acc;
 
     if (ready)
     {
       runMPPI();
-      Eigen::Vector3d ref_acc(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
-      des_acc = u_mean_[0] + ref_acc;
-      // Store previous control (delta from reference) for rate penalty
+      des_acc = u_mean_[0];
       u_prev_ = u_mean_[0];
     }
     else
     {
-      // Hover command if not ready
       des_acc.setZero();
-      // Warm start with zero if not ready
       std::fill(u_mean_.begin(), u_mean_.end(), Eigen::Vector3d::Zero());
       u_prev_.setZero();
     }
 
-    Eigen::Vector3d force = mass_ * (des_acc + Eigen::Vector3d(0, 0, params_.g));
+    if (common_params_.enable_lpf)
+    {
+      if (!lpf_initialized_)
+      {
+        acc_filtered_ = des_acc;
+        lpf_initialized_ = true;
+      }
+      else
+      {
+        acc_filtered_ = common_params_.lpf_alpha * des_acc + (1.0 - common_params_.lpf_alpha) * acc_filtered_;
+      }
+    }
+    else
+    {
+      acc_filtered_ = des_acc;
+    }
 
-    // Use current yaw if reference not ready
+    Eigen::Vector3d force = mass_ * (acc_filtered_ + Eigen::Vector3d(0, 0, common_params_.g));
     double target_yaw = ready ? ref_cmd_.yaw : current_yaw_;
 
     Eigen::Vector3d b1d(cos(target_yaw), sin(target_yaw), 0);
     Eigen::Vector3d b3c = force.normalized();
     Eigen::Vector3d b2c = b3c.cross(b1d).normalized();
     Eigen::Vector3d b1c = b2c.cross(b3c).normalized();
-
     Eigen::Matrix3d R;
     R << b1c, b2c, b3c;
     Eigen::Quaterniond orientation(R);
 
-    auto so3_cmd = std::make_shared<quadrotor_msgs::msg::SO3Command>();
-    so3_cmd->header.stamp = this->now();
-    so3_cmd->header.frame_id = "world";
-    so3_cmd->force.x = force.x();
-    so3_cmd->force.y = force.y();
-    so3_cmd->force.z = force.z();
-    so3_cmd->orientation.x = orientation.x();
-    so3_cmd->orientation.y = orientation.y();
-    so3_cmd->orientation.z = orientation.z();
-    so3_cmd->orientation.w = orientation.w();
-    for (int i = 0; i < 3; i++)
-    {
-      so3_cmd->kr[i] = kR_[i];
-      so3_cmd->kom[i] = kOm_[i];
-    }
-    so3_cmd->aux.current_yaw = current_yaw_;
-    so3_cmd->aux.enable_motors = true;
-    so3_cmd->aux.use_external_yaw = false;
-
-    so3_cmd_pub_->publish(*so3_cmd);
+    publishSO3(force, orientation);
 
     if (ready)
     {
-      // Shift control sequence for next iteration (Warm start)
-      for (int i = 0; i < params_.H - 1; ++i)
+      publish_execution_time(comp_time_pub_, start_time);
+
+      // Shift control sequence
+      for (int i = 0; i < common_params_.H - 1; ++i)
       {
         u_mean_[i] = u_mean_[i + 1];
       }
-      u_mean_[params_.H - 1].setZero();
+      u_mean_[common_params_.H - 1].setZero();
     }
   }
 
   void MPPIAccNode::runMPPI()
   {
-    std::vector<float3> samples_u(params_.K * params_.H);
-    std::vector<float> costs(params_.K);
-    std::vector<float3> u_mean_f3(params_.H);
+    std::vector<float3> samples_u(common_params_.K * common_params_.H);
+    std::vector<float> costs(common_params_.K);
+    std::vector<float3> u_mean_f3(common_params_.H);
 
-    for (int i = 0; i < params_.H; ++i)
+    for (int i = 0; i < common_params_.H; ++i)
     {
-      u_mean_f3[i] = make_float3(u_mean_[i].x(), u_mean_[i].y(), u_mean_[i].z());
+      u_mean_f3[i] = toFloat3(u_mean_[i]);
     }
 
-    float3 cp = make_float3(curr_p_.x(), curr_p_.y(), curr_p_.z());
-    float3 cv = make_float3(curr_v_.x(), curr_v_.y(), curr_v_.z());
+    float3 cp = toFloat3(curr_p_);
+    float3 cv = toFloat3(curr_v_);
     float3 rp = make_float3(ref_cmd_.position.x, ref_cmd_.position.y, ref_cmd_.position.z);
     float3 rv = make_float3(ref_cmd_.velocity.x, ref_cmd_.velocity.y, ref_cmd_.velocity.z);
     float3 ra = make_float3(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
-    float3 up = make_float3(u_prev_.x(), u_prev_.y(), u_prev_.z());
+    float3 up = toFloat3(u_prev_);
 
     launch_mppi_acc_kernel(
         u_mean_f3.data(), up, cp, cv, rp, rv, ra,
-        params_.K, params_.H, params_.dt, params_.sigma, params_.lambda,
-        params_.Q_pos_x, params_.Q_pos_y, params_.Q_pos_z,
-        params_.Q_vel_x, params_.Q_vel_y, params_.Q_vel_z,
-        params_.R_x, params_.R_y, params_.R_z,
-        params_.R_rate_x, params_.R_rate_y, params_.R_rate_z,
-        params_.w_obs,
-        params_.a_max, params_.tilt_max, params_.g,
+        common_params_.K, common_params_.H, common_params_.dt, acc_params_.sigma, common_params_.lambda,
+        acc_params_.Q_pos_x, acc_params_.Q_pos_y, acc_params_.Q_pos_z,
+        acc_params_.Q_vel_x, acc_params_.Q_vel_y, acc_params_.Q_vel_z,
+        acc_params_.R_x, acc_params_.R_y, acc_params_.R_z,
+        acc_params_.R_rate_x, acc_params_.R_rate_y, acc_params_.R_rate_z,
+        common_params_.w_obs,
+        acc_params_.a_max, acc_params_.tilt_max, common_params_.g,
         samples_u.data(), costs.data(), seed_++);
 
-    // Weighting
     float min_cost = *std::min_element(costs.begin(), costs.end());
     double sum_weights = 0.0;
-    std::vector<double> weights(params_.K);
+    std::vector<double> weights(common_params_.K);
 
-    for (int k = 0; k < params_.K; ++k)
+    for (int k = 0; k < common_params_.K; ++k)
     {
-      weights[k] = exp(-(costs[k] - min_cost) / params_.lambda);
+      weights[k] = exp(-(costs[k] - min_cost) / common_params_.lambda);
       sum_weights += weights[k];
     }
 
-    // Update mean control
-    std::vector<Eigen::Vector3d> new_u_mean(params_.H, Eigen::Vector3d::Zero());
-    for (int h = 0; h < params_.H; ++h)
+    std::vector<Eigen::Vector3d> new_u_mean(common_params_.H, Eigen::Vector3d::Zero());
+    for (int h = 0; h < common_params_.H; ++h)
     {
-      for (int k = 0; k < params_.K; ++k)
+      for (int k = 0; k < common_params_.K; ++k)
       {
-        float3 ukh = samples_u[k * params_.H + h];
-        new_u_mean[h] += weights[k] * Eigen::Vector3d(ukh.x, ukh.y, ukh.z);
+        float3 ukh = samples_u[k * common_params_.H + h];
+        new_u_mean[h] += weights[k] * toEigen(ukh);
       }
       new_u_mean[h] /= (sum_weights + 1e-6);
     }

@@ -16,7 +16,8 @@
         "ms-python.python",
         "Ranch-Hand-Robotics.rde-pack",
         "dotjoshjohnson.xml",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
@@ -36,6 +37,5 @@
       }
     }
   },
-  "remoteUser": "ubuntu",
-  "postCreateCommand": "bash ${workspaceFolder}/claude_code_zai_env.sh || echo 'Claude Code setup skipped or failed'"
+  "remoteUser": "ubuntu"
 }
