@@ -44,6 +44,13 @@ namespace mppi_control
     acc_params_.a_max = this->declare_parameter("mppi.a_max", 10.0);
     acc_params_.tilt_max = this->declare_parameter("mppi.tilt_max", 0.6);
 
+    // Lambda Auto-tuning Parameters
+    lambda_params_.auto_lambda = this->declare_parameter("mppi.auto_lambda", true);
+    lambda_params_.target_ess = this->declare_parameter("mppi.target_ess", 50.0);
+    lambda_params_.lambda_min = this->declare_parameter("mppi.lambda_min", 0.001);
+    lambda_params_.lambda_max = this->declare_parameter("mppi.lambda_max", 1.0);
+    lambda_params_.lambda_step = this->declare_parameter("mppi.lambda_step", 0.01);
+
     lpf_initialized_ = false;
     acc_filtered_.setZero();
 
@@ -75,6 +82,9 @@ namespace mppi_control
     RCLCPP_INFO(this->get_logger(), "  sigma: %.3f", acc_params_.sigma);
     RCLCPP_INFO(this->get_logger(), "  Q_pos: [%.1f, %.1f, %.1f]",
                 acc_params_.Q_pos_x, acc_params_.Q_pos_y, acc_params_.Q_pos_z);
+    RCLCPP_INFO(this->get_logger(), "  Auto Lambda: %s, target_ess: %.1f, step: %.3f",
+                lambda_params_.auto_lambda ? "ON" : "OFF",
+                lambda_params_.target_ess, lambda_params_.lambda_step);
 
     if (acc_params_.sigma < 0.0)
       RCLCPP_ERROR(this->get_logger(), "sigma must be >= 0");
@@ -187,6 +197,17 @@ namespace mppi_control
       weights[k] = exp(-(costs[k] - min_cost) / common_params_.lambda);
       sum_weights += weights[k];
     }
+
+    // ESS and Lambda Auto-tuning
+    float ess = update_lambda_ess(weights, sum_weights, common_params_.lambda, lambda_params_);
+    
+    std_msgs::msg::Float32 ess_msg;
+    ess_msg.data = ess;
+    ess_pub_->publish(ess_msg);
+
+    std_msgs::msg::Float32 lambda_msg;
+    lambda_msg.data = static_cast<float>(common_params_.lambda);
+    lambda_pub_->publish(lambda_msg);
 
     std::vector<Eigen::Vector3d> new_u_mean(common_params_.H, Eigen::Vector3d::Zero());
     for (int h = 0; h < common_params_.H; ++h)

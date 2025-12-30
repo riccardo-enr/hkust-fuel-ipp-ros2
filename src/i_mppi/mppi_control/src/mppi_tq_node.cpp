@@ -45,6 +45,9 @@ namespace mppi_control
     tq_params_.thrust_min = this->declare_parameter("mppi.thrust_min", 1.0);
     common_params_.g = this->declare_parameter("mppi.g", 9.81);
 
+    // Disable auto lambda for TQ version for now
+    lambda_params_.auto_lambda = false;
+
     lpf_initialized_ = false;
     control_filtered_.thrust = common_params_.g;
     control_filtered_.quat = make_float4(0, 0, 0, 1);
