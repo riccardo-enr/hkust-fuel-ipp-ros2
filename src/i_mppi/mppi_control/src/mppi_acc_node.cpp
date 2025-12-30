@@ -19,7 +19,7 @@ namespace mppi_control
     common_params_.lambda = this->declare_parameter("mppi.lambda", 0.1);
     common_params_.w_obs = this->declare_parameter("mppi.w_obs", 100.0);
     common_params_.g = this->declare_parameter("mppi.g", 9.81);
-    
+
     // Low-pass filter common params
     common_params_.enable_lpf = this->declare_parameter("mppi.enable_lpf", false);
     common_params_.lpf_cutoff = this->declare_parameter("mppi.lpf_cutoff", 5.0);
@@ -40,9 +40,9 @@ namespace mppi_control
     acc_params_.R_rate_x = this->declare_parameter("mppi.R_rate_x", 0.5);
     acc_params_.R_rate_y = this->declare_parameter("mppi.R_rate_y", 0.5);
     acc_params_.R_rate_z = this->declare_parameter("mppi.R_rate_z", 0.5);
-    
+
     acc_params_.a_max = this->declare_parameter("mppi.a_max", 10.0);
-    acc_params_.tilt_max = this->declare_parameter("mppi.tilt_max", 0.6); 
+    acc_params_.tilt_max = this->declare_parameter("mppi.tilt_max", 0.6);
 
     lpf_initialized_ = false;
     acc_filtered_.setZero();
@@ -59,7 +59,7 @@ namespace mppi_control
 
     // Initialize Base (Subscribers/Publishers/Timer)
     initBase();
-    
+
     // Validate
     validateAndLogParameters();
 
@@ -69,19 +69,21 @@ namespace mppi_control
   void MPPIAccNode::validateAndLogParameters()
   {
     validateCommonParameters(common_params_);
-    
+
     // Log Specifics
     RCLCPP_INFO(this->get_logger(), "=== MPPI ACC Configuration ===");
     RCLCPP_INFO(this->get_logger(), "  sigma: %.3f", acc_params_.sigma);
     RCLCPP_INFO(this->get_logger(), "  Q_pos: [%.1f, %.1f, %.1f]",
                 acc_params_.Q_pos_x, acc_params_.Q_pos_y, acc_params_.Q_pos_z);
-    
-    if (acc_params_.sigma < 0.0) RCLCPP_ERROR(this->get_logger(), "sigma must be >= 0");
+
+    if (acc_params_.sigma < 0.0)
+      RCLCPP_ERROR(this->get_logger(), "sigma must be >= 0");
   }
 
   void MPPIAccNode::controlLoop()
   {
-    if (!odom_received_) return;
+    if (!odom_received_)
+      return;
 
     checkTiming();
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -94,8 +96,7 @@ namespace mppi_control
     if (ready)
     {
       runMPPI();
-      Eigen::Vector3d ref_acc(ref_cmd_.acceleration.x, ref_cmd_.acceleration.y, ref_cmd_.acceleration.z);
-      des_acc = u_mean_[0] + ref_acc;
+      des_acc = u_mean_[0];
       u_prev_ = u_mean_[0];
     }
     else
@@ -107,10 +108,13 @@ namespace mppi_control
 
     if (common_params_.enable_lpf)
     {
-      if (!lpf_initialized_) {
+      if (!lpf_initialized_)
+      {
         acc_filtered_ = des_acc;
         lpf_initialized_ = true;
-      } else {
+      }
+      else
+      {
         acc_filtered_ = common_params_.lpf_alpha * des_acc + (1.0 - common_params_.lpf_alpha) * acc_filtered_;
       }
     }
@@ -135,7 +139,7 @@ namespace mppi_control
     if (ready)
     {
       publish_execution_time(comp_time_pub_, start_time);
-      
+
       // Shift control sequence
       for (int i = 0; i < common_params_.H - 1; ++i)
       {

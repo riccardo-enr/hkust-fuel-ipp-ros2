@@ -6,19 +6,19 @@ mppi_control:
       ctl_freq: 50.0 # Control frequency in Hz (dt = 1/ctl_freq)
       sigma: 0.1
       lambda: 0.001
-      Q_pos_x: 50.0
-      Q_pos_y: 50.0
-      Q_pos_z: 50.0
-      Q_vel_x: 5.0
-      Q_vel_y: 5.0
-      Q_vel_z: 5.0
+      Q_pos_x: 500.0
+      Q_pos_y: 500.0
+      Q_pos_z: 500.0
+      Q_vel_x: 50.0
+      Q_vel_y: 50.0
+      Q_vel_z: 50.0
       R_x: 0.5
       R_y: 0.5
       R_z: 0.5
       R_rate_x: 30.0
       R_rate_y: 30.0
       R_rate_z: 30.0
-      w_obs: 0.0
+      w_obs: 10.0
       a_max: 10.0
       tilt_max: 0.6
       g: 9.81
