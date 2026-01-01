@@ -57,7 +57,7 @@ protected:
   rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr pos_cmd_sub_;
   rclcpp::Publisher<quadrotor_msgs::msg::SO3Command>::SharedPtr so3_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr comp_time_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr ess_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr objective_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr lambda_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 

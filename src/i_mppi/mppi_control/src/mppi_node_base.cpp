@@ -24,7 +24,7 @@ void MPPINodeBase::initBase()
   // Publishers
   so3_cmd_pub_ = this->create_publisher<quadrotor_msgs::msg::SO3Command>("so3_cmd", 10);
   comp_time_pub_ = this->create_publisher<std_msgs::msg::Float32>("mppi/comp_time", 10);
-  ess_pub_ = this->create_publisher<std_msgs::msg::Float32>("mppi/ess", 10);
+  objective_pub_ = this->create_publisher<std_msgs::msg::Float32>("mppi/objective", 10);
   lambda_pub_ = this->create_publisher<std_msgs::msg::Float32>("mppi/lambda", 10);
 
   // Timer
