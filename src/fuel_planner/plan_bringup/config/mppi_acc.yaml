@@ -23,6 +23,16 @@ mppi_control:
       tilt_max: 0.6
       g: 9.81
 
+      # Lambda Auto-tuning (Jang's gradient-based method)
+      auto_lambda: true
+      alpha_fluctuation: 1.0   # Weight for fluctuation term
+      beta_performance: 1.0    # Weight for performance term
+      learning_rate: 0.1       # Gradient descent step size
+      lambda_perturbation: 0.01 # For finite difference gradient
+
+      lambda_min: 0.0001
+      lambda_max: 100.0
+
       # Low-pass filter (optional, for smoother control)
       enable_lpf: false
       lpf_cutoff: 5.0 # Cutoff frequency in Hz

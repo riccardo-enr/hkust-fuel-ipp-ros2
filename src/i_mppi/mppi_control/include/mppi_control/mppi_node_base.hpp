@@ -10,6 +10,7 @@
 #include <Eigen/Eigen>
 #include <vector>
 #include "mppi_control/utils.hpp"
+#include "mppi_control/mppi_common.hpp"
 
 namespace mppi_control
 {
@@ -56,6 +57,8 @@ protected:
   rclcpp::Subscription<quadrotor_msgs::msg::PositionCommand>::SharedPtr pos_cmd_sub_;
   rclcpp::Publisher<quadrotor_msgs::msg::SO3Command>::SharedPtr so3_cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr comp_time_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr objective_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr lambda_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   // State
@@ -77,6 +80,7 @@ protected:
 
   // Common Parameters
   CommonMPPIParams common_params_;
+  LambdaAutoTuneParams lambda_params_;
   double mass_;
   double kR_[3], kOm_[3];
 
